@@ -1,0 +1,11 @@
+--- arch/arm/boot/dts/am437x-sk-evm.dts
++++ arch/arm/boot/dts/am437x-sk-evm.dts
+@@ -533,6 +533,8 @@
+ 
+ 		touchscreen-size-x = <480>;
+ 		touchscreen-size-y = <272>;
++
++		wakeup-source;
+ 	};
+ 
+ 	tlv320aic3106: tlv320aic3106@1b {

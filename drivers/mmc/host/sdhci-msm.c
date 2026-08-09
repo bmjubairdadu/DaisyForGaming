@@ -5162,6 +5162,12 @@ static int sdhci_msm_probe(struct platform_device *pdev)
 		goto vreg_deinit;
 	}
 
+	/* Enable pwr irq interrupts */
+	writel_relaxed(INT_MASK, msm_host->core_mem + CORE_PWRCTL_MASK);
+
+	/* Enable pwr irq interrupts */
+	writel_relaxed(INT_MASK, msm_host->core_mem + CORE_PWRCTL_MASK);
+
 	ret = devm_request_threaded_irq(&pdev->dev, msm_host->pwr_irq, NULL,
 					sdhci_msm_pwr_irq, IRQF_ONESHOT,
 					dev_name(&pdev->dev), host);

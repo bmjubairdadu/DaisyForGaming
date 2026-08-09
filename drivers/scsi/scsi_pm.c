@@ -167,8 +167,22 @@ static int scsi_bus_resume_common(struct device *dev,
 			async_synchronize_full_domain(&scsi_sd_pm_domain);
 	} else {
 		pm_runtime_disable(dev);
-		pm_runtime_set_active(dev);
+		err = pm_runtime_set_active(dev);
 		pm_runtime_enable(dev);
+
+		/*
+		 * Forcibly set runtime PM status of request queue to "active"
+		 * to make sure we can again get requests from the queue
+		 * (see also blk_pm_peek_request()).
+		 *
+		 * The resume hook will correct runtime PM status of the disk.
+		 */
+		if (!err && scsi_is_sdev_device(dev)) {
+			struct scsi_device *sdev = to_scsi_device(dev);
+
+			if (sdev->request_queue->dev)
+				blk_set_runtime_active(sdev->request_queue);
+		}
 	}
 	return 0;
 }

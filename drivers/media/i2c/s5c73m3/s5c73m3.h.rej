@@ -1,0 +1,11 @@
+--- drivers/media/i2c/s5c73m3/s5c73m3.h
++++ drivers/media/i2c/s5c73m3/s5c73m3.h
+@@ -361,7 +361,7 @@ struct s5c73m3_ctrls {
+ 
+ enum s5c73m3_gpio_id {
+ 	STBY,
+-	RST,
++	RSET,
+ 	GPIO_NUM,
+ };
+ 

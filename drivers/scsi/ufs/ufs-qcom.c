@@ -1466,6 +1466,62 @@ static int ufs_qcom_apply_dev_quirks(struct ufs_hba *hba)
 	return err;
 }
 
+static int ufs_qcom_quirk_host_pa_saveconfigtime(struct ufs_hba *hba)
+{
+	int err;
+	u32 pa_vs_config_reg1;
+
+	err = ufshcd_dme_get(hba, UIC_ARG_MIB(PA_VS_CONFIG_REG1),
+			     &pa_vs_config_reg1);
+	if (err)
+		goto out;
+
+	/* Allow extension of MSB bits of PA_SaveConfigTime attribute */
+	err = ufshcd_dme_set(hba, UIC_ARG_MIB(PA_VS_CONFIG_REG1),
+			    (pa_vs_config_reg1 | (1 << 12)));
+
+out:
+	return err;
+}
+
+static int ufs_qcom_apply_dev_quirks(struct ufs_hba *hba)
+{
+	int err = 0;
+
+	if (hba->dev_quirks & UFS_DEVICE_QUIRK_HOST_PA_SAVECONFIGTIME)
+		err = ufs_qcom_quirk_host_pa_saveconfigtime(hba);
+
+	return err;
+}
+
+static int ufs_qcom_quirk_host_pa_saveconfigtime(struct ufs_hba *hba)
+{
+	int err;
+	u32 pa_vs_config_reg1;
+
+	err = ufshcd_dme_get(hba, UIC_ARG_MIB(PA_VS_CONFIG_REG1),
+			     &pa_vs_config_reg1);
+	if (err)
+		goto out;
+
+	/* Allow extension of MSB bits of PA_SaveConfigTime attribute */
+	err = ufshcd_dme_set(hba, UIC_ARG_MIB(PA_VS_CONFIG_REG1),
+			    (pa_vs_config_reg1 | (1 << 12)));
+
+out:
+	return err;
+}
+
+static int ufs_qcom_apply_dev_quirks(struct ufs_hba *hba)
+{
+	int err = 0;
+
+	if (hba->dev_quirks & UFS_DEVICE_QUIRK_HOST_PA_SAVECONFIGTIME)
+		err = ufs_qcom_quirk_host_pa_saveconfigtime(hba);
+
+	return err;
+}
+
 static u32 ufs_qcom_get_ufs_hci_version(struct ufs_hba *hba)
 {
 	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
@@ -2712,6 +2768,7 @@ static struct ufs_hba_variant_ops ufs_hba_qcom_vops = {
 	.add_debugfs		= ufs_qcom_dbg_add_debugfs,
 #endif
 };
+MODULE_DEVICE_TABLE(of, ufs_qcom_of_match);
 
 static struct ufs_hba_crypto_variant_ops ufs_hba_crypto_variant_ops = {
 	.crypto_req_setup	= ufs_qcom_crypto_req_setup,
@@ -2720,6 +2777,7 @@ static struct ufs_hba_crypto_variant_ops ufs_hba_crypto_variant_ops = {
 	.crypto_engine_reset	  = ufs_qcom_crytpo_engine_reset,
 	.crypto_engine_get_status = ufs_qcom_crypto_engine_get_status,
 };
+MODULE_DEVICE_TABLE(of, ufs_qcom_of_match);
 
 static struct ufs_hba_pm_qos_variant_ops ufs_hba_pm_qos_variant_ops = {
 	.req_start	= ufs_qcom_pm_qos_req_start,

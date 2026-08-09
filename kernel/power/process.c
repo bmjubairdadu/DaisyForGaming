@@ -213,6 +213,8 @@ void thaw_processes(void)
 
 	cpuset_wait_for_hotplug();
 
+	cpuset_wait_for_hotplug();
+
 	read_lock(&tasklist_lock);
 	for_each_process_thread(g, p) {
 		/* No other threads should have PF_SUSPEND_TASK set */
@@ -239,6 +241,8 @@ void thaw_kernel_threads(void)
 	pr_info("Restarting kernel threads ... ");
 
 	thaw_workqueues();
+
+	cpuset_wait_for_hotplug();
 
 	read_lock(&tasklist_lock);
 	for_each_process_thread(g, p) {

@@ -53,6 +53,10 @@ unsigned long *watchdog_cpumask_bits = cpumask_bits(&watchdog_cpumask);
 
 atomic_t watchdog_park_in_progress = ATOMIC_INIT(0);
 
+atomic_t watchdog_park_in_progress = ATOMIC_INIT(0);
+
+atomic_t watchdog_park_in_progress = ATOMIC_INIT(0);
+
 /*
  * The 'watchdog_running' variable is set to 1 when the watchdog threads
  * are registered/started and is set to 0 when the watchdog threads are
@@ -268,6 +272,12 @@ static enum hrtimer_restart watchdog_timer_fn(struct hrtimer *hrtimer)
 	struct pt_regs *regs = get_irq_regs();
 	int duration;
 	int softlockup_all_cpu_backtrace = sysctl_softlockup_all_cpu_backtrace;
+
+	if (atomic_read(&watchdog_park_in_progress) != 0)
+		return HRTIMER_NORESTART;
+
+	if (atomic_read(&watchdog_park_in_progress) != 0)
+		return HRTIMER_NORESTART;
 
 	if (atomic_read(&watchdog_park_in_progress) != 0)
 		return HRTIMER_NORESTART;

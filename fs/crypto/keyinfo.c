@@ -294,6 +294,7 @@ static void free_master_key(struct fscrypt_master_key *mk)
 		kzfree(mk);
 	}
 }
+EXPORT_SYMBOL(fscrypt_get_encryption_info);
 
 static void put_master_key(struct fscrypt_master_key *mk)
 {
@@ -303,6 +304,7 @@ static void put_master_key(struct fscrypt_master_key *mk)
 	spin_unlock(&fscrypt_master_keys_lock);
 	free_master_key(mk);
 }
+EXPORT_SYMBOL(fscrypt_get_encryption_info);
 
 /*
  * Find/insert the given master key into the fscrypt_master_keys table.  If

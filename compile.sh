@@ -48,7 +48,7 @@ build_clang() {
 	CROSS_COMPILE_ARM32=arm-linux-gnueabi-
 }
 
-make O=out sleepy_defconfig
+make O=out daisy_defconfig
 build_clang
 
 # Zip up the kernel
@@ -58,7 +58,7 @@ zip_kernelimage() {
     rm -rf AnyKernel3/*.zip
     BUILD_TIME=$(date +"%d%m%Y-%H%M")
     cd AnyKernel3
-    KERNEL_NAME=Sleepy-"${BUILD_TIME}"
+    KERNEL_NAME=DaisyForGaming-"${BUILD_TIME}"
     zip -r9 "$KERNEL_NAME".zip ./*
     cd ..
 }

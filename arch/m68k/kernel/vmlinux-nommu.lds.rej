@@ -1,0 +1,11 @@
+--- arch/m68k/kernel/vmlinux-nommu.lds
++++ arch/m68k/kernel/vmlinux-nommu.lds
+@@ -44,6 +44,8 @@ SECTIONS {
+ 	.text : {
+ 		HEAD_TEXT
+ 		TEXT_TEXT
++		IRQENTRY_TEXT
++		SOFTIRQENTRY_TEXT
+ 		SCHED_TEXT
+ 		CPUIDLE_TEXT
+ 		LOCK_TEXT

@@ -1616,6 +1616,14 @@ void __init page_alloc_init_late(void)
 	/* Discard memblock private memory */
 	memblock_discard();
 #endif
+#ifdef CONFIG_ARCH_DISCARD_MEMBLOCK
+	/* Discard memblock private memory */
+	memblock_discard();
+#endif
+#ifdef CONFIG_ARCH_DISCARD_MEMBLOCK
+	/* Discard memblock private memory */
+	memblock_discard();
+#endif
 
 	for_each_populated_zone(zone)
 		set_zone_contiguous(zone);
@@ -1791,7 +1799,7 @@ inline void post_alloc_hook(struct page *page, unsigned int order,
 static void prep_new_page(struct page *page, unsigned int order, gfp_t gfp_flags,
 							unsigned int alloc_flags)
 {
-	int i;
+	int i, alloced = 0;
 
 	post_alloc_hook(page, order, gfp_flags);
 
@@ -2487,6 +2495,7 @@ void mark_free_pages(struct zone *zone)
 	unsigned long flags;
 	unsigned int order, t;
 	struct page *page;
+	unsigned int noreclaim_flag = current->flags & PF_MEMALLOC;
 
 	if (zone_is_empty(zone))
 		return;
@@ -2593,7 +2602,7 @@ void free_hot_cold_page_list(struct list_head *list, bool cold)
  */
 void split_page(struct page *page, unsigned int order)
 {
-	int i;
+	int i, alloced = 0;
 
 	VM_BUG_ON_PAGE(PageCompound(page), page);
 	VM_BUG_ON_PAGE(!page_count(page), page);
@@ -2888,6 +2897,23 @@ bool __zone_watermark_ok(struct zone *z, unsigned int order, unsigned long mark,
 	if (!(alloc_flags & ALLOC_CMA))
 		free_pages -= zone_page_state(z, NR_FREE_CMA_PAGES);
 #endif
+
+retry_cpuset:
+	compaction_retries = 0;
+	no_progress_loops = 0;
+	compact_priority = DEF_COMPACT_PRIORITY;
+	cpuset_mems_cookie = read_mems_allowed_begin();
+	/*
+	 * We need to recalculate the starting point for the zonelist iterator
+	 * because we might have used different nodemask in the fast path, or
+	 * there was a cpuset modification and we are retrying - otherwise we
+	 * could end up iterating over non-eligible zones endlessly.
+	 */
+	ac->preferred_zoneref = first_zones_zonelist(ac->zonelist,
+					ac->high_zoneidx, ac->nodemask);
+	if (!ac->preferred_zoneref->zone)
+		goto nopage;
+
 
 	/*
 	 * Check watermarks for an order-0 allocation request. If these
@@ -3890,6 +3916,13 @@ retry:
 	if (read_mems_allowed_retry(cpuset_mems_cookie))
 		goto retry_cpuset;
 
+	/*
+	 * It's possible we raced with cpuset update so the OOM would be
+	 * premature (see below the nopage: label for full explanation).
+	 */
+	if (read_mems_allowed_retry(cpuset_mems_cookie))
+		goto retry_cpuset;
+
 	/* Reclaim has failed us, start killing things */
 	page = __alloc_pages_may_oom(gfp_mask, order, ac, &did_some_progress);
 	if (page)
@@ -3968,6 +4001,7 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 	/* Dirty zone balancing only done in the fast path */
 	ac.spread_dirty_pages = (gfp_mask & __GFP_WRITE);
 
+no_zone:
 	/*
 	 * The preferred zone is used for statistics but crucially it is
 	 * also used as the starting point for the zonelist iterator. It
@@ -5147,6 +5181,9 @@ static int __build_all_zonelists(void *data)
 		if (cpu_online(cpu))
 			set_cpu_numa_mem(cpu, local_memory_node(cpu_to_node(cpu)));
 #endif
+		if (alloc_harder &&
+			!list_empty(&area->free_list[MIGRATE_HIGHATOMIC]))
+			return true;
 	}
 
 	return 0;
@@ -5911,6 +5948,23 @@ void __paginginit set_pageblock_order(void)
 	else
 		order = MAX_ORDER - 1;
 
+retry_cpuset:
+	compaction_retries = 0;
+	no_progress_loops = 0;
+	compact_priority = DEF_COMPACT_PRIORITY;
+	cpuset_mems_cookie = read_mems_allowed_begin();
+	/*
+	 * We need to recalculate the starting point for the zonelist iterator
+	 * because we might have used different nodemask in the fast path, or
+	 * there was a cpuset modification and we are retrying - otherwise we
+	 * could end up iterating over non-eligible zones endlessly.
+	 */
+	ac->preferred_zoneref = first_zones_zonelist(ac->zonelist,
+					ac->high_zoneidx, ac->nodemask);
+	if (!ac->preferred_zoneref->zone)
+		goto nopage;
+
+
 	/*
 	 * Assume the largest contiguous order of interest is a huge page.
 	 * This value may be variable depending on boot parameters on IA64 and
@@ -6268,6 +6322,7 @@ static void __init find_zone_movable_pfns_for_nodes(void)
 	/* Need to find movable_zone earlier when movable_node is specified. */
 	find_usable_zone_for_movable();
 
+no_zone:
 	/*
 	 * If movable_node is specified, ignore kernelcore and movablecore
 	 * options.

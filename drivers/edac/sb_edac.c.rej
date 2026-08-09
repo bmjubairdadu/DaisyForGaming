@@ -1,0 +1,27 @@
+--- drivers/edac/sb_edac.c
++++ drivers/edac/sb_edac.c
+@@ -1009,7 +1009,7 @@ static u64 haswell_get_tohm(struct sbridge_pvt *pvt)
+ 	pci_read_config_dword(pvt->info.pci_vtd, HASWELL_TOHM_1, &reg);
+ 	rc = ((reg << 6) | rc) << 26;
+ 
+-	return rc | 0x1ffffff;
++	return rc | 0x3ffffff;
+ }
+ 
+ static u64 knl_get_tolm(struct sbridge_pvt *pvt)
+@@ -2510,6 +2510,7 @@ static int ibridge_mci_bind_devs(struct mem_ctl_info *mci,
+ 			break;
+ 		case PCI_DEVICE_ID_INTEL_IBRIDGE_IMC_HA0_TA:
+ 			pvt->pci_ta = pdev;
++			break;
+ 		case PCI_DEVICE_ID_INTEL_IBRIDGE_IMC_HA0_RAS:
+ 			pvt->pci_ras = pdev;
+ 			break;
+@@ -2933,6 +2934,7 @@ static void sbridge_mce_output_error(struct mem_ctl_info *mci,
+ 		recoverable = GET_BITFIELD(m->status, 56, 56);
+ 
+ 	if (uncorrected_error) {
++		core_err_cnt = 1;
+ 		if (ripv) {
+ 			type = "FATAL";
+ 			tp_event = HW_EVENT_ERR_FATAL;

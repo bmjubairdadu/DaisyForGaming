@@ -1,0 +1,15 @@
+--- arch/arm/boot/dts/bcm7445-bcm97445svmb.dts
++++ arch/arm/boot/dts/bcm7445-bcm97445svmb.dts
+@@ -13,10 +13,10 @@
+ 	};
+ };
+ 
+-&nand {
++&nand_controller {
+ 	status = "okay";
+ 
+-	nandcs@1 {
++	nand@1 {
+ 		compatible = "brcm,nandcs";
+ 		reg = <1>;
+ 		nand-ecc-step-size = <512>;

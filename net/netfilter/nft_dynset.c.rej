@@ -1,0 +1,33 @@
+--- net/netfilter/nft_dynset.c
++++ net/netfilter/nft_dynset.c
+@@ -82,8 +82,7 @@ static void nft_dynset_eval(const struct nft_expr *expr,
+ 		    nft_set_ext_exists(ext, NFT_SET_EXT_EXPIRATION)) {
+ 			timeout = priv->timeout ? : set->timeout;
+ 			*nft_set_ext_expiration(ext) = jiffies + timeout;
+-		} else if (sexpr == NULL)
+-			goto out;
++		}
+ 
+ 		if (sexpr != NULL)
+ 			sexpr->ops->eval(sexpr, regs, pkt);
+@@ -92,7 +91,7 @@ static void nft_dynset_eval(const struct nft_expr *expr,
+ 			regs->verdict.code = NFT_BREAK;
+ 		return;
+ 	}
+-out:
++
+ 	if (!priv->invert)
+ 		regs->verdict.code = NFT_BREAK;
+ }
+@@ -211,8 +210,10 @@ static int nft_dynset_init(const struct nft_ctx *ctx,
+ 		nft_set_ext_add_length(&priv->tmpl, NFT_SET_EXT_EXPR,
+ 				       priv->expr->ops->size);
+ 	if (set->flags & NFT_SET_TIMEOUT) {
+-		if (timeout || set->timeout)
++		if (timeout || set->timeout) {
++			nft_set_ext_add(&priv->tmpl, NFT_SET_EXT_TIMEOUT);
+ 			nft_set_ext_add(&priv->tmpl, NFT_SET_EXT_EXPIRATION);
++		}
+ 	}
+ 
+ 	priv->timeout = timeout;

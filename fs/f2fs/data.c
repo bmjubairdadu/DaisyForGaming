@@ -536,6 +536,14 @@ int f2fs_submit_page_bio(struct f2fs_io_info *fio)
 			META_GENERIC : DATA_GENERIC_ENHANCE)))
 		return -EFSCORRUPTED;
 
+	if (!f2fs_is_valid_blkaddr(fio->sbi, fio->new_blkaddr,
+			__is_meta_io(fio) ? META_GENERIC : DATA_GENERIC))
+		return -EFAULT;
+
+	if (!f2fs_is_valid_blkaddr(fio->sbi, fio->new_blkaddr,
+			__is_meta_io(fio) ? META_GENERIC : DATA_GENERIC))
+		return -EFAULT;
+
 	trace_f2fs_submit_page_bio(page, fio);
 	f2fs_trace_ios(fio, 0);
 
@@ -3148,6 +3156,10 @@ int f2fs_release_page(struct page *page, gfp_t wait)
 	/* If this is dirty page, keep PagePrivate */
 	if (PageDirty(page))
 		return 0;
+
+	clear_cold_data(page);
+
+	clear_cold_data(page);
 
 	/* This is atomic written page, keep Private */
 	if (IS_ATOMIC_WRITTEN_PAGE(page))

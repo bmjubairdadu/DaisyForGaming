@@ -1,0 +1,36 @@
+--- drivers/i2c/busses/i2c-cadence.c
++++ drivers/i2c/busses/i2c-cadence.c
+@@ -908,7 +908,10 @@ static int cdns_i2c_probe(struct platform_device *pdev)
+ 	if (IS_ERR(id->membase))
+ 		return PTR_ERR(id->membase);
+ 
+-	id->irq = platform_get_irq(pdev, 0);
++	ret = platform_get_irq(pdev, 0);
++	if (ret < 0)
++		return ret;
++	id->irq = ret;
+ 
+ 	id->adap.owner = THIS_MODULE;
+ 	id->adap.dev.of_node = pdev->dev.of_node;
+@@ -962,10 +965,6 @@ static int cdns_i2c_probe(struct platform_device *pdev)
+ 		goto err_clk_dis;
+ 	}
+ 
+-	ret = i2c_add_adapter(&id->adap);
+-	if (ret < 0)
+-		goto err_clk_dis;
+-
+ 	/*
+ 	 * Cadence I2C controller has a bug wherein it generates
+ 	 * invalid read transaction after HW timeout in master receiver mode.
+@@ -975,6 +974,10 @@ static int cdns_i2c_probe(struct platform_device *pdev)
+ 	 */
+ 	cdns_i2c_writereg(CDNS_I2C_TIMEOUT_MAX, CDNS_I2C_TIME_OUT_OFFSET);
+ 
++	ret = i2c_add_adapter(&id->adap);
++	if (ret < 0)
++		goto err_clk_dis;
++
+ 	dev_info(&pdev->dev, "%u kHz mmio %08lx irq %d\n",
+ 		 id->i2c_clk / 1000, (unsigned long)r_mem->start, id->irq);
+ 

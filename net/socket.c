@@ -2348,6 +2348,7 @@ SYSCALL_DEFINE5(recvmmsg, int, fd, struct mmsghdr __user *, mmsg,
 
 	if (flags & MSG_CMSG_COMPAT)
 		return -EINVAL;
+	call = array_index_nospec(call, SYS_SENDMMSG + 1);
 
 	if (!timeout)
 		return __sys_recvmmsg(fd, mmsg, vlen, flags, NULL);
@@ -2398,6 +2399,7 @@ SYSCALL_DEFINE2(socketcall, int, call, unsigned long __user *, args)
 	len = nargs[call];
 	if (len > sizeof(a))
 		return -EINVAL;
+	call = array_index_nospec(call, SYS_SENDMMSG + 1);
 
 	/* copy_from_user should be SMP safe. */
 	if (copy_from_user(a, args, len))

@@ -1,0 +1,11 @@
+--- arch/arm/boot/dts/tango4-vantage-1172.dts
++++ arch/arm/boot/dts/tango4-vantage-1172.dts
+@@ -21,7 +21,7 @@
+ };
+ 
+ &eth0 {
+-	phy-connection-type = "rgmii";
++	phy-connection-type = "rgmii-id";
+ 	phy-handle = <&eth0_phy>;
+ 	#address-cells = <1>;
+ 	#size-cells = <0>;

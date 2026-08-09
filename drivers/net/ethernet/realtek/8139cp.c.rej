@@ -1,0 +1,21 @@
+--- drivers/net/ethernet/realtek/8139cp.c
++++ drivers/net/ethernet/realtek/8139cp.c
+@@ -578,6 +578,7 @@ static irqreturn_t cp_interrupt (int irq, void *dev_instance)
+ 	struct cp_private *cp;
+ 	int handled = 0;
+ 	u16 status;
++	u16 mask;
+ 
+ 	if (unlikely(dev == NULL))
+ 		return IRQ_NONE;
+@@ -585,6 +586,10 @@ static irqreturn_t cp_interrupt (int irq, void *dev_instance)
+ 
+ 	spin_lock(&cp->lock);
+ 
++	mask = cpr16(IntrMask);
++	if (!mask)
++		goto out_unlock;
++
+ 	status = cpr16(IntrStatus);
+ 	if (!status || (status == 0xFFFF))
+ 		goto out_unlock;

@@ -1,0 +1,13 @@
+--- drivers/misc/c2port/c2port-duramar2150.c
++++ drivers/misc/c2port/c2port-duramar2150.c
+@@ -129,8 +129,8 @@ static int __init duramar2150_c2port_init(void)
+ 
+ 	duramar2150_c2port_dev = c2port_device_register("uc",
+ 					&duramar2150_c2port_ops, NULL);
+-	if (!duramar2150_c2port_dev) {
+-		ret = -ENODEV;
++	if (IS_ERR(duramar2150_c2port_dev)) {
++		ret = PTR_ERR(duramar2150_c2port_dev);
+ 		goto free_region;
+ 	}
+ 

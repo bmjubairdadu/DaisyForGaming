@@ -1,0 +1,12 @@
+--- drivers/acpi/acpi_dbg.c
++++ drivers/acpi/acpi_dbg.c
+@@ -757,6 +757,9 @@ int __init acpi_aml_init(void)
+ 		goto err_exit;
+ 	}
+ 
++	if (acpi_disabled)
++		return -ENODEV;
++
+ 	/* Initialize AML IO interface */
+ 	mutex_init(&acpi_aml_io.lock);
+ 	init_waitqueue_head(&acpi_aml_io.wait);

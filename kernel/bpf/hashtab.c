@@ -696,7 +696,7 @@ static int htab_map_delete_elem(struct bpf_map *map, void *key)
 
 	raw_spin_lock_irqsave(&b->lock, flags);
 
-	l = lookup_elem_raw(head, hash, key, key_size);
+	l = lookup_nulls_elem_raw(head, hash, key, key_size, htab->n_buckets);
 
 	if (l) {
 		hlist_nulls_del_rcu(&l->hash_node);

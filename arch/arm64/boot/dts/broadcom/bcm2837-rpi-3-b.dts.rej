@@ -1,0 +1,16 @@
+--- arch/arm64/boot/dts/broadcom/bcm2837-rpi-3-b.dts
++++ arch/arm64/boot/dts/broadcom/bcm2837-rpi-3-b.dts
+@@ -15,13 +15,6 @@
+ 		act {
+ 			gpios = <&gpio 47 0>;
+ 		};
+-
+-		pwr {
+-			label = "PWR";
+-			gpios = <&gpio 35 0>;
+-			default-state = "keep";
+-			linux,default-trigger = "default-on";
+-		};
+ 	};
+ };
+ 

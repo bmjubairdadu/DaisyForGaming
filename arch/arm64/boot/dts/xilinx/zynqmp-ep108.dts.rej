@@ -1,0 +1,11 @@
+--- arch/arm64/boot/dts/xilinx/zynqmp-ep108.dts
++++ arch/arm64/boot/dts/xilinx/zynqmp-ep108.dts
+@@ -27,7 +27,7 @@
+ 		stdout-path = "serial0:115200n8";
+ 	};
+ 
+-	memory {
++	memory@0 {
+ 		device_type = "memory";
+ 		reg = <0x0 0x0 0x0 0x40000000>;
+ 	};

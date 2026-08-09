@@ -1,0 +1,11 @@
+--- tools/testing/selftests/rcutorture/bin/configinit.sh
++++ tools/testing/selftests/rcutorture/bin/configinit.sh
+@@ -51,7 +51,7 @@ then
+ 			mkdir $builddir
+ 		fi
+ 	else
+-		echo Bad build directory: \"$builddir\"
++		echo Bad build directory: \"$buildloc\"
+ 		exit 2
+ 	fi
+ fi

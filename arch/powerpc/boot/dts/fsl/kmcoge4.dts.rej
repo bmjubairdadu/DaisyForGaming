@@ -1,0 +1,13 @@
+--- arch/powerpc/boot/dts/fsl/kmcoge4.dts
++++ arch/powerpc/boot/dts/fsl/kmcoge4.dts
+@@ -83,6 +83,10 @@
+ 			};
+ 		};
+ 
++		sdhc@114000 {
++			status = "disabled";
++		};
++
+ 		i2c@119000 {
+ 			status = "disabled";
+ 		};

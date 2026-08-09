@@ -1,0 +1,36 @@
+--- drivers/net/wireless/ath/wcn36xx/main.c
++++ drivers/net/wireless/ath/wcn36xx/main.c
+@@ -129,7 +129,9 @@ static struct ieee80211_supported_band wcn_band_2ghz = {
+ 		.cap =	IEEE80211_HT_CAP_GRN_FLD |
+ 			IEEE80211_HT_CAP_SGI_20 |
+ 			IEEE80211_HT_CAP_DSSSCCK40 |
+-			IEEE80211_HT_CAP_LSIG_TXOP_PROT,
++			IEEE80211_HT_CAP_LSIG_TXOP_PROT |
++			IEEE80211_HT_CAP_SGI_40 |
++			IEEE80211_HT_CAP_SUP_WIDTH_20_40,
+ 		.ht_supported = true,
+ 		.ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K,
+ 		.ampdu_density = IEEE80211_HT_MPDU_DENSITY_16,
+@@ -158,7 +160,7 @@ static struct ieee80211_supported_band wcn_band_5ghz = {
+ 		.ampdu_density = IEEE80211_HT_MPDU_DENSITY_16,
+ 		.mcs = {
+ 			.rx_mask = { 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
+-			.rx_highest = cpu_to_le16(72),
++			.rx_highest = cpu_to_le16(150),
+ 			.tx_params = IEEE80211_HT_MCS_TX_DEFINED,
+ 		}
+ 	}
+@@ -1165,11 +1167,12 @@ static int wcn36xx_remove(struct platform_device *pdev)
+ 	wcn36xx_dbg(WCN36XX_DBG_MAC, "platform remove\n");
+ 
+ 	release_firmware(wcn->nv);
+-	mutex_destroy(&wcn->hal_mutex);
+ 
+ 	ieee80211_unregister_hw(hw);
+ 	iounmap(wcn->dxe_base);
+ 	iounmap(wcn->ccu_base);
++
++	mutex_destroy(&wcn->hal_mutex);
+ 	ieee80211_free_hw(hw);
+ 
+ 	return 0;

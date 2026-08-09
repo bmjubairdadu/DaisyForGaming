@@ -1,0 +1,10 @@
+--- arch/arm/boot/dts/bcm283x-rpi-smsc9514.dtsi
++++ arch/arm/boot/dts/bcm283x-rpi-smsc9514.dtsi
+@@ -1,6 +1,6 @@
+ / {
+ 	aliases {
+-		ethernet = &ethernet;
++		ethernet0 = &ethernet;
+ 	};
+ };
+ 

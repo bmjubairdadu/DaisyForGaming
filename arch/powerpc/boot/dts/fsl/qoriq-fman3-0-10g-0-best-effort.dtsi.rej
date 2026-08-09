@@ -1,0 +1,10 @@
+--- arch/powerpc/boot/dts/fsl/qoriq-fman3-0-10g-0-best-effort.dtsi
++++ arch/powerpc/boot/dts/fsl/qoriq-fman3-0-10g-0-best-effort.dtsi
+@@ -63,6 +63,7 @@ fman@400000 {
+ 		#size-cells = <0>;
+ 		compatible = "fsl,fman-memac-mdio", "fsl,fman-xmdio";
+ 		reg = <0xe1000 0x1000>;
++		fsl,erratum-a011043; /* must ignore read errors */
+ 
+ 		pcsphy0: ethernet-phy@0 {
+ 			reg = <0x0>;

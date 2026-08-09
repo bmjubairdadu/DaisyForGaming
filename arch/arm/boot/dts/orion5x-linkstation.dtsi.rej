@@ -1,0 +1,11 @@
+--- arch/arm/boot/dts/orion5x-linkstation.dtsi
++++ arch/arm/boot/dts/orion5x-linkstation.dtsi
+@@ -156,7 +156,7 @@
+ &i2c {
+ 	status = "okay";
+ 
+-	rtc {
++	rtc@32 {
+ 		compatible = "ricoh,rs5c372a";
+ 		reg = <0x32>;
+ 	};

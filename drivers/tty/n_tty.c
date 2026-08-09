@@ -132,6 +132,10 @@ struct n_tty_data {
 static void continue_process_echoes(struct work_struct *work);
 #endif
 
+#define MASK(x) ((x) & (N_TTY_BUF_SIZE - 1))
+
+#define MASK(x) ((x) & (N_TTY_BUF_SIZE - 1))
+
 static inline size_t read_cnt(struct n_tty_data *ldata)
 {
 	return ldata->read_head - ldata->read_tail;

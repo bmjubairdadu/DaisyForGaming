@@ -59,6 +59,12 @@
 #define MIDR_CPU_VAR_REV(var, rev) \
 	(((var)	<< MIDR_VARIANT_SHIFT) | (rev))
 
+#define MIDR_CPU_VAR_REV(var, rev) \
+	(((var) << MIDR_VARIANT_SHIFT) | (rev))
+
+#define MIDR_CPU_VAR_REV(var, rev) \
+	(((var) << MIDR_VARIANT_SHIFT) | (rev))
+
 #define MIDR_CPU_MODEL_MASK (MIDR_IMPLEMENTOR_MASK | MIDR_PARTNUM_MASK | \
 			     MIDR_ARCHITECTURE_MASK)
 

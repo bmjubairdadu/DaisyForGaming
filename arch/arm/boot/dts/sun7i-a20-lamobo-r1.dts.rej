@@ -1,0 +1,11 @@
+--- arch/arm/boot/dts/sun7i-a20-lamobo-r1.dts
++++ arch/arm/boot/dts/sun7i-a20-lamobo-r1.dts
+@@ -167,7 +167,7 @@
+ 					reg = <8>;
+ 					label = "cpu";
+ 					ethernet = <&gmac>;
+-					phy-mode = "rgmii";
++					phy-mode = "rgmii-txid";
+ 					fixed-link {
+ 						speed = <1000>;
+ 						full-duplex;

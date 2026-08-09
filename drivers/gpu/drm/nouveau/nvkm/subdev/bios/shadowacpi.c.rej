@@ -1,0 +1,10 @@
+--- drivers/gpu/drm/nouveau/nvkm/subdev/bios/shadowacpi.c
++++ drivers/gpu/drm/nouveau/nvkm/subdev/bios/shadowacpi.c
+@@ -99,6 +99,7 @@ nvbios_acpi_fast = {
+ 	.init = acpi_init,
+ 	.read = acpi_read_fast,
+ 	.rw = false,
++	.require_checksum = true,
+ };
+ 
+ const struct nvbios_source

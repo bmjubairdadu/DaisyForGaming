@@ -1,0 +1,99 @@
+--- net/sched/sch_api.c
++++ net/sched/sch_api.c
+@@ -277,9 +277,6 @@ static struct Qdisc *qdisc_match_from_root(struct Qdisc *root, u32 handle)
+ void qdisc_hash_add(struct Qdisc *q)
+ {
+ 	if ((q->parent != TC_H_ROOT) && !(q->flags & TCQ_F_INGRESS)) {
+-		struct Qdisc *root = qdisc_dev(q)->qdisc;
+-
+-		WARN_ON_ONCE(root == &noop_qdisc);
+ 		ASSERT_RTNL();
+ 		hash_add_rcu(qdisc_dev(q)->qdisc_hash, &q->hash, q->handle);
+ 	}
+@@ -299,6 +296,8 @@ struct Qdisc *qdisc_lookup(struct net_device *dev, u32 handle)
+ {
+ 	struct Qdisc *q;
+ 
++	if (!handle)
++		return NULL;
+ 	q = qdisc_match_from_root(dev->qdisc, handle);
+ 	if (q)
+ 		goto out;
+@@ -394,7 +393,8 @@ struct qdisc_rate_table *qdisc_get_rtab(struct tc_ratespec *r,
+ {
+ 	struct qdisc_rate_table *rtab;
+ 
+-	if (tab == NULL || r->rate == 0 || r->cell_log == 0 ||
++	if (tab == NULL || r->rate == 0 ||
++	    r->cell_log == 0 || r->cell_log >= 32 ||
+ 	    nla_len(tab) != TC_RTAB_SIZE)
+ 		return NULL;
+ 
+@@ -1008,6 +1008,9 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
+ 
+ 		return sch;
+ 	}
++	/* ops->init() failed, we call ->destroy() like qdisc_create_dflt() */
++	if (ops->destroy)
++		ops->destroy(sch);
+ err_out3:
+ 	dev_put(dev);
+ 	kfree((char *) sch - sch->padded);
+@@ -1786,7 +1789,7 @@ static int tc_dump_tclass_qdisc(struct Qdisc *q, struct sk_buff *skb,
+ 
+ static int tc_dump_tclass_root(struct Qdisc *root, struct sk_buff *skb,
+ 			       struct tcmsg *tcm, struct netlink_callback *cb,
+-			       int *t_p, int s_t)
++			       int *t_p, int s_t, bool recur)
+ {
+ 	struct Qdisc *q;
+ 	int b;
+@@ -1797,7 +1800,7 @@ static int tc_dump_tclass_root(struct Qdisc *root, struct sk_buff *skb,
+ 	if (tc_dump_tclass_qdisc(root, skb, tcm, cb, t_p, s_t) < 0)
+ 		return -1;
+ 
+-	if (!qdisc_dev(root))
++	if (!qdisc_dev(root) || !recur)
+ 		return 0;
+ 
+ 	hash_for_each(qdisc_dev(root)->qdisc_hash, b, q, hash) {
+@@ -1825,13 +1828,13 @@ static int tc_dump_tclass(struct sk_buff *skb, struct netlink_callback *cb)
+ 	s_t = cb->args[0];
+ 	t = 0;
+ 
+-	if (tc_dump_tclass_root(dev->qdisc, skb, tcm, cb, &t, s_t) < 0)
++	if (tc_dump_tclass_root(dev->qdisc, skb, tcm, cb, &t, s_t, true) < 0)
+ 		goto done;
+ 
+ 	dev_queue = dev_ingress_queue(dev);
+ 	if (dev_queue &&
+ 	    tc_dump_tclass_root(dev_queue->qdisc_sleeping, skb, tcm, cb,
+-				&t, s_t) < 0)
++				&t, s_t, false) < 0)
+ 		goto done;
+ 
+ done:
+@@ -1848,7 +1851,6 @@ done:
+ int tc_classify(struct sk_buff *skb, const struct tcf_proto *tp,
+ 		struct tcf_result *res, bool compat_mode)
+ {
+-	__be16 protocol = tc_skb_protocol(skb);
+ #ifdef CONFIG_NET_CLS_ACT
+ 	const struct tcf_proto *old_tp = tp;
+ 	int limit = 0;
+@@ -1856,6 +1858,7 @@ int tc_classify(struct sk_buff *skb, const struct tcf_proto *tp,
+ reclassify:
+ #endif
+ 	for (; tp; tp = rcu_dereference_bh(tp->next)) {
++		__be16 protocol = tc_skb_protocol(skb);
+ 		int err;
+ 
+ 		if (tp->protocol != protocol &&
+@@ -1882,7 +1885,6 @@ reset:
+ 	}
+ 
+ 	tp = old_tp;
+-	protocol = tc_skb_protocol(skb);
+ 	goto reclassify;
+ #endif
+ }

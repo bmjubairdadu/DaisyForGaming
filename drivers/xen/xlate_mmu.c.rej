@@ -1,0 +1,10 @@
+--- drivers/xen/xlate_mmu.c
++++ drivers/xen/xlate_mmu.c
+@@ -36,6 +36,7 @@
+ #include <asm/xen/hypervisor.h>
+ 
+ #include <xen/xen.h>
++#include <xen/xen-ops.h>
+ #include <xen/page.h>
+ #include <xen/interface/xen.h>
+ #include <xen/interface/memory.h>

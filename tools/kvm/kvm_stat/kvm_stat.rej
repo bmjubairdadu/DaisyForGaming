@@ -1,0 +1,8 @@
+--- tools/kvm/kvm_stat/kvm_stat
++++ tools/kvm/kvm_stat/kvm_stat
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/env python
+ #
+ # top-like utility for displaying kvm statistics
+ #

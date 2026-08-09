@@ -1,0 +1,24 @@
+--- fs/ubifs/lprops.c
++++ fs/ubifs/lprops.c
+@@ -1091,10 +1091,6 @@ static int scan_check_cb(struct ubifs_info *c,
+ 		}
+ 	}
+ 
+-	buf = __vmalloc(c->leb_size, GFP_NOFS, PAGE_KERNEL);
+-	if (!buf)
+-		return -ENOMEM;
+-
+ 	/*
+ 	 * After an unclean unmount, empty and freeable LEBs
+ 	 * may contain garbage - do not scan them.
+@@ -1113,6 +1109,10 @@ static int scan_check_cb(struct ubifs_info *c,
+ 		return LPT_SCAN_CONTINUE;
+ 	}
+ 
++	buf = __vmalloc(c->leb_size, GFP_NOFS, PAGE_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
+ 	sleb = ubifs_scan(c, lnum, 0, buf, 0);
+ 	if (IS_ERR(sleb)) {
+ 		ret = PTR_ERR(sleb);

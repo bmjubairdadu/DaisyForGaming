@@ -126,6 +126,16 @@ struct st_sensor_das {
 };
 
 /**
+ * struct st_sensor_das - ST sensor device data alignment selection
+ * @addr: address of the register.
+ * @mask: mask to write the das flag for left alignment.
+ */
+struct st_sensor_das {
+	u8 addr;
+	u8 mask;
+};
+
+/**
  * struct st_sensor_data_ready_irq - ST sensor device data-ready interrupt
  * @addr: address of the register.
  * @mask_int1: mask to enable/disable IRQ on INT1 pin.

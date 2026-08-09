@@ -1,0 +1,15 @@
+--- drivers/video/fbdev/omap2/omapfb/dss/hdmi4.c
++++ drivers/video/fbdev/omap2/omapfb/dss/hdmi4.c
+@@ -50,9 +50,10 @@ static int hdmi_runtime_get(void)
+ 	DSSDBG("hdmi_runtime_get\n");
+ 
+ 	r = pm_runtime_get_sync(&hdmi.pdev->dev);
+-	WARN_ON(r < 0);
+-	if (r < 0)
++	if (WARN_ON(r < 0)) {
++		pm_runtime_put_sync(&hdmi.pdev->dev);
+ 		return r;
++	}
+ 
+ 	return 0;
+ }

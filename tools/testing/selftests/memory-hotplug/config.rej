@@ -1,0 +1,7 @@
+--- tools/testing/selftests/memory-hotplug/config
++++ tools/testing/selftests/memory-hotplug/config
+@@ -2,3 +2,4 @@ CONFIG_MEMORY_HOTPLUG=y
+ CONFIG_MEMORY_HOTPLUG_SPARSE=y
+ CONFIG_NOTIFIER_ERROR_INJECTION=y
+ CONFIG_MEMORY_NOTIFIER_ERROR_INJECT=m
++CONFIG_MEMORY_HOTREMOVE=y

@@ -1,0 +1,11 @@
+--- arch/arm64/kernel/cpu-reset.S
++++ arch/arm64/kernel/cpu-reset.S
+@@ -16,7 +16,7 @@
+ #include <asm/virt.h>
+ 
+ .text
+-.pushsection    .idmap.text, "ax"
++.pushsection    .idmap.text, "awx"
+ 
+ /*
+  * __cpu_soft_restart(el2_switch, entry, arg0, arg1, arg2) - Helper for

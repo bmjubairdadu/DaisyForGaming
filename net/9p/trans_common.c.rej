@@ -1,0 +1,10 @@
+--- net/9p/trans_common.c
++++ net/9p/trans_common.c
+@@ -14,6 +14,7 @@
+ 
+ #include <linux/mm.h>
+ #include <linux/module.h>
++#include "trans_common.h"
+ 
+ /**
+  *  p9_release_req_pages - Release pages after the transaction.

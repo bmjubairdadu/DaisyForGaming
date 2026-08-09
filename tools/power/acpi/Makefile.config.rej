@@ -1,0 +1,11 @@
+--- tools/power/acpi/Makefile.config
++++ tools/power/acpi/Makefile.config
+@@ -18,7 +18,7 @@ include $(srctree)/../../scripts/Makefile.include
+ 
+ OUTPUT=$(srctree)/
+ ifeq ("$(origin O)", "command line")
+-	OUTPUT := $(O)/power/acpi/
++	OUTPUT := $(O)/tools/power/acpi/
+ endif
+ #$(info Determined 'OUTPUT' to be $(OUTPUT))
+ 

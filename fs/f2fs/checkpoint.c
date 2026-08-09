@@ -175,8 +175,20 @@ bool f2fs_is_valid_blkaddr(struct f2fs_sb_info *sbi,
 			return false;
 		break;
 	case META_POR:
+	case DATA_GENERIC:
 		if (unlikely(blkaddr >= MAX_BLKADDR(sbi) ||
-			blkaddr < MAIN_BLKADDR(sbi)))
+			blkaddr < MAIN_BLKADDR(sbi))) {
+			if (type == DATA_GENERIC) {
+				f2fs_msg(sbi->sb, KERN_WARNING,
+					"access invalid blkaddr:%u", blkaddr);
+				WARN_ON(1);
+			}
+			return false;
+		}
+		break;
+	case META_GENERIC:
+		if (unlikely(blkaddr < SEG0_BLKADDR(sbi) ||
+			blkaddr >= MAIN_BLKADDR(sbi)))
 			return false;
 		break;
 	case DATA_GENERIC:

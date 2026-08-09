@@ -1,0 +1,20 @@
+--- arch/um/kernel/initrd.c
++++ arch/um/kernel/initrd.c
+@@ -14,7 +14,7 @@
+ static char *initrd __initdata = NULL;
+ static int load_initrd(char *filename, void *buf, int size);
+ 
+-static int __init read_initrd(void)
++int __init read_initrd(void)
+ {
+ 	void *area;
+ 	long long size;
+@@ -46,8 +46,6 @@ static int __init read_initrd(void)
+ 	return 0;
+ }
+ 
+-__uml_postsetup(read_initrd);
+-
+ static int __init uml_initrd_setup(char *line, int *add)
+ {
+ 	initrd = line;

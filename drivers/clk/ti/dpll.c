@@ -126,6 +126,18 @@ static const struct clk_ops omap3_dpll5_ck_ops = {
 	.round_rate	= &omap2_dpll_round_rate,
 };
 
+static const struct clk_ops omap3_dpll5_ck_ops = {
+	.enable		= &omap3_noncore_dpll_enable,
+	.disable	= &omap3_noncore_dpll_disable,
+	.get_parent	= &omap2_init_dpll_parent,
+	.recalc_rate	= &omap3_dpll_recalc,
+	.set_rate	= &omap3_dpll5_set_rate,
+	.set_parent	= &omap3_noncore_dpll_set_parent,
+	.set_rate_and_parent	= &omap3_noncore_dpll_set_rate_and_parent,
+	.determine_rate	= &omap3_noncore_dpll_determine_rate,
+	.round_rate	= &omap2_dpll_round_rate,
+};
+
 static const struct clk_ops omap3_dpll_per_ck_ops = {
 	.enable		= &omap3_noncore_dpll_enable,
 	.disable	= &omap3_noncore_dpll_disable,

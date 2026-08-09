@@ -1,0 +1,8 @@
+--- scripts/extract_xc3028.pl
++++ scripts/extract_xc3028.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/usr/bin/env perl
+ 
+ # Copyright (c) Mauro Carvalho Chehab <mchehab@infradead.org>
+ # Released under GPLv2

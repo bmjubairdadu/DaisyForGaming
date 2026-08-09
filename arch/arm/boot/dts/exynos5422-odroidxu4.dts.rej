@@ -1,0 +1,11 @@
+--- arch/arm/boot/dts/exynos5422-odroidxu4.dts
++++ arch/arm/boot/dts/exynos5422-odroidxu4.dts
+@@ -26,7 +26,7 @@
+ 			label = "blue:heartbeat";
+ 			pwms = <&pwm 2 2000000 0>;
+ 			pwm-names = "pwm2";
+-			max_brightness = <255>;
++			max-brightness = <255>;
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 	};

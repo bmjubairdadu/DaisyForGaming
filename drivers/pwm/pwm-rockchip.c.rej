@@ -1,0 +1,44 @@
+--- drivers/pwm/pwm-rockchip.c
++++ drivers/pwm/pwm-rockchip.c
+@@ -229,22 +251,26 @@ static int rockchip_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
+ 		return ret;
+ 
+ 	if (state->polarity != curstate.polarity && enabled) {
+-		pc->data->set_enable(chip, pwm, false, state->polarity);
++		ret = rockchip_pwm_enable(chip, pwm, false, state->polarity);
++		if (ret)
++			goto out;
+ 		enabled = false;
+ 	}
+ 
+ 	ret = rockchip_pwm_config(chip, pwm, state->duty_cycle, state->period);
+ 	if (ret) {
+ 		if (enabled != curstate.enabled)
+-			pc->data->set_enable(chip, pwm, !enabled,
+-					     state->polarity);
+-
++			rockchip_pwm_enable(chip, pwm, !enabled,
++				      state->polarity);
+ 		goto out;
+ 	}
+ 
+-	if (state->enabled != enabled)
+-		pc->data->set_enable(chip, pwm, state->enabled,
+-				     state->polarity);
++	if (state->enabled != enabled) {
++		ret = rockchip_pwm_enable(chip, pwm, state->enabled,
++				    state->polarity);
++		if (ret)
++			goto out;
++	}
+ 
+ 	/*
+ 	 * Update the state with the real hardware, which can differ a bit
+@@ -362,7 +388,6 @@ static int rockchip_pwm_probe(struct platform_device *pdev)
+ 
+ 	ret = pwmchip_add(&pc->chip);
+ 	if (ret < 0) {
+-		clk_unprepare(pc->clk);
+ 		dev_err(&pdev->dev, "pwmchip_add() failed: %d\n", ret);
+ 	}
+ 

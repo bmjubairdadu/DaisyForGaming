@@ -92,7 +92,7 @@ static struct nvmem_device *of_nvmem_find(struct device_node *nvmem_np)
 	d = bus_find_device(&nvmem_bus_type, NULL, nvmem_np, of_nvmem_match);
 
 	if (!d)
-		return NULL;
+		return ERR_PTR(-ENOENT);
 
 	return to_nvmem_device(d);
 }

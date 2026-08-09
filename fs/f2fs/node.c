@@ -1569,6 +1569,18 @@ static int __write_node_page(struct page *page, bool atomic, bool *submitted,
 			*seq_id = seq;
 	}
 
+	if (__is_valid_data_blkaddr(ni.blk_addr) &&
+		!f2fs_is_valid_blkaddr(sbi, ni.blk_addr, DATA_GENERIC)) {
+		up_read(&sbi->node_write);
+		goto redirty_out;
+	}
+
+	if (__is_valid_data_blkaddr(ni.blk_addr) &&
+		!f2fs_is_valid_blkaddr(sbi, ni.blk_addr, DATA_GENERIC)) {
+		up_read(&sbi->node_write);
+		goto redirty_out;
+	}
+
 	set_page_writeback(page);
 	ClearPageError(page);
 

@@ -1,0 +1,11 @@
+--- arch/arm/boot/dts/rk3036-kylin.dts
++++ arch/arm/boot/dts/rk3036-kylin.dts
+@@ -426,7 +426,7 @@
+ 		};
+ 	};
+ 
+-	sleep {
++	suspend {
+ 		global_pwroff: global-pwroff {
+ 			rockchip,pins = <2 7 RK_FUNC_1 &pcfg_pull_none>;
+ 		};

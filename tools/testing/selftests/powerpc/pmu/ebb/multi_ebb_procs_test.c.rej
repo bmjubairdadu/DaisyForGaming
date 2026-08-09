@@ -1,0 +1,11 @@
+--- tools/testing/selftests/powerpc/pmu/ebb/multi_ebb_procs_test.c
++++ tools/testing/selftests/powerpc/pmu/ebb/multi_ebb_procs_test.c
+@@ -61,8 +61,6 @@ static int cycles_child(void)
+ 	ebb_global_disable();
+ 	ebb_freeze_pmcs();
+ 
+-	count_pmc(1, sample_period);
+-
+ 	dump_summary_ebb_state();
+ 
+ 	event_close(&event);

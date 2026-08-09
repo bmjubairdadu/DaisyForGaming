@@ -1,0 +1,10 @@
+--- drivers/mfd/tps65217.c
++++ drivers/mfd/tps65217.c
+@@ -455,6 +473,7 @@ static struct i2c_driver tps65217_driver = {
+ 	},
+ 	.id_table	= tps65217_id_table,
+ 	.probe		= tps65217_probe,
++	.remove		= tps65217_remove,
+ };
+ 
+ static int __init tps65217_init(void)

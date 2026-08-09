@@ -1,0 +1,11 @@
+--- arch/arm/boot/dts/socfpga_cyclone5_de0_sockit.dts
++++ arch/arm/boot/dts/socfpga_cyclone5_de0_sockit.dts
+@@ -88,7 +88,7 @@
+ 	status = "okay";
+ 	speed-mode = <0>;
+ 
+-	adxl345: adxl345@0 {
++	adxl345: adxl345@53 {
+ 		compatible = "adi,adxl345";
+ 		reg = <0x53>;
+ 

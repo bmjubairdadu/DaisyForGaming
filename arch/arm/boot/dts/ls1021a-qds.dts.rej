@@ -1,0 +1,11 @@
+--- arch/arm/boot/dts/ls1021a-qds.dts
++++ arch/arm/boot/dts/ls1021a-qds.dts
+@@ -215,7 +215,7 @@
+ 				reg = <0x2a>;
+ 				VDDA-supply = <&reg_3p3v>;
+ 				VDDIO-supply = <&reg_3p3v>;
+-				clocks = <&sys_mclk 1>;
++				clocks = <&sys_mclk>;
+ 			};
+ 		};
+ 	};

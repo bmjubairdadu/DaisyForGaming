@@ -1,0 +1,10 @@
+--- arch/arm/boot/dts/bcm958525er.dts
++++ arch/arm/boot/dts/bcm958525er.dts
+@@ -55,6 +55,7 @@
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
+ 		gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
++		open-source;
+ 		priority = <200>;
+ 	};
+ };

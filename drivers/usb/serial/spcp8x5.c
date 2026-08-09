@@ -167,6 +167,19 @@ static int spcp8x5_attach(struct usb_serial *serial)
 	return 0;
 }
 
+static int spcp8x5_attach(struct usb_serial *serial)
+{
+	unsigned char num_ports = serial->num_ports;
+
+	if (serial->num_bulk_in < num_ports ||
+			serial->num_bulk_out < num_ports) {
+		dev_err(&serial->interface->dev, "missing endpoints\n");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
 static int spcp8x5_port_probe(struct usb_serial_port *port)
 {
 	const struct usb_device_id *id = usb_get_serial_data(port->serial);

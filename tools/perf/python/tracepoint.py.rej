@@ -1,0 +1,8 @@
+--- tools/perf/python/tracepoint.py
++++ tools/perf/python/tracepoint.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/env python
+ # -*- python -*-
+ # -*- coding: utf-8 -*-
+ 

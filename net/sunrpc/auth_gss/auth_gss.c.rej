@@ -1,0 +1,87 @@
+--- net/sunrpc/auth_gss/auth_gss.c
++++ net/sunrpc/auth_gss/auth_gss.c
+@@ -53,6 +53,7 @@
+ #include <asm/uaccess.h>
+ #include <linux/hashtable.h>
+ 
++#include "auth_gss_internal.h"
+ #include "../netns.h"
+ 
+ static const struct rpc_authops authgss_ops;
+@@ -147,35 +148,6 @@ gss_cred_set_ctx(struct rpc_cred *cred, struct gss_cl_ctx *ctx)
+ 	clear_bit(RPCAUTH_CRED_NEW, &cred->cr_flags);
+ }
+ 
+-static const void *
+-simple_get_bytes(const void *p, const void *end, void *res, size_t len)
+-{
+-	const void *q = (const void *)((const char *)p + len);
+-	if (unlikely(q > end || q < p))
+-		return ERR_PTR(-EFAULT);
+-	memcpy(res, p, len);
+-	return q;
+-}
+-
+-static inline const void *
+-simple_get_netobj(const void *p, const void *end, struct xdr_netobj *dest)
+-{
+-	const void *q;
+-	unsigned int len;
+-
+-	p = simple_get_bytes(p, end, &len, sizeof(len));
+-	if (IS_ERR(p))
+-		return p;
+-	q = (const void *)((const char *)p + len);
+-	if (unlikely(q > end || q < p))
+-		return ERR_PTR(-EFAULT);
+-	dest->data = kmemdup(p, len, GFP_NOFS);
+-	if (unlikely(dest->data == NULL))
+-		return ERR_PTR(-ENOMEM);
+-	dest->len = len;
+-	return q;
+-}
+-
+ static struct gss_cl_ctx *
+ gss_cred_get_ctx(struct rpc_cred *cred)
+ {
+@@ -541,9 +513,13 @@ gss_setup_upcall(struct gss_auth *gss_auth, struct rpc_cred *cred)
+ 		return gss_new;
+ 	gss_msg = gss_add_msg(gss_new);
+ 	if (gss_msg == gss_new) {
+-		int res = rpc_queue_upcall(gss_new->pipe, &gss_new->msg);
++		int res;
++		atomic_inc(&gss_msg->count);
++		res = rpc_queue_upcall(gss_new->pipe, &gss_new->msg);
+ 		if (res) {
+ 			gss_unhash_msg(gss_new);
++			atomic_dec(&gss_msg->count);
++			gss_release_msg(gss_new);
+ 			gss_msg = ERR_PTR(res);
+ 		}
+ 	} else
+@@ -836,6 +812,7 @@ gss_pipe_destroy_msg(struct rpc_pipe_msg *msg)
+ 			warn_gssd();
+ 		gss_release_msg(gss_msg);
+ 	}
++	gss_release_msg(gss_msg);
+ }
+ 
+ static void gss_pipe_dentry_destroy(struct dentry *dir,
+@@ -1731,6 +1708,7 @@ priv_release_snd_buf(struct rpc_rqst *rqstp)
+ 	for (i=0; i < rqstp->rq_enc_pages_num; i++)
+ 		__free_page(rqstp->rq_enc_pages[i]);
+ 	kfree(rqstp->rq_enc_pages);
++	rqstp->rq_release_snd_buf = NULL;
+ }
+ 
+ static int
+@@ -1739,6 +1717,9 @@ alloc_enc_pages(struct rpc_rqst *rqstp)
+ 	struct xdr_buf *snd_buf = &rqstp->rq_snd_buf;
+ 	int first, last, i;
+ 
++	if (rqstp->rq_release_snd_buf)
++		rqstp->rq_release_snd_buf(rqstp);
++
+ 	if (snd_buf->page_len == 0) {
+ 		rqstp->rq_enc_pages_num = 0;
+ 		return 0;

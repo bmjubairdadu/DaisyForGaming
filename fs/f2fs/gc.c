@@ -233,6 +233,10 @@ static unsigned int check_bg_victims(struct f2fs_sb_info *sbi)
 	for_each_set_bit(secno, dirty_i->victim_secmap, MAIN_SECS(sbi)) {
 		if (sec_usage_check(sbi, secno))
 			continue;
+
+		if (no_fggc_candidate(sbi, secno))
+			continue;
+
 		clear_bit(secno, dirty_i->victim_secmap);
 		return GET_SEG_FROM_SEC(sbi, secno);
 	}

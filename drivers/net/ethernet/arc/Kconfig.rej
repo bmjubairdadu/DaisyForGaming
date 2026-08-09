@@ -1,0 +1,10 @@
+--- drivers/net/ethernet/arc/Kconfig
++++ drivers/net/ethernet/arc/Kconfig
+@@ -19,6 +19,7 @@ config ARC_EMAC_CORE
+ 	tristate
+ 	select MII
+ 	select PHYLIB
++	select CRC32
+ 
+ config ARC_EMAC
+ 	tristate "ARC EMAC support"

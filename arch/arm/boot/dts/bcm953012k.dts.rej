@@ -1,0 +1,11 @@
+--- arch/arm/boot/dts/bcm953012k.dts
++++ arch/arm/boot/dts/bcm953012k.dts
+@@ -48,7 +48,7 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x10000000>;
++		reg = <0x80000000 0x10000000>;
+ 	};
+ };
+ 

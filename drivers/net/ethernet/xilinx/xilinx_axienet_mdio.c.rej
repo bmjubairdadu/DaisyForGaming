@@ -1,0 +1,10 @@
+--- drivers/net/ethernet/xilinx/xilinx_axienet_mdio.c
++++ drivers/net/ethernet/xilinx/xilinx_axienet_mdio.c
+@@ -217,6 +217,7 @@ issue:
+ 	ret = of_mdiobus_register(bus, np1);
+ 	if (ret) {
+ 		mdiobus_free(bus);
++		lp->mii_bus = NULL;
+ 		return ret;
+ 	}
+ 	return 0;

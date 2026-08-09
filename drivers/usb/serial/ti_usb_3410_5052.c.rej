@@ -1,0 +1,104 @@
+--- drivers/usb/serial/ti_usb_3410_5052.c
++++ drivers/usb/serial/ti_usb_3410_5052.c
+@@ -41,6 +41,7 @@
+ /* Vendor and product ids */
+ #define TI_VENDOR_ID			0x0451
+ #define IBM_VENDOR_ID			0x04b3
++#define STARTECH_VENDOR_ID		0x14b0
+ #define TI_3410_PRODUCT_ID		0x3410
+ #define IBM_4543_PRODUCT_ID		0x4543
+ #define IBM_454B_PRODUCT_ID		0x454b
+@@ -378,6 +379,7 @@ static const struct usb_device_id ti_id_table_3410[] = {
+ 	{ USB_DEVICE(MXU1_VENDOR_ID, MXU1_1131_PRODUCT_ID) },
+ 	{ USB_DEVICE(MXU1_VENDOR_ID, MXU1_1150_PRODUCT_ID) },
+ 	{ USB_DEVICE(MXU1_VENDOR_ID, MXU1_1151_PRODUCT_ID) },
++	{ USB_DEVICE(STARTECH_VENDOR_ID, TI_3410_PRODUCT_ID) },
+ 	{ }	/* terminator */
+ };
+ 
+@@ -416,6 +418,7 @@ static const struct usb_device_id ti_id_table_combined[] = {
+ 	{ USB_DEVICE(MXU1_VENDOR_ID, MXU1_1131_PRODUCT_ID) },
+ 	{ USB_DEVICE(MXU1_VENDOR_ID, MXU1_1150_PRODUCT_ID) },
+ 	{ USB_DEVICE(MXU1_VENDOR_ID, MXU1_1151_PRODUCT_ID) },
++	{ USB_DEVICE(STARTECH_VENDOR_ID, TI_3410_PRODUCT_ID) },
+ 	{ }	/* terminator */
+ };
+ 
+@@ -579,6 +582,13 @@ static int ti_startup(struct usb_serial *serial)
+ 		goto free_tdev;
+ 	}
+ 
++	if (serial->num_bulk_in < serial->num_ports ||
++			serial->num_bulk_out < serial->num_ports) {
++		dev_err(&serial->interface->dev, "missing endpoints\n");
++		status = -ENODEV;
++		goto free_tdev;
++	}
++
+ 	return 0;
+ 
+ free_tdev:
+@@ -771,7 +781,6 @@ static void ti_close(struct usb_serial_port *port)
+ 	struct ti_port *tport;
+ 	int port_number;
+ 	int status;
+-	int do_unlock;
+ 	unsigned long flags;
+ 
+ 	tdev = usb_get_serial_data(port->serial);
+@@ -795,16 +804,13 @@ static void ti_close(struct usb_serial_port *port)
+ 			"%s - cannot send close port command, %d\n"
+ 							, __func__, status);
+ 
+-	/* if mutex_lock is interrupted, continue anyway */
+-	do_unlock = !mutex_lock_interruptible(&tdev->td_open_close_lock);
++	mutex_lock(&tdev->td_open_close_lock);
+ 	--tport->tp_tdev->td_open_port_count;
+-	if (tport->tp_tdev->td_open_port_count <= 0) {
++	if (tport->tp_tdev->td_open_port_count == 0) {
+ 		/* last port is closed, shut down interrupt urb */
+ 		usb_kill_urb(port->serial->port[0]->interrupt_in_urb);
+-		tport->tp_tdev->td_open_port_count = 0;
+ 	}
+-	if (do_unlock)
+-		mutex_unlock(&tdev->td_open_close_lock);
++	mutex_unlock(&tdev->td_open_close_lock);
+ }
+ 
+ 
+@@ -1122,7 +1128,7 @@ static void ti_break(struct tty_struct *tty, int break_state)
+ 
+ static int ti_get_port_from_code(unsigned char code)
+ {
+-	return (code >> 4) - 3;
++	return (code >> 6) & 0x01;
+ }
+ 
+ static int ti_get_func_from_code(unsigned char code)
+@@ -1549,13 +1555,10 @@ static int ti_command_out_sync(struct ti_device *tdev, __u8 command,
+ 		(USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_DIR_OUT),
+ 		value, moduleid, data, size, 1000);
+ 
+-	if (status == size)
+-		status = 0;
+-
+-	if (status > 0)
+-		status = -ECOMM;
++	if (status < 0)
++		return status;
+ 
+-	return status;
++	return 0;
+ }
+ 
+ 
+@@ -1571,8 +1574,7 @@ static int ti_command_in_sync(struct ti_device *tdev, __u8 command,
+ 
+ 	if (status == size)
+ 		status = 0;
+-
+-	if (status > 0)
++	else if (status >= 0)
+ 		status = -ECOMM;
+ 
+ 	return status;

@@ -1,0 +1,11 @@
+--- arch/arm/boot/dts/at91-sama5d2_xplained.dts
++++ arch/arm/boot/dts/at91-sama5d2_xplained.dts
+@@ -148,6 +148,8 @@
+ 			uart1: serial@f8020000 {
+ 				pinctrl-names = "default";
+ 				pinctrl-0 = <&pinctrl_uart1_default>;
++				atmel,use-dma-rx;
++				atmel,use-dma-tx;
+ 				status = "okay";
+ 			};
+ 

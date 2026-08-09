@@ -1,0 +1,11 @@
+--- include/linux/console.h
++++ include/linux/console.h
+@@ -135,6 +135,8 @@ struct console {
+ 	short	flags;
+ 	short	index;
+ 	int	cflag;
++	uint	ispeed;
++	uint	ospeed;
+ 	void	*data;
+ 	struct	 console *next;
+ };

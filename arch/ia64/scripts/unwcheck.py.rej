@@ -1,0 +1,8 @@
+--- arch/ia64/scripts/unwcheck.py
++++ arch/ia64/scripts/unwcheck.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/env python
+ #
+ # Usage: unwcheck.py FILE
+ #

@@ -1,0 +1,38 @@
+--- drivers/usb/gadget/function/f_tcm.c
++++ drivers/usb/gadget/function/f_tcm.c
+@@ -751,12 +751,13 @@ static int uasp_alloc_stream_res(struct f_uas *fu, struct uas_stream *stream)
+ 		goto err_sts;
+ 
+ 	return 0;
++
+ err_sts:
+-	usb_ep_free_request(fu->ep_status, stream->req_status);
+-	stream->req_status = NULL;
+-err_out:
+ 	usb_ep_free_request(fu->ep_out, stream->req_out);
+ 	stream->req_out = NULL;
++err_out:
++	usb_ep_free_request(fu->ep_in, stream->req_in);
++	stream->req_in = NULL;
+ out:
+ 	return -ENOMEM;
+ }
+@@ -1073,7 +1074,7 @@ static struct usbg_cmd *usbg_get_cmd(struct f_uas *fu,
+ 	struct usbg_cmd *cmd;
+ 	int tag;
+ 
+-	tag = percpu_ida_alloc(&se_sess->sess_tag_pool, GFP_ATOMIC);
++	tag = percpu_ida_alloc(&se_sess->sess_tag_pool, TASK_RUNNING);
+ 	if (tag < 0)
+ 		return ERR_PTR(-ENOMEM);
+ 
+@@ -2070,7 +2071,8 @@ static int tcm_bind(struct usb_configuration *c, struct usb_function *f)
+ 	uasp_fs_cmd_desc.bEndpointAddress = uasp_ss_cmd_desc.bEndpointAddress;
+ 
+ 	ret = usb_assign_descriptors(f, uasp_fs_function_desc,
+-			uasp_hs_function_desc, uasp_ss_function_desc, NULL);
++			uasp_hs_function_desc, uasp_ss_function_desc,
++			uasp_ss_function_desc);
+ 	if (ret)
+ 		goto ep_fail;
+ 

@@ -316,6 +316,12 @@ static ssize_t gadget_dev_desc_UDC_store(struct config_item *item,
 	if (strlen(page) < len)
 		return -EOVERFLOW;
 
+	if (strlen(page) < len)
+		return -EOVERFLOW;
+
+	if (strlen(page) < len)
+		return -EOVERFLOW;
+
 	name = kstrdup(page, GFP_KERNEL);
 	if (!name)
 		return -ENOMEM;
@@ -1784,7 +1790,7 @@ static int android_device_create(struct gadget_info *gi)
 		}
 	}
 
-	return 0;
+	return os_desc_group;
 }
 
 static void android_device_destroy(struct device *dev)

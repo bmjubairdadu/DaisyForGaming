@@ -1,0 +1,10 @@
+--- drivers/staging/comedi/drivers/ni_660x.c
++++ drivers/staging/comedi/drivers/ni_660x.c
+@@ -606,6 +606,7 @@ static int ni_660x_set_pfi_routing(struct comedi_device *dev,
+ 	case NI_660X_PFI_OUTPUT_DIO:
+ 		if (chan > 31)
+ 			return -EINVAL;
++		break;
+ 	default:
+ 		return -EINVAL;
+ 	}

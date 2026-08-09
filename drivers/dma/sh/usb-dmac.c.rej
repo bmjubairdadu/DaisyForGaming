@@ -1,0 +1,21 @@
+--- drivers/dma/sh/usb-dmac.c
++++ drivers/dma/sh/usb-dmac.c
+@@ -117,7 +117,7 @@ struct usb_dmac {
+ #define USB_DMASWR			0x0008
+ #define USB_DMASWR_SWR			(1 << 0)
+ #define USB_DMAOR			0x0060
+-#define USB_DMAOR_AE			(1 << 2)
++#define USB_DMAOR_AE			(1 << 1)
+ #define USB_DMAOR_DME			(1 << 0)
+ 
+ #define USB_DMASAR			0x0000
+@@ -861,8 +861,8 @@ static int usb_dmac_probe(struct platform_device *pdev)
+ 
+ error:
+ 	of_dma_controller_free(pdev->dev.of_node);
+-	pm_runtime_put(&pdev->dev);
+ error_pm:
++	pm_runtime_put(&pdev->dev);
+ 	pm_runtime_disable(&pdev->dev);
+ 	return ret;
+ }

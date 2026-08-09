@@ -3996,6 +3996,26 @@ struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 	if ((flags & WQ_UNBOUND) && max_active == 1)
 		flags |= __WQ_ORDERED;
 
+	/*
+	 * Unbound && max_active == 1 used to imply ordered, which is no
+	 * longer the case on NUMA machines due to per-node pools.  While
+	 * alloc_ordered_workqueue() is the right way to create an ordered
+	 * workqueue, keep the previous behavior to avoid subtle breakages
+	 * on NUMA.
+	 */
+	if ((flags & WQ_UNBOUND) && max_active == 1)
+		flags |= __WQ_ORDERED;
+
+	/*
+	 * Unbound && max_active == 1 used to imply ordered, which is no
+	 * longer the case on NUMA machines due to per-node pools.  While
+	 * alloc_ordered_workqueue() is the right way to create an ordered
+	 * workqueue, keep the previous behavior to avoid subtle breakages
+	 * on NUMA.
+	 */
+	if ((flags & WQ_UNBOUND) && max_active == 1)
+		flags |= __WQ_ORDERED;
+
 	/* see the comment above the definition of WQ_POWER_EFFICIENT */
 	if ((flags & WQ_POWER_EFFICIENT) && wq_power_efficient)
 		flags |= WQ_UNBOUND;
@@ -4215,6 +4235,38 @@ void workqueue_set_max_active(struct workqueue_struct *wq, int max_active)
 	mutex_unlock(&wq->mutex);
 }
 EXPORT_SYMBOL_GPL(workqueue_set_max_active);
+
+/**
+ * current_work - retrieve %current task's work struct
+ *
+ * Determine if %current task is a workqueue worker and what it's working on.
+ * Useful to find out the context that the %current task is running in.
+ *
+ * Return: work struct if %current task is a workqueue worker, %NULL otherwise.
+ */
+struct work_struct *current_work(void)
+{
+	struct worker *worker = current_wq_worker();
+
+	return worker ? worker->current_work : NULL;
+}
+EXPORT_SYMBOL(current_work);
+
+/**
+ * current_work - retrieve %current task's work struct
+ *
+ * Determine if %current task is a workqueue worker and what it's working on.
+ * Useful to find out the context that the %current task is running in.
+ *
+ * Return: work struct if %current task is a workqueue worker, %NULL otherwise.
+ */
+struct work_struct *current_work(void)
+{
+	struct worker *worker = current_wq_worker();
+
+	return worker ? worker->current_work : NULL;
+}
+EXPORT_SYMBOL(current_work);
 
 /**
  * current_work - retrieve %current task's work struct
@@ -5455,6 +5507,18 @@ static void wq_watchdog_timer_fn(unsigned long data)
 
 		if (list_empty(&pool->worklist))
 			continue;
+
+		/*
+		 * If a virtual machine is stopped by the host it can look to
+		 * the watchdog like a stall.
+		 */
+		kvm_check_and_clear_guest_paused();
+
+		/*
+		 * If a virtual machine is stopped by the host it can look to
+		 * the watchdog like a stall.
+		 */
+		kvm_check_and_clear_guest_paused();
 
 		/*
 		 * If a virtual machine is stopped by the host it can look to

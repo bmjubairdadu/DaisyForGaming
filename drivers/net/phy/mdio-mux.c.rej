@@ -1,0 +1,57 @@
+--- drivers/net/phy/mdio-mux.c
++++ drivers/net/phy/mdio-mux.c
+@@ -117,15 +117,15 @@ int mdio_mux_init(struct device *dev,
+ 	} else {
+ 		parent_bus_node = NULL;
+ 		parent_bus = mux_bus;
++		get_device(&parent_bus->dev);
+ 	}
+ 
+ 	pb = devm_kzalloc(dev, sizeof(*pb), GFP_KERNEL);
+ 	if (pb == NULL) {
+ 		ret_val = -ENOMEM;
+-		goto err_parent_bus;
++		goto err_pb_kz;
+ 	}
+ 
+-
+ 	pb->switch_data = data;
+ 	pb->switch_fn = switch_fn;
+ 	pb->current_child = -1;
+@@ -154,6 +154,7 @@ int mdio_mux_init(struct device *dev,
+ 		cb->mii_bus = mdiobus_alloc();
+ 		if (!cb->mii_bus) {
+ 			ret_val = -ENOMEM;
++			devm_kfree(dev, cb);
+ 			of_node_put(child_bus_node);
+ 			break;
+ 		}
+@@ -170,7 +171,6 @@ int mdio_mux_init(struct device *dev,
+ 			mdiobus_free(cb->mii_bus);
+ 			devm_kfree(dev, cb);
+ 		} else {
+-			of_node_get(child_bus_node);
+ 			cb->next = pb->children;
+ 			pb->children = cb;
+ 		}
+@@ -181,9 +181,9 @@ int mdio_mux_init(struct device *dev,
+ 		return 0;
+ 	}
+ 
+-	/* balance the reference of_mdio_find_bus() took */
+-	put_device(&pb->mii_bus->dev);
+-
++	devm_kfree(dev, pb);
++err_pb_kz:
++	put_device(&parent_bus->dev);
+ err_parent_bus:
+ 	of_node_put(parent_bus_node);
+ 	return ret_val;
+@@ -201,7 +201,6 @@ void mdio_mux_uninit(void *mux_handle)
+ 		cb = cb->next;
+ 	}
+ 
+-	/* balance the reference of_mdio_find_bus() in mdio_mux_init() took */
+ 	put_device(&pb->mii_bus->dev);
+ }
+ EXPORT_SYMBOL_GPL(mdio_mux_uninit);

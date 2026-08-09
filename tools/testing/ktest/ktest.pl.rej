@@ -1,0 +1,11 @@
+--- tools/testing/ktest/ktest.pl
++++ tools/testing/ktest/ktest.pl
+@@ -2629,7 +2629,7 @@ sub do_run_test {
+     }
+ 
+     waitpid $child_pid, 0;
+-    $child_exit = $?;
++    $child_exit = $? >> 8;
+ 
+     my $end_time = time;
+     $test_time = $end_time - $start_time;

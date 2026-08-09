@@ -1,0 +1,35 @@
+--- arch/mips/lib/libgcc.h
++++ arch/mips/lib/libgcc.h
+@@ -9,10 +9,18 @@ typedef int word_type __attribute__ ((mode (__word__)));
+ struct DWstruct {
+ 	int high, low;
+ };
++
++struct TWstruct {
++	long long high, low;
++};
+ #elif defined(__LITTLE_ENDIAN)
+ struct DWstruct {
+ 	int low, high;
+ };
++
++struct TWstruct {
++	long long low, high;
++};
+ #else
+ #error I feel sick.
+ #endif
+@@ -22,4 +30,13 @@ typedef union {
+ 	long long ll;
+ } DWunion;
+ 
++#if defined(CONFIG_64BIT) && defined(CONFIG_CPU_MIPSR6)
++typedef int ti_type __attribute__((mode(TI)));
++
++typedef union {
++	struct TWstruct s;
++	ti_type ti;
++} TWunion;
++#endif
++
+ #endif /* __ASM_LIBGCC_H */

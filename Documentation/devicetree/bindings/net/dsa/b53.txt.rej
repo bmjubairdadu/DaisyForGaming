@@ -1,0 +1,10 @@
+--- Documentation/devicetree/bindings/net/dsa/b53.txt
++++ Documentation/devicetree/bindings/net/dsa/b53.txt
+@@ -10,6 +10,7 @@ Required properties:
+       "brcm,bcm53128"
+       "brcm,bcm5365"
+       "brcm,bcm5395"
++      "brcm,bcm5389"
+       "brcm,bcm5397"
+       "brcm,bcm5398"
+ 

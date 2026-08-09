@@ -1,0 +1,13 @@
+--- arch/arm/boot/dts/rk3288-veyron-mickey.dts
++++ arch/arm/boot/dts/rk3288-veyron-mickey.dts
+@@ -161,10 +161,6 @@
+ 	};
+ };
+ 
+-&emmc {
+-	/delete-property/mmc-hs200-1_8v;
+-};
+-
+ &i2c2 {
+ 	status = "disabled";
+ };

@@ -1,0 +1,10 @@
+--- drivers/net/wireless/broadcom/brcm80211/brcmsmac/main.h
++++ drivers/net/wireless/broadcom/brcm80211/brcmsmac/main.h
+@@ -563,6 +563,7 @@ struct brcms_c_info {
+ 
+ 	struct wiphy *wiphy;
+ 	struct scb pri_scb;
++	struct ieee80211_vif *vif;
+ 
+ 	struct sk_buff *beacon;
+ 	u16 beacon_tim_offset;

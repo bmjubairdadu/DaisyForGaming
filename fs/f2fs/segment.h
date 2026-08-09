@@ -17,6 +17,10 @@
 
 #define F2FS_MIN_SEGMENTS	9 /* SB + 2 (CP + SIT + NAT) + SSA + MAIN */
 
+#define F2FS_MIN_SEGMENTS	9 /* SB + 2 (CP + SIT + NAT) + SSA + MAIN */
+
+#define F2FS_MIN_SEGMENTS	9 /* SB + 2 (CP + SIT + NAT) + SSA + MAIN */
+
 /* L: Logical segment # in volume, R: Relative segment # in main area */
 #define GET_L2R_SEGNO(free_i, segno)	((segno) - (free_i)->start_segno)
 #define GET_R2L_SEGNO(free_i, segno)	((segno) + (free_i)->start_segno)
@@ -430,6 +434,7 @@ static inline void __set_free(struct f2fs_sb_info *sbi, unsigned int segno)
 		clear_bit(secno, free_i->free_secmap);
 		free_i->free_sections++;
 	}
+skip_free:
 	spin_unlock(&free_i->segmap_lock);
 }
 
@@ -482,6 +487,7 @@ static inline void __set_test_and_inuse(struct f2fs_sb_info *sbi,
 		if (!test_and_set_bit(secno, free_i->free_secmap))
 			free_i->free_sections--;
 	}
+skip_free:
 	spin_unlock(&free_i->segmap_lock);
 }
 
@@ -802,6 +808,24 @@ static inline block_t sum_blk_addr(struct f2fs_sb_info *sbi, int base, int type)
 	return __start_cp_addr(sbi) +
 		le32_to_cpu(F2FS_CKPT(sbi)->cp_pack_total_block_count)
 				- (base + 1) + type;
+}
+
+static inline bool no_fggc_candidate(struct f2fs_sb_info *sbi,
+						unsigned int secno)
+{
+	if (get_valid_blocks(sbi, secno, sbi->segs_per_sec) >=
+						sbi->fggc_threshold)
+		return true;
+	return false;
+}
+
+static inline bool no_fggc_candidate(struct f2fs_sb_info *sbi,
+						unsigned int secno)
+{
+	if (get_valid_blocks(sbi, secno, sbi->segs_per_sec) >=
+						sbi->fggc_threshold)
+		return true;
+	return false;
 }
 
 static inline bool sec_usage_check(struct f2fs_sb_info *sbi, unsigned int secno)

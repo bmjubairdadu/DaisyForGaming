@@ -1,0 +1,10 @@
+--- drivers/mfd/fsl-imx25-tsadc.c
++++ drivers/mfd/fsl-imx25-tsadc.c
+@@ -207,6 +220,7 @@ static struct platform_driver mx25_tsadc_driver = {
+ 		.of_match_table = of_match_ptr(mx25_tsadc_ids),
+ 	},
+ 	.probe = mx25_tsadc_probe,
++	.remove = mx25_tsadc_remove,
+ };
+ module_platform_driver(mx25_tsadc_driver);
+ 

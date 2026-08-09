@@ -1,0 +1,10 @@
+--- drivers/net/wireless/ralink/rt2x00/rt2x00.h
++++ drivers/net/wireless/ralink/rt2x00/rt2x00.h
+@@ -669,7 +669,6 @@ enum rt2x00_state_flags {
+ 	CONFIG_CHANNEL_HT40,
+ 	CONFIG_POWERSAVING,
+ 	CONFIG_HT_DISABLED,
+-	CONFIG_QOS_DISABLED,
+ 	CONFIG_MONITORING,
+ 
+ 	/*

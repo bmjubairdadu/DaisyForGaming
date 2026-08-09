@@ -1,0 +1,10 @@
+--- arch/mips/boot/dts/brcm/Makefile
++++ arch/mips/boot/dts/brcm/Makefile
+@@ -22,7 +22,6 @@ dtb-$(CONFIG_DT_NONE) += \
+ 	bcm63268-comtrend-vr-3032u.dtb \
+ 	bcm93384wvg.dtb \
+ 	bcm93384wvg_viper.dtb \
+-	bcm96358nb4ser.dtb \
+ 	bcm96368mvwg.dtb \
+ 	bcm9ejtagprb.dtb \
+ 	bcm97125cbmb.dtb \

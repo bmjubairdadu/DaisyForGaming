@@ -1,0 +1,10 @@
+--- fs/dlm/dlm_internal.h
++++ fs/dlm/dlm_internal.h
+@@ -100,7 +100,6 @@ do { \
+                __LINE__, __FILE__, #x, jiffies); \
+     {do} \
+     printk("\n"); \
+-    BUG(); \
+     panic("DLM:  Record message above and reboot.\n"); \
+   } \
+ }

@@ -211,6 +211,58 @@ static int cmd_to_func(struct nfit_mem *nfit_mem, unsigned int cmd,
 	return 0;
 }
 
+static int cmd_to_func(struct nfit_mem *nfit_mem, unsigned int cmd,
+		struct nd_cmd_pkg *call_pkg)
+{
+	if (call_pkg) {
+		int i;
+
+		if (nfit_mem->family != call_pkg->nd_family)
+			return -ENOTTY;
+
+		for (i = 0; i < ARRAY_SIZE(call_pkg->nd_reserved2); i++)
+			if (call_pkg->nd_reserved2[i])
+				return -EINVAL;
+		return call_pkg->nd_command;
+	}
+
+	/* Linux ND commands == NVDIMM_FAMILY_INTEL function numbers */
+	if (nfit_mem->family == NVDIMM_FAMILY_INTEL)
+		return cmd;
+
+	/*
+	 * Force function number validation to fail since 0 is never
+	 * published as a valid function in dsm_mask.
+	 */
+	return 0;
+}
+
+static int cmd_to_func(struct nfit_mem *nfit_mem, unsigned int cmd,
+		struct nd_cmd_pkg *call_pkg)
+{
+	if (call_pkg) {
+		int i;
+
+		if (nfit_mem->family != call_pkg->nd_family)
+			return -ENOTTY;
+
+		for (i = 0; i < ARRAY_SIZE(call_pkg->nd_reserved2); i++)
+			if (call_pkg->nd_reserved2[i])
+				return -EINVAL;
+		return call_pkg->nd_command;
+	}
+
+	/* Linux ND commands == NVDIMM_FAMILY_INTEL function numbers */
+	if (nfit_mem->family == NVDIMM_FAMILY_INTEL)
+		return cmd;
+
+	/*
+	 * Force function number validation to fail since 0 is never
+	 * published as a valid function in dsm_mask.
+	 */
+	return 0;
+}
+
 int acpi_nfit_ctl(struct nvdimm_bus_descriptor *nd_desc, struct nvdimm *nvdimm,
 		unsigned int cmd, void *buf, unsigned int buf_len, int *cmd_rc)
 {
@@ -305,6 +357,20 @@ int acpi_nfit_ctl(struct nvdimm_bus_descriptor *nd_desc, struct nvdimm *nvdimm,
 		dev_dbg(dev, "%s:%s _DSM failed cmd: %s\n", __func__, dimm_name,
 				cmd_name);
 		return -EINVAL;
+	}
+
+	if (out_obj->type != ACPI_TYPE_BUFFER) {
+		dev_dbg(dev, "%s unexpected output object type cmd: %s type: %d\n",
+				dimm_name, cmd_name, out_obj->type);
+		rc = -EINVAL;
+		goto out;
+	}
+
+	if (out_obj->type != ACPI_TYPE_BUFFER) {
+		dev_dbg(dev, "%s unexpected output object type cmd: %s type: %d\n",
+				dimm_name, cmd_name, out_obj->type);
+		rc = -EINVAL;
+		goto out;
 	}
 
 	if (out_obj->type != ACPI_TYPE_BUFFER) {
@@ -1420,6 +1486,11 @@ static int acpi_nfit_add_dimm(struct acpi_nfit_desc *acpi_desc,
 				device_handle);
 		return force_enable_dimms ? 0 : -ENODEV;
 	}
+	/*
+	 * Record nfit_mem for the notification path to track back to
+	 * the nfit sysfs attributes for this dimm device object.
+	 */
+	dev_set_drvdata(&adev_dimm->dev, nfit_mem);
 
 	if (ACPI_FAILURE(acpi_install_notify_handler(adev_dimm->handle,
 		ACPI_DEVICE_NOTIFY, acpi_nvdimm_notify, adev_dimm))) {
@@ -1462,6 +1533,25 @@ static int acpi_nfit_add_dimm(struct acpi_nfit_desc *acpi_desc,
 		/* DSMs are optional, continue loading the driver... */
 		return 0;
 	}
+	/*
+	 * Record nfit_mem for the notification path to track back to
+	 * the nfit sysfs attributes for this dimm device object.
+	 */
+	dev_set_drvdata(&adev_dimm->dev, nfit_mem);
+
+	/*
+	 * Function 0 is the command interrogation function, don't
+	 * export it to potential userspace use, and enable it to be
+	 * used as an error value in acpi_nfit_ctl().
+	 */
+	dsm_mask &= ~1UL;
+
+	/*
+	 * Function 0 is the command interrogation function, don't
+	 * export it to potential userspace use, and enable it to be
+	 * used as an error value in acpi_nfit_ctl().
+	 */
+	dsm_mask &= ~1UL;
 
 	/*
 	 * Function 0 is the command interrogation function, don't
@@ -1664,6 +1754,30 @@ static int cmp_map_compat(const void *m0, const void *m1)
 
 	return memcmp(&map0->region_offset, &map1->region_offset,
 			sizeof(u64));
+}
+
+static int cmp_map_compat(const void *m0, const void *m1)
+{
+	const struct nfit_set_info_map *map0 = m0;
+	const struct nfit_set_info_map *map1 = m1;
+
+	if (map0->region_offset < map1->region_offset)
+		return -1;
+	else if (map0->region_offset > map1->region_offset)
+		return 1;
+	return 0;
+}
+
+static int cmp_map_compat(const void *m0, const void *m1)
+{
+	const struct nfit_set_info_map *map0 = m0;
+	const struct nfit_set_info_map *map1 = m1;
+
+	if (map0->region_offset < map1->region_offset)
+		return -1;
+	else if (map0->region_offset > map1->region_offset)
+		return 1;
+	return 0;
 }
 
 static int cmp_map(const void *m0, const void *m1)

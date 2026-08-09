@@ -64,6 +64,38 @@
  * generates .data.identifier sections, which need to be pulled in with
  * .data. We don't want to pull in .data..other sections, which Linux
  * has defined. Same for text and bss.
+ */
+#ifdef CONFIG_LD_DEAD_CODE_DATA_ELIMINATION
+#define TEXT_MAIN .text .text.[0-9a-zA-Z_]*
+#define DATA_MAIN .data .data.[0-9a-zA-Z_]*
+#define BSS_MAIN .bss .bss.[0-9a-zA-Z_]*
+#else
+#define TEXT_MAIN .text
+#define DATA_MAIN .data
+#define BSS_MAIN .bss
+#endif
+
+/*
+ * LD_DEAD_CODE_DATA_ELIMINATION option enables -fdata-sections, which
+ * generates .data.identifier sections, which need to be pulled in with
+ * .data. We don't want to pull in .data..other sections, which Linux
+ * has defined. Same for text and bss.
+ */
+#ifdef CONFIG_LD_DEAD_CODE_DATA_ELIMINATION
+#define TEXT_MAIN .text .text.[0-9a-zA-Z_]*
+#define DATA_MAIN .data .data.[0-9a-zA-Z_]*
+#define BSS_MAIN .bss .bss.[0-9a-zA-Z_]*
+#else
+#define TEXT_MAIN .text
+#define DATA_MAIN .data
+#define BSS_MAIN .bss
+#endif
+
+/*
+ * LD_DEAD_CODE_DATA_ELIMINATION option enables -fdata-sections, which
+ * generates .data.identifier sections, which need to be pulled in with
+ * .data. We don't want to pull in .data..other sections, which Linux
+ * has defined. Same for text and bss.
  *
  * RODATA_MAIN is not used because existing code already defines .rodata.x
  * sections to be brought in with rodata.

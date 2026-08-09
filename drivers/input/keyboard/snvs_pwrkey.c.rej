@@ -1,0 +1,22 @@
+--- drivers/input/keyboard/snvs_pwrkey.c
++++ drivers/input/keyboard/snvs_pwrkey.c
+@@ -156,6 +156,9 @@ static int imx_snvs_pwrkey_probe(struct platform_device *pdev)
+ 		return error;
+ 	}
+ 
++	pdata->input = input;
++	platform_set_drvdata(pdev, pdata);
++
+ 	error = devm_request_irq(&pdev->dev, pdata->irq,
+ 			       imx_snvs_pwrkey_interrupt,
+ 			       0, pdev->name, pdev);
+@@ -171,9 +174,6 @@ static int imx_snvs_pwrkey_probe(struct platform_device *pdev)
+ 		return error;
+ 	}
+ 
+-	pdata->input = input;
+-	platform_set_drvdata(pdev, pdata);
+-
+ 	device_init_wakeup(&pdev->dev, pdata->wakeup);
+ 
+ 	return 0;

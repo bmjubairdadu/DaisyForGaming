@@ -1,0 +1,29 @@
+--- drivers/usb/musb/musb_core.h
++++ drivers/usb/musb/musb_core.h
+@@ -216,6 +216,7 @@ struct musb_platform_ops {
+ 	void	(*pre_root_reset_end)(struct musb *musb);
+ 	void	(*post_root_reset_end)(struct musb *musb);
+ 	int	(*phy_callback)(enum musb_vbus_id_status status);
++	void	(*clear_ep_rxintr)(struct musb *musb, int epnum);
+ };
+ 
+ /*
+@@ -409,7 +410,6 @@ struct musb {
+ 
+ 	/* is_suspended means USB B_PERIPHERAL suspend */
+ 	unsigned		is_suspended:1;
+-	unsigned		need_finish_resume :1;
+ 
+ 	/* may_wakeup means remote wakeup is enabled */
+ 	unsigned		may_wakeup:1;
+@@ -626,4 +626,10 @@ static inline void musb_platform_post_root_reset_end(struct musb *musb)
+ 		musb->ops->post_root_reset_end(musb);
+ }
+ 
++static inline void musb_platform_clear_ep_rxintr(struct musb *musb, int epnum)
++{
++	if (musb->ops->clear_ep_rxintr)
++		musb->ops->clear_ep_rxintr(musb, epnum);
++}
++
+ #endif	/* __MUSB_CORE_H__ */

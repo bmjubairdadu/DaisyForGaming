@@ -1,0 +1,11 @@
+--- drivers/media/platform/davinci/vpif_capture.c
++++ drivers/media/platform/davinci/vpif_capture.c
+@@ -1408,8 +1408,6 @@ probe_out:
+ 		/* Unregister video device */
+ 		video_unregister_device(&ch->video_dev);
+ 	}
+-	kfree(vpif_obj.sd);
+-	v4l2_device_unregister(&vpif_obj.v4l2_dev);
+ 
+ 	return err;
+ }

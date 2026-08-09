@@ -1,0 +1,11 @@
+--- drivers/net/wireless/mediatek/mt7601u/phy.c
++++ drivers/net/wireless/mediatek/mt7601u/phy.c
+@@ -221,7 +221,7 @@ int mt7601u_wait_bbp_ready(struct mt7601u_dev *dev)
+ 
+ 	do {
+ 		val = mt7601u_bbp_rr(dev, MT_BBP_REG_VERSION);
+-		if (val && ~val)
++		if (val && val != 0xff)
+ 			break;
+ 	} while (--i);
+ 
