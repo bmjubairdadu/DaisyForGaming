@@ -136,7 +136,6 @@ config HID_APPLEIR
 
 config HID_ASUS
 	tristate "Asus"
-	depends on USB_HID
 	depends on I2C_HID
 	---help---
 	Support for Asus notebook built-in keyboard via i2c.
@@ -884,7 +883,7 @@ config THRUSTMASTER_FF
 
 config HID_WACOM
 	tristate "Wacom Intuos/Graphire tablet support (USB)"
-	depends on USB_HID
+	depends on HID
 	select POWER_SUPPLY
 	select NEW_LEDS
 	select LEDS_CLASS

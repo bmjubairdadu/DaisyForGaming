@@ -83,7 +83,6 @@ static void tcp_event_new_data_sent(struct sock *sk, const struct sk_buff *skb)
 
 	NET_ADD_STATS(sock_net(sk), LINUX_MIB_TCPORIGDATASENT,
 		      tcp_skb_pcount(skb));
-	tcp_check_space(sk);
 }
 
 /* SND.NXT, if window was not shrunk.
@@ -1585,20 +1584,15 @@ static void tcp_cwnd_validate(struct sock *sk, bool is_cwnd_limited)
 {
 	struct tcp_sock *tp = tcp_sk(sk);
 
-	/* Track the strongest available signal of the degree to which the cwnd
-	 * is fully utilized. If cwnd-limited then remember that fact for the
-	 * current window. If not cwnd-limited then track the maximum number of
-	 * outstanding packets in the current window. (If cwnd-limited then we
-	 * chose to not update tp->max_packets_out to avoid an extra else
-	 * clause with no functional impact.)
+	/* Track the maximum number of outstanding packets in each
+	 * window, and remember whether we were cwnd-limited then.
 	 */
-	if (!before(tp->snd_una, tp->cwnd_usage_seq) ||
-	    is_cwnd_limited ||
-	    (!tp->is_cwnd_limited &&
-	     tp->packets_out > tp->max_packets_out)) {
-		tp->is_cwnd_limited = is_cwnd_limited;
+	if (!before(tp->snd_una, tp->max_packets_seq) ||
+	    tp->packets_out > tp->max_packets_out ||
+	    is_cwnd_limited) {
 		tp->max_packets_out = tp->packets_out;
-		tp->cwnd_usage_seq = tp->snd_nxt;
+		tp->max_packets_seq = tp->snd_nxt;
+		tp->is_cwnd_limited = is_cwnd_limited;
 	}
 
 	if (tcp_is_cwnd_limited(sk)) {
@@ -2066,7 +2060,7 @@ static int tcp_mtu_probe(struct sock *sk)
 	 * probing process by not resetting search range to its orignal.
 	 */
 	if (probe_size > tcp_mtu_to_mss(sk, icsk->icsk_mtup.search_high) ||
-	    interval < READ_ONCE(net->ipv4.sysctl_tcp_probe_threshold)) {
+		interval < net->ipv4.sysctl_tcp_probe_threshold) {
 		/* Check whether enough time has elaplased for
 		 * another round of probing.
 		 */
@@ -3060,12 +3054,11 @@ begin_fwd:
  */
 void sk_forced_mem_schedule(struct sock *sk, int size)
 {
-	int delta, amt;
+	int amt;
 
-	delta = size - sk->sk_forward_alloc;
-	if (delta <= 0)
+	if (size <= sk->sk_forward_alloc)
 		return;
-	amt = sk_mem_pages(delta);
+	amt = sk_mem_pages(size);
 	sk->sk_forward_alloc += amt * SK_MEM_QUANTUM;
 	sk_memory_allocated_add(sk, amt);
 
@@ -3770,8 +3763,8 @@ int tcp_rtx_synack(const struct sock *sk, struct request_sock *req)
 	tcp_rsk(req)->txhash = net_tx_rndhash();
 	res = af_ops->send_synack(sk, NULL, &fl, req, NULL, TCP_SYNACK_NORMAL);
 	if (!res) {
-		TCP_INC_STATS(sock_net(sk), TCP_MIB_RETRANSSEGS);
-		NET_INC_STATS(sock_net(sk), LINUX_MIB_TCPSYNRETRANS);
+		__TCP_INC_STATS(sock_net(sk), TCP_MIB_RETRANSSEGS);
+		__NET_INC_STATS(sock_net(sk), LINUX_MIB_TCPSYNRETRANS);
 		if (unlikely(tcp_passive_fastopen(sk)))
 			tcp_sk(sk)->total_retrans++;
 	}

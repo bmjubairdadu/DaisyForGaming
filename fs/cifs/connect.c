@@ -2599,7 +2599,7 @@ cifs_set_cifscreds(struct smb_vol *vol __attribute__((unused)),
 static struct cifs_ses *
 cifs_get_smb_ses(struct TCP_Server_Info *server, struct smb_vol *volume_info)
 {
-	int rc = 0;
+	int rc = -ENOMEM;
 	unsigned int xid;
 	struct cifs_ses *ses;
 	struct sockaddr_in *addr = (struct sockaddr_in *)&server->dstaddr;
@@ -2640,8 +2640,6 @@ cifs_get_smb_ses(struct TCP_Server_Info *server, struct smb_vol *volume_info)
 		free_xid(xid);
 		return ses;
 	}
-
-	rc = -ENOMEM;
 
 	cifs_dbg(FYI, "Existing smb sess not found\n");
 	ses = sesInfoAlloc();
