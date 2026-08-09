@@ -19,6 +19,8 @@ struct random_ready_callback {
 
 extern void add_device_randomness(const void *, unsigned int);
 
+int __init random_init(const char *command_line);
+
 #if defined(CONFIG_GCC_PLUGIN_LATENT_ENTROPY) && !defined(__CHECKER__)
 static inline void add_latent_entropy(void)
 {
