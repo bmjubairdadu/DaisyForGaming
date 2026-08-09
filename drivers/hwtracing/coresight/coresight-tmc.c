@@ -362,13 +362,6 @@ static ssize_t trigger_cntr_store(struct device *dev,
 
 	ret = kstrtoul(buf, 16, &val);
 	if (ret)
-		/*
-		 * ETR configuration uses a 40-bit AXI master in place of
-		 * the embedded SRAM of ETB/ETF.
-		 */
-		ret = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(40));
-		if (ret)
-			goto out;
 		return ret;
 
 	drvdata->trigger_cntr = val;

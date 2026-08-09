@@ -120,12 +120,6 @@ static const unsigned long ata_eh_revalidate_timeouts[] = {
 	ULONG_MAX,
 };
 
-static const unsigned long ata_eh_revalidate_timeouts[] = {
-	15000,	/* Some drives are slow to read log pages when waking-up */
-	15000,  /* combined time till here is enough even for media access */
-	ULONG_MAX,
-};
-
 static const unsigned long ata_eh_flush_timeouts[] = {
 	15000,	/* be generous with flush */
 	15000,  /* ditto */

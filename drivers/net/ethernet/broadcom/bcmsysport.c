@@ -90,13 +90,9 @@ static inline void tdma_port_write_desc_addr(struct bcm_sysport_priv *priv,
 					     struct dma_desc *desc,
 					     unsigned int port)
 {
-	unsigned long desc_flags;
-
 	/* Ports are latched, so write upper address first */
-	spin_lock_irqsave(&priv->desc_lock, desc_flags);
 	tdma_writel(priv, desc->addr_status_len, TDMA_WRITE_PORT_HI(port));
 	tdma_writel(priv, desc->addr_lo, TDMA_WRITE_PORT_LO(port));
-	spin_unlock_irqrestore(&priv->desc_lock, desc_flags);
 }
 
 /* Ethtool operations */
@@ -435,6 +431,7 @@ static int bcm_sysport_get_coalesce(struct net_device *dev,
 				    struct ethtool_coalesce *ec)
 {
 	struct bcm_sysport_priv *priv = netdev_priv(dev);
+	u32 reg;
 
 	reg = tdma_readl(priv, TDMA_DESC_RING_INTR_CONTROL(0));
 
@@ -1590,7 +1587,6 @@ static int bcm_sysport_open(struct net_device *dev)
 	}
 
 	/* Initialize both hardware and software ring */
-	spin_lock_init(&priv->desc_lock);
 	for (i = 0; i < dev->num_tx_queues; i++) {
 		ret = bcm_sysport_init_tx_ring(priv, i);
 		if (ret) {
@@ -1987,9 +1983,6 @@ static int bcm_sysport_resume(struct device *d)
 		return 0;
 
 	umac_reset(priv);
-
-	/* Disable the UniMAC RX/TX */
-	umac_enable_set(priv, CMD_RX_EN | CMD_TX_EN, 0);
 
 	/* Disable the UniMAC RX/TX */
 	umac_enable_set(priv, CMD_RX_EN | CMD_TX_EN, 0);

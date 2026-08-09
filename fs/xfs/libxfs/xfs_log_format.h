@@ -292,7 +292,6 @@ struct xfs_inode_log_format_32 {
 	__uint32_t		ilf_fields;	/* flags for fields logged */
 	__uint16_t		ilf_asize;	/* size of attr d/ext/root */
 	__uint16_t		ilf_dsize;	/* size of data/ext/root */
-	__uint32_t		ilf_pad;	/* pad for 64 bit boundary */
 	__uint64_t		ilf_ino;	/* inode number */
 	union {
 		__uint32_t	ilfu_rdev;	/* rdev value for dev inode*/

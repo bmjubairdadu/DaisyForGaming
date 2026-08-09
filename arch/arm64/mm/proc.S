@@ -115,7 +115,6 @@ ENTRY(cpu_do_suspend)
 	mrs	x7, vbar_el1
 	mrs	x8, mdscr_el1
 	mrs	x9, oslsr_el1
-	msr	osdlr_el1, x5
 	mrs	x10, sctlr_el1
 alternative_if_not ARM64_HAS_VIRT_HOST_EXTN
 	mrs	x11, tpidr_el1
@@ -151,8 +150,8 @@ ENTRY(cpu_do_resume)
 	msr	cpacr_el1, x6
 
 	/* Don't change t0sz here, mask those bits when restoring */
-	mrs	x7, tcr_el1
-	bfi	x8, x7, TCR_T0SZ_OFFSET, TCR_TxSZ_WIDTH
+	mrs	x5, tcr_el1
+	bfi	x8, x5, TCR_T0SZ_OFFSET, TCR_TxSZ_WIDTH
 
 	msr	tcr_el1, x8
 	msr	vbar_el1, x9
@@ -176,7 +175,6 @@ alternative_endif
 	/*
 	 * Restore oslsr_el1 by writing oslar_el1
 	 */
-	msr	osdlr_el1, x5
 	ubfx	x11, x11, #1, #1
 	msr	oslar_el1, x11
 	reset_pmuserenr_el0 x0			// Disable PMU access from EL0
@@ -241,11 +239,6 @@ ENDPROC(idmap_cpu_replace_ttbr1)
 
 #ifdef CONFIG_UNMAP_KERNEL_AT_EL0
 	.pushsection ".idmap.text", "awx"
-#ifdef CONFIG_ARM64_ERRATUM_1024718
-	/* Disable hardware DBM on Cortex-A55 all versions */
-	cpu_midr_match MIDR_CORTEX_A55, MIDR_CPU_VAR_REV(0, 0), MIDR_CPU_VAR_REV(0xf, 0xf), x1, x2, x3, x4
-	cbnz	x1, 1f
-#endif
 
 	.macro	__idmap_kpti_get_pgtable_ent, type
 	dc	cvac, cur_\()\type\()p		// Ensure any existing dirty

@@ -29,7 +29,6 @@
 #include <linux/of.h>
 #include <linux/clk.h>
 #include <linux/delay.h>
-#include <linux/delay.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 
@@ -371,39 +370,6 @@ static int ksz8061_config_init(struct phy_device *phydev)
 	return kszphy_config_init(phydev);
 }
 
-static int ksz8061_config_init(struct phy_device *phydev)
-{
-	int ret;
-
-	ret = phy_write_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_DEVID1, 0xB61A);
-	if (ret)
-		return ret;
-
-	return kszphy_config_init(phydev);
-}
-
-static int ksz8061_config_init(struct phy_device *phydev)
-{
-	int ret;
-
-	ret = phy_write_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_DEVID1, 0xB61A);
-	if (ret)
-		return ret;
-
-	return kszphy_config_init(phydev);
-}
-
-static int ksz8061_config_init(struct phy_device *phydev)
-{
-	int ret;
-
-	ret = phy_write_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_DEVID1, 0xB61A);
-	if (ret)
-		return ret;
-
-	return kszphy_config_init(phydev);
-}
-
 static int ksz9021_load_values_from_of(struct phy_device *phydev,
 				       const struct device_node *of_node,
 				       u16 reg,
@@ -634,9 +600,6 @@ static int ksz9031_config_init(struct phy_device *phydev)
 		"txd2-skew-ps", "txd3-skew-ps"
 	};
 	static const char *control_skews[2] = {"txen-skew-ps", "rxdv-skew-ps"};
-		if (phydev->drv->config_intr && phy_interrupt_is_valid(phydev))
-			phydev->drv->config_intr(phydev);
-		return genphy_config_aneg(phydev);
 	const struct device *dev_walker;
 	int result;
 
@@ -815,24 +778,6 @@ static int kszphy_suspend(struct phy_device *phydev)
 static int kszphy_resume(struct phy_device *phydev)
 {
 	genphy_resume(phydev);
-
-	/* After switching from power-down to normal mode, an internal global
-	 * reset is automatically generated. Wait a minimum of 1 ms before
-	 * read/write access to the PHY registers.
-	 */
-	usleep_range(1000, 2000);
-
-	/* After switching from power-down to normal mode, an internal global
-	 * reset is automatically generated. Wait a minimum of 1 ms before
-	 * read/write access to the PHY registers.
-	 */
-	usleep_range(1000, 2000);
-
-	/* After switching from power-down to normal mode, an internal global
-	 * reset is automatically generated. Wait a minimum of 1 ms before
-	 * read/write access to the PHY registers.
-	 */
-	usleep_range(1000, 2000);
 
 	/* After switching from power-down to normal mode, an internal global
 	 * reset is automatically generated. Wait a minimum of 1 ms before
@@ -1048,9 +993,8 @@ static struct phy_driver ksphy_driver[] = {
 	.read_status	= genphy_read_status,
 	.ack_interrupt	= kszphy_ack_interrupt,
 	.config_intr	= kszphy_config_intr,
-	/* No suspend/resume callbacks because of errata DS80000700A,
-	 * receiver error following software power down.
-	 */
+	.suspend	= genphy_suspend,
+	.resume		= genphy_resume,
 }, {
 	.phy_id		= PHY_ID_KSZ8021,
 	.phy_id_mask	= 0x00ffffff,
@@ -1065,6 +1009,9 @@ static struct phy_driver ksphy_driver[] = {
 	.read_status	= genphy_read_status,
 	.ack_interrupt	= kszphy_ack_interrupt,
 	.config_intr	= kszphy_config_intr,
+	.get_sset_count = kszphy_get_sset_count,
+	.get_strings	= kszphy_get_strings,
+	.get_stats	= kszphy_get_stats,
 	.suspend	= genphy_suspend,
 	.resume		= genphy_resume,
 }, {
@@ -1081,6 +1028,9 @@ static struct phy_driver ksphy_driver[] = {
 	.read_status	= genphy_read_status,
 	.ack_interrupt	= kszphy_ack_interrupt,
 	.config_intr	= kszphy_config_intr,
+	.get_sset_count = kszphy_get_sset_count,
+	.get_strings	= kszphy_get_strings,
+	.get_stats	= kszphy_get_stats,
 	.suspend	= genphy_suspend,
 	.resume		= genphy_resume,
 }, {
@@ -1120,9 +1070,8 @@ static struct phy_driver ksphy_driver[] = {
 	.get_sset_count = kszphy_get_sset_count,
 	.get_strings	= kszphy_get_strings,
 	.get_stats	= kszphy_get_stats,
-	/* No suspend/resume callbacks because of errata DS80000700A,
-	 * receiver error following software power down.
-	 */
+	.suspend	= genphy_suspend,
+	.resume		= genphy_resume,
 }, {
 	.phy_id		= PHY_ID_KSZ8051,
 	.phy_id_mask	= MICREL_PHY_ID_MASK,
@@ -1132,21 +1081,22 @@ static struct phy_driver ksphy_driver[] = {
 	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
 	.driver_data	= &ksz8051_type,
 	.probe		= kszphy_probe,
-	.config_init	= ksz8061_config_init,
+	.config_init	= kszphy_config_init,
 	.config_aneg	= genphy_config_aneg,
 	.read_status	= genphy_read_status,
 	.ack_interrupt	= kszphy_ack_interrupt,
 	.config_intr	= kszphy_config_intr,
-	/* No suspend/resume callbacks because of errata DS80000700A,
-	 * receiver error following software power down.
-	 */
+	.get_sset_count = kszphy_get_sset_count,
+	.get_strings	= kszphy_get_strings,
+	.get_stats	= kszphy_get_stats,
+	.suspend	= genphy_suspend,
+	.resume		= genphy_resume,
 }, {
 	.phy_id		= PHY_ID_KSZ8001,
 	.name		= "Micrel KSZ8001 or KS8721",
 	.phy_id_mask	= 0x00fffffc,
 	.features	= (PHY_BASIC_FEATURES | SUPPORTED_Pause),
 	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
-	.probe		= kszphy_probe,
 	.driver_data	= &ksz8041_type,
 	.probe		= kszphy_probe,
 	.config_init	= kszphy_config_init,
@@ -1154,6 +1104,9 @@ static struct phy_driver ksphy_driver[] = {
 	.read_status	= genphy_read_status,
 	.ack_interrupt	= kszphy_ack_interrupt,
 	.config_intr	= kszphy_config_intr,
+	.get_sset_count = kszphy_get_sset_count,
+	.get_strings	= kszphy_get_strings,
+	.get_stats	= kszphy_get_stats,
 	.suspend	= genphy_suspend,
 	.resume		= genphy_resume,
 }, {
@@ -1166,7 +1119,6 @@ static struct phy_driver ksphy_driver[] = {
 	.probe		= kszphy_probe,
 	.config_init	= kszphy_config_init,
 	.config_aneg	= genphy_config_aneg,
-	.probe		= kszphy_probe,
 	.read_status	= genphy_read_status,
 	.ack_interrupt	= kszphy_ack_interrupt,
 	.config_intr	= kszphy_config_intr,
@@ -1201,6 +1153,9 @@ static struct phy_driver ksphy_driver[] = {
 	.read_status	= genphy_read_status,
 	.ack_interrupt	= kszphy_ack_interrupt,
 	.config_intr	= kszphy_config_intr,
+	.get_sset_count = kszphy_get_sset_count,
+	.get_strings	= kszphy_get_strings,
+	.get_stats	= kszphy_get_stats,
 	.suspend	= genphy_suspend,
 	.resume		= genphy_resume,
 	.read_mmd_indirect = ksz9021_rd_mmd_phyreg,
@@ -1219,17 +1174,9 @@ static struct phy_driver ksphy_driver[] = {
 	.read_status	= ksz9031_read_status,
 	.ack_interrupt	= ksz9031_ack_interrupt,
 	.config_intr	= kszphy_config_intr,
-	.suspend	= genphy_suspend,
-	.resume		= genphy_resume,
-}, {
-	.phy_id		= PHY_ID_KSZ8795,
-	.phy_id_mask	= MICREL_PHY_ID_MASK,
-	.name		= "Micrel KSZ8795",
-	.features	= PHY_BASIC_FEATURES,
-	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
-	.config_init	= kszphy_config_init,
-	.config_aneg	= ksz8873mll_config_aneg,
-	.read_status	= ksz8873mll_read_status,
+	.get_sset_count = kszphy_get_sset_count,
+	.get_strings	= kszphy_get_strings,
+	.get_stats	= kszphy_get_stats,
 	.set_wol	= ksz9031_set_wol,
 	.get_wol	= ksz9031_get_wol,
 	.suspend	= ksz9031_suspend,

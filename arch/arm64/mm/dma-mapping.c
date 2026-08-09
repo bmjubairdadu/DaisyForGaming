@@ -489,27 +489,6 @@ static int __swiotlb_dma_mapping_error(struct device *hwdev, dma_addr_t addr)
 	return 0;
 }
 
-static int __swiotlb_dma_mapping_error(struct device *hwdev, dma_addr_t addr)
-{
-	if (swiotlb)
-		return swiotlb_dma_mapping_error(hwdev, addr);
-	return 0;
-}
-
-static int __swiotlb_dma_mapping_error(struct device *hwdev, dma_addr_t addr)
-{
-	if (swiotlb)
-		return swiotlb_dma_mapping_error(hwdev, addr);
-	return 0;
-}
-
-static int __swiotlb_dma_mapping_error(struct device *hwdev, dma_addr_t addr)
-{
-	if (swiotlb)
-		return swiotlb_dma_mapping_error(hwdev, addr);
-	return 0;
-}
-
 static struct dma_map_ops swiotlb_dma_ops = {
 	.alloc = __dma_alloc,
 	.free = __dma_free,

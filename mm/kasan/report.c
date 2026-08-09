@@ -13,7 +13,6 @@
  *
  */
 
-#include <linux/ftrace.h>
 #include <linux/bitops.h>
 #include <linux/ftrace.h>
 #include <linux/init.h>
@@ -405,10 +404,7 @@ void kasan_report(unsigned long addr, size_t size,
 
 	disable_trace_on_warning();
 
-	disable_trace_on_warning();
-
 	info.access_addr = (void *)addr;
-	info.first_bad_addr = (void *)addr;
 	info.first_bad_addr = (void *)addr;
 	info.access_size = size;
 	info.is_write = is_write;

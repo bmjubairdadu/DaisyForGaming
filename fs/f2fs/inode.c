@@ -285,57 +285,12 @@ static bool sanity_check_inode(struct inode *inode, struct page *node_page)
 	return true;
 }
 
-static bool sanity_check_inode(struct inode *inode, struct page *node_page)
-{
-	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
-	unsigned long long iblocks;
-
-	iblocks = le64_to_cpu(F2FS_INODE(node_page)->i_blocks);
-	if (!iblocks) {
-		set_sbi_flag(sbi, SBI_NEED_FSCK);
-		f2fs_msg(sbi->sb, KERN_WARNING,
-			"%s: corrupted inode i_blocks i_ino=%lx iblocks=%llu, "
-			"run fsck to fix.",
-			__func__, inode->i_ino, iblocks);
-		return false;
-	}
-
-	if (ino_of_node(node_page) != nid_of_node(node_page)) {
-		set_sbi_flag(sbi, SBI_NEED_FSCK);
-		f2fs_msg(sbi->sb, KERN_WARNING,
-			"%s: corrupted inode footer i_ino=%lx, ino,nid: "
-			"[%u, %u] run fsck to fix.",
-			__func__, inode->i_ino,
-			ino_of_node(node_page), nid_of_node(node_page));
-		return false;
-	}
-
-	if (F2FS_I(inode)->extent_tree) {
-		struct extent_info *ei = &F2FS_I(inode)->extent_tree->largest;
-
-		if (ei->len &&
-			(!f2fs_is_valid_blkaddr(sbi, ei->blk, DATA_GENERIC) ||
-			!f2fs_is_valid_blkaddr(sbi, ei->blk + ei->len - 1,
-							DATA_GENERIC))) {
-			set_sbi_flag(sbi, SBI_NEED_FSCK);
-			f2fs_msg(sbi->sb, KERN_WARNING,
-				"%s: inode (ino=%lx) extent info [%u, %u, %u] "
-				"is incorrect, run fsck to fix",
-				__func__, inode->i_ino,
-				ei->blk, ei->fofs, ei->len);
-			return false;
-		}
-	}
-	return true;
-}
-
 static int do_read_inode(struct inode *inode)
 {
 	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
 	struct f2fs_inode_info *fi = F2FS_I(inode);
 	struct page *node_page;
 	struct f2fs_inode *ri;
-	int err;
 	projid_t i_projid;
 	int err;
 
@@ -406,21 +361,6 @@ static int do_read_inode(struct inode *inode)
 		return -EFSCORRUPTED;
 	}
 
-	if (!sanity_check_inode(inode, node_page)) {
-		f2fs_put_page(node_page, 1);
-		return -EINVAL;
-	}
-
-	if (!sanity_check_inode(inode, node_page)) {
-		f2fs_put_page(node_page, 1);
-		return -EINVAL;
-	}
-
-	if (!sanity_check_inode(inode, node_page)) {
-		f2fs_put_page(node_page, 1);
-		return -EINVAL;
-	}
-
 	/* check data exist */
 	if (f2fs_has_inline_data(inode) && !f2fs_exist_data(inode))
 		__recover_inline_status(inode, node_page);
@@ -462,7 +402,6 @@ static int do_read_inode(struct inode *inode)
 		fi->i_crtime.tv_sec = le64_to_cpu(ri->i_crtime);
 		fi->i_crtime.tv_nsec = le32_to_cpu(ri->i_crtime_nsec);
 	}
-	f2fs_inode_synced(inode);
 
 	F2FS_I(inode)->i_disk_time[0] = inode->i_atime;
 	F2FS_I(inode)->i_disk_time[1] = inode->i_ctime;

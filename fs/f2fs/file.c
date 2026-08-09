@@ -239,15 +239,6 @@ static int f2fs_do_sync_file(struct file *file, loff_t start, loff_t end,
 	if (S_ISDIR(inode->i_mode))
 		goto go_write;
 
-	if (S_ISDIR(inode->i_mode))
-		goto go_write;
-
-	if (S_ISDIR(inode->i_mode))
-		goto go_write;
-
-	if (S_ISDIR(inode->i_mode))
-		goto go_write;
-
 	/* if fdatasync is triggered, let's do in-place-update */
 	if (datasync || get_dirty_pages(inode) <= SM_I(sbi)->min_fsync_blocks)
 		set_inode_flag(inode, FI_NEED_IPU);
@@ -483,11 +474,6 @@ static loff_t f2fs_llseek(struct file *file, loff_t offset, int whence)
 {
 	struct inode *inode = file->f_mapping->host;
 	loff_t maxbytes = inode->i_sb->s_maxbytes;
-
-
-		if (__is_valid_data_blkaddr(blkaddr) &&
-			!f2fs_is_valid_blkaddr(sbi, blkaddr, DATA_GENERIC))
-			continue;
 
 	switch (whence) {
 	case SEEK_SET:
@@ -1836,7 +1822,7 @@ static int f2fs_ioc_setflags(struct file *filp, unsigned long arg)
 	struct f2fs_inode_info *fi = F2FS_I(inode);
 	u32 fsflags, old_fsflags;
 	u32 iflags;
-	int ret = 0;
+	int ret;
 
 	if (!inode_owner_or_capable(inode))
 		return -EACCES;
@@ -2065,12 +2051,6 @@ static int f2fs_ioc_abort_volatile_write(struct file *filp)
 
 	inode_lock(inode);
 
-	down_write(&F2FS_I(inode)->dio_rwsem[WRITE]);
-
-	down_write(&F2FS_I(inode)->dio_rwsem[WRITE]);
-
-	down_write(&F2FS_I(inode)->dio_rwsem[WRITE]);
-
 	if (f2fs_is_atomic_file(inode))
 		f2fs_drop_inmem_pages(inode);
 	if (f2fs_is_volatile_file(inode)) {
@@ -2184,11 +2164,9 @@ static int f2fs_ioc_fitrim(struct file *filp, unsigned long arg)
 				sizeof(range)))
 		return -EFAULT;
 
-	if (in != F2FS_GOING_DOWN_FULLSYNC) {
-		ret = mnt_want_write_file(filp);
-		if (ret)
-			return ret;
-	}
+	ret = mnt_want_write_file(filp);
+	if (ret)
+		return ret;
 
 	range.minlen = max((unsigned int)range.minlen,
 				q->limits.discard_granularity);
@@ -2286,11 +2264,9 @@ static int f2fs_ioc_gc(struct file *filp, unsigned long arg)
 	if (f2fs_readonly(sbi->sb))
 		return -EROFS;
 
-	if (in != F2FS_GOING_DOWN_FULLSYNC) {
-		ret = mnt_want_write_file(filp);
-		if (ret)
-			return ret;
-	}
+	ret = mnt_want_write_file(filp);
+	if (ret)
+		return ret;
 
 	if (!sync) {
 		if (!down_write_trylock(&sbi->gc_lock)) {
@@ -2303,8 +2279,7 @@ static int f2fs_ioc_gc(struct file *filp, unsigned long arg)
 
 	ret = f2fs_gc(sbi, sync, true, NULL_SEGNO);
 out:
-	if (in != F2FS_GOING_DOWN_FULLSYNC)
-		mnt_drop_write_file(filp);
+	mnt_drop_write_file(filp);
 	return ret;
 }
 
@@ -2331,11 +2306,9 @@ static int f2fs_ioc_gc_range(struct file *filp, unsigned long arg)
 					end >= MAX_BLKADDR(sbi))
 		return -EINVAL;
 
-	if (in != F2FS_GOING_DOWN_FULLSYNC) {
-		ret = mnt_want_write_file(filp);
-		if (ret)
-			return ret;
-	}
+	ret = mnt_want_write_file(filp);
+	if (ret)
+		return ret;
 
 do_more:
 	if (!range.sync) {
@@ -2352,8 +2325,7 @@ do_more:
 	if (range.start <= end)
 		goto do_more;
 out:
-	if (in != F2FS_GOING_DOWN_FULLSYNC)
-		mnt_drop_write_file(filp);
+	mnt_drop_write_file(filp);
 	return ret;
 }
 
@@ -2791,8 +2763,7 @@ static int f2fs_ioc_flush_device(struct file *filp, unsigned long arg)
 		start_segno++;
 	}
 out:
-	if (in != F2FS_GOING_DOWN_FULLSYNC)
-		mnt_drop_write_file(filp);
+	mnt_drop_write_file(filp);
 	return ret;
 }
 

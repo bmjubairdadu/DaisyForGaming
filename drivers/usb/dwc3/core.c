@@ -312,9 +312,6 @@ static void dwc3_frame_length_adjustment(struct dwc3 *dwc)
 		reg |= DWC3_GFLADJ_30MHZ_SDBND_SEL | dwc->fladj;
 		dwc3_writel(dwc->regs, DWC3_GFLADJ, reg);
 	}
-
-	/* de-assert DRVVBUS for HOST and OTG mode */
-	dwc3_set_mode(dwc, DWC3_GCTL_PRTCAP_DEVICE);
 }
 
 /**
@@ -524,18 +521,6 @@ static void dwc3_free_scratch_buffers(struct dwc3 *dwc)
 
 	 /* should never fall here */
 	if (!WARN_ON(dwc->scratchbuf))
-	usb_phy_shutdown(dwc->usb2_phy);
-	usb_phy_shutdown(dwc->usb3_phy);
-	phy_exit(dwc->usb2_generic_phy);
-	phy_exit(dwc->usb3_generic_phy);
-
-	usb_phy_set_suspend(dwc->usb2_phy, 1);
-	usb_phy_set_suspend(dwc->usb3_phy, 1);
-	phy_power_off(dwc->usb2_generic_phy);
-	phy_power_off(dwc->usb3_generic_phy);
-
-	dwc3_ulpi_exit(dwc);
-
 		return;
 
 	dma_unmap_single(dwc->sysdev, dwc->scratch_addr, dwc->nr_scratch *
@@ -583,24 +568,6 @@ static int dwc3_phy_setup(struct dwc3 *dwc)
 	int ret;
 
 	reg = dwc3_readl(dwc->regs, DWC3_GUSB3PIPECTL(0));
-
-	/*
-	 * Make sure UX_EXIT_PX is cleared as that causes issues with some
-	 * PHYs. Also, this bit is not supposed to be used in normal operation.
-	 */
-	reg &= ~DWC3_GUSB3PIPECTL_UX_EXIT_PX;
-
-	/*
-	 * Make sure UX_EXIT_PX is cleared as that causes issues with some
-	 * PHYs. Also, this bit is not supposed to be used in normal operation.
-	 */
-	reg &= ~DWC3_GUSB3PIPECTL_UX_EXIT_PX;
-
-	/*
-	 * Make sure UX_EXIT_PX is cleared as that causes issues with some
-	 * PHYs. Also, this bit is not supposed to be used in normal operation.
-	 */
-	reg &= ~DWC3_GUSB3PIPECTL_UX_EXIT_PX;
 
 	/*
 	 * Make sure UX_EXIT_PX is cleared as that causes issues with some
@@ -728,15 +695,11 @@ static void dwc3_core_exit(struct dwc3 *dwc)
 {
 	dwc3_event_buffers_cleanup(dwc);
 
-	usb_phy_set_suspend(dwc->usb2_phy, 1);
-	usb_phy_set_suspend(dwc->usb3_phy, 1);
-	phy_power_off(dwc->usb2_generic_phy);
-	phy_power_off(dwc->usb3_generic_phy);
-
-	usb_phy_shutdown(dwc->usb2_phy);
-	usb_phy_shutdown(dwc->usb3_phy);
 	phy_exit(dwc->usb2_generic_phy);
 	phy_exit(dwc->usb3_generic_phy);
+
+	phy_power_off(dwc->usb2_generic_phy);
+	phy_power_off(dwc->usb3_generic_phy);
 }
 
 /**
@@ -1401,7 +1364,7 @@ static int dwc3_probe(struct platform_device *pdev)
 	}
 
 	dwc->dwc_ipc_log_ctxt = ipc_log_context_create(NUM_LOG_PAGES,
-				dev_name(dwc->dev), 0);
+					dev_name(dwc->dev), 0);
 	if (!dwc->dwc_ipc_log_ctxt)
 		dev_err(dwc->dev, "Error getting ipc_log_ctxt\n");
 

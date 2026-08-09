@@ -730,8 +730,6 @@ void unregister_xenbus_watch(struct xenbus_watch *watch)
 
 	sprintf(token, "%lX", (long)watch);
 
-	watch->nr_pending = 0;
-
 	down_read(&xs_state.watch_mutex);
 
 	spin_lock(&watches_lock);

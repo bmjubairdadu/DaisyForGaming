@@ -142,7 +142,6 @@ enum {
 enum {
 	MASK_UFS_PHY_SOFT_RESET             = 0x2,
 	MASK_TX_SYMBOL_CLK_1US_REG          = 0x3FF,
-#define PA_VS_CONFIG_REG1	0x9000
 	MASK_CLK_NS_REG                     = 0xFFFC00,
 };
 

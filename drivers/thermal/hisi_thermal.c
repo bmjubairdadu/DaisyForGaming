@@ -342,17 +342,6 @@ static int hi6220_thermal_enable_sensor(struct hisi_thermal_data *data)
 	hi6220_thermal_alarm_clear(data->regs, 0);
 	hi6220_thermal_alarm_enable(data->regs, 1);
 
-	ret = devm_request_threaded_irq(&pdev->dev, data->irq,
-					hisi_thermal_alarm_irq,
-					hisi_thermal_alarm_irq_thread,
-					0, "hisi_thermal", data);
-	if (ret < 0) {
-		dev_err(&pdev->dev, "failed to request alarm irq: %d\n", ret);
-		return ret;
-	}
-
-	enable_irq(data->irq);
-
 	return 0;
 }
 
@@ -374,17 +363,6 @@ static int hi3660_thermal_enable_sensor(struct hisi_thermal_data *data)
 	/* enable interrupt */
 	hi3660_thermal_alarm_clear(data->regs, sensor->id, 1);
 	hi3660_thermal_alarm_enable(data->regs, sensor->id, 1);
-
-	ret = devm_request_threaded_irq(&pdev->dev, data->irq,
-					hisi_thermal_alarm_irq,
-					hisi_thermal_alarm_irq_thread,
-					0, "hisi_thermal", data);
-	if (ret < 0) {
-		dev_err(&pdev->dev, "failed to request alarm irq: %d\n", ret);
-		return ret;
-	}
-
-	enable_irq(data->irq);
 
 	return 0;
 }
@@ -516,21 +494,10 @@ static int hisi_thermal_register_sensor(struct platform_device *pdev,
 
 	for (i = 0; i < of_thermal_get_ntrips(sensor->tzd); i++) {
 		if (trip[i].type == THERMAL_TRIP_PASSIVE) {
-			sensor->thres_temp = hisi_thermal_round_temp(trip[i].temperature);
+			sensor->thres_temp = trip[i].temperature;
 			break;
 		}
 	}
-
-	ret = devm_request_threaded_irq(&pdev->dev, data->irq,
-					hisi_thermal_alarm_irq,
-					hisi_thermal_alarm_irq_thread,
-					0, "hisi_thermal", data);
-	if (ret < 0) {
-		dev_err(&pdev->dev, "failed to request alarm irq: %d\n", ret);
-		return ret;
-	}
-
-	enable_irq(data->irq);
 
 	return 0;
 }

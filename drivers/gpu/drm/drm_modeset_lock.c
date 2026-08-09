@@ -165,7 +165,7 @@ void drm_modeset_lock_crtc(struct drm_crtc *crtc,
 	struct drm_modeset_acquire_ctx *ctx;
 	int ret;
 
-	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL | __GFP_NOFAIL);
+	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
 	if (WARN_ON(!ctx))
 		return;
 

@@ -105,7 +105,7 @@ static u8 clk_rcg2_get_parent(struct clk_hw *hw)
 err:
 	pr_debug("Clock %s has invalid parent, using default.\n",
 		 clk_hw_get_name(hw));
-	return -EBUSY;
+	return 0;
 }
 
 static int update_config(struct clk_rcg2 *rcg)
@@ -321,13 +321,8 @@ static int _freq_tbl_determine_rate(struct clk_hw *hw,
 	if (!p)
 		return -EINVAL;
 
-	if (!p)
-		return -EINVAL;
-
 	if (clk_flags & CLK_SET_RATE_PARENT) {
 		if (f->pre_div) {
-			if (!rate)
-				rate = req->rate;
 			if (!rate)
 				rate = req->rate;
 			rate /= 2;

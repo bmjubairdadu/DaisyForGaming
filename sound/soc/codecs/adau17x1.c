@@ -112,27 +112,6 @@ static int adau17x1_adc_fixup(struct snd_soc_dapm_widget *w,
 	return 0;
 }
 
-static int adau17x1_adc_fixup(struct snd_soc_dapm_widget *w,
-	struct snd_kcontrol *kcontrol, int event)
-{
-	struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
-	struct adau *adau = snd_soc_codec_get_drvdata(codec);
-
-	/*
-	 * If we are capturing, toggle the ADOSR bit in Converter Control 0 to
-	 * avoid losing SNR (workaround from ADI). This must be done after
-	 * the ADC(s) have been enabled. According to the data sheet, it is
-	 * normally illegal to set this bit when the sampling rate is 96 kHz,
-	 * but according to ADI it is acceptable for this workaround.
-	 */
-	regmap_update_bits(adau->regmap, ADAU17X1_CONVERTER0,
-		ADAU17X1_CONVERTER0_ADOSR, ADAU17X1_CONVERTER0_ADOSR);
-	regmap_update_bits(adau->regmap, ADAU17X1_CONVERTER0,
-		ADAU17X1_CONVERTER0_ADOSR, 0);
-
-	return 0;
-}
-
 static const char * const adau17x1_mono_stereo_text[] = {
 	"Stereo",
 	"Mono Left Channel (L+R)",

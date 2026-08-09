@@ -611,7 +611,6 @@ static void td_to_noop(struct xhci_hcd *xhci, struct xhci_ring *ep_ring,
 				TRB_TYPE(TRB_TR_NOOP));
 			xhci_dbg_trace(xhci, trace_xhci_dbg_cancel_urb,
 					"TRB to noop at offset 0x%llx",
-	size_t len;
 					(unsigned long long)
 					xhci_trb_virt_to_dma(cur_seg, cur_trb));
 		}
@@ -1602,7 +1601,6 @@ static void handle_port_status(struct xhci_hcd *xhci,
 	temp = readl(port_array[faked_port_index]);
 	if (hcd->state == HC_STATE_SUSPENDED) {
 		xhci_dbg(xhci, "resume root hub\n");
-			usb_hcd_start_port_resume(&hcd->self, faked_port_index);
 		usb_hcd_resume_root_hub(hcd);
 	}
 
@@ -2825,8 +2823,6 @@ hw_died:
 }
 
 irqreturn_t xhci_msi_irq(int irq, void *hcd)
-	/* make sure TRB is fully written before giving it to the controller */
-	wmb();
 {
 	return xhci_irq(hcd);
 }
@@ -3139,7 +3135,6 @@ static u32 xhci_td_remainder(struct xhci_hcd *xhci, int transferred,
 	/* MTK xHCI 0.96 contains some features from 1.0 */
 	if (xhci->hci_version < 0x100 && !(xhci->quirks & XHCI_MTK_HOST))
 		return ((td_total_len - transferred) >> 10);
-	size_t len;
 
 	/* One TRB with a zero-length data packet. */
 	if (!more_trbs_coming || (transferred == 0 && trb_buff_len == 0) ||

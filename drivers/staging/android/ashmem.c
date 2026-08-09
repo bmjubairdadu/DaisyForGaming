@@ -397,23 +397,8 @@ static int ashmem_file_setup(struct ashmem_area *asma,
 	return 0;
 }
 
-static int ashmem_vmfile_mmap(struct file *file, struct vm_area_struct *vma)
-{
-	/* do not allow to mmap ashmem backing shmem file directly */
-	return -EPERM;
-}
-
-static unsigned long
-ashmem_vmfile_get_unmapped_area(struct file *file, unsigned long addr,
-				unsigned long len, unsigned long pgoff,
-				unsigned long flags)
-{
-	return current->mm->get_unmapped_area(file, addr, len, pgoff, flags);
-}
-
 static int ashmem_mmap(struct file *file, struct vm_area_struct *vma)
 {
-	static struct file_operations vmfile_fops;
 	static struct file_operations vmfile_fops;
 	struct ashmem_area *asma = file->private_data;
 	unsigned long prot_mask;
@@ -431,24 +416,6 @@ static int ashmem_mmap(struct file *file, struct vm_area_struct *vma)
 		return -EINVAL;
 
 	prot_mask = READ_ONCE(asma->prot_mask);
-
-	/* requested mapping size larger than object size */
-	if (vma->vm_end - vma->vm_start > PAGE_ALIGN(asma->size)) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	/* requested mapping size larger than object size */
-	if (vma->vm_end - vma->vm_start > PAGE_ALIGN(asma->size)) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	/* requested mapping size larger than object size */
-	if (vma->vm_end - vma->vm_start > PAGE_ALIGN(asma->size)) {
-		ret = -EINVAL;
-		goto out;
-	}
 
 	/* requested protection bits must match our allowed protection mask */
 	if (unlikely((vma->vm_flags & ~calc_vm_prot_bits(prot_mask, 0)) &
@@ -801,7 +768,6 @@ static long ashmem_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 	switch (cmd) {
 	case ASHMEM_SET_NAME:
-out_unlock:
 		ret = set_name(asma, (void __user *)arg);
 		break;
 	case ASHMEM_GET_NAME:

@@ -632,15 +632,6 @@ static void msm_start_rx_dma(struct msm_port *msm_port)
 	if (IS_ENABLED(CONFIG_CONSOLE_POLL))
 		return;
 
-	if (IS_ENABLED(CONFIG_CONSOLE_POLL))
-		return;
-
-	if (IS_ENABLED(CONFIG_CONSOLE_POLL))
-		return;
-
-	if (IS_ENABLED(CONFIG_CONSOLE_POLL))
-		return;
-
 	if (!dma->chan)
 		return;
 
@@ -716,7 +707,6 @@ static void msm_stop_rx(struct uart_port *port)
 static void msm_enable_ms(struct uart_port *port)
 {
 	struct msm_port *msm_port = UART_TO_MSM(port);
-	unsigned int mr;
 
 	msm_port->imr |= UART_IMR_DELTA_CTS;
 	msm_write(port, msm_port->imr, UART_IMR);
@@ -728,7 +718,6 @@ static void msm_handle_rx_dm(struct uart_port *port, unsigned int misr)
 	unsigned int sr;
 	int count = 0;
 	struct msm_port *msm_port = UART_TO_MSM(port);
-	unsigned int mr;
 
 	if ((msm_read(port, UART_SR) & UART_SR_OVERRUN)) {
 		port->icount.overrun++;
@@ -858,7 +847,6 @@ static void msm_handle_tx_pio(struct uart_port *port, unsigned int tx_count)
 	unsigned int num_chars;
 	unsigned int tf_pointer = 0;
 	void __iomem *tf;
-	int locked = 1;
 
 	if (msm_port->is_uartdm)
 		tf = port->membase + UARTDM_TF;
@@ -1068,7 +1056,6 @@ struct msm_baud_map {
 	u8	code;
 	u8	rxstale;
 };
-MODULE_DEVICE_TABLE(of, msm_match_table);
 
 static const struct msm_baud_map *
 msm_find_best_baud(struct uart_port *port, unsigned int baud,
@@ -1271,7 +1258,6 @@ err_pclk:
 static void msm_shutdown(struct uart_port *port)
 {
 	struct msm_port *msm_port = UART_TO_MSM(port);
-	unsigned int mr;
 
 	msm_port->imr = 0;
 	msm_write(port, 0, UART_IMR); /* disable interrupts */
@@ -1591,7 +1577,6 @@ static struct uart_ops msm_uart_pops = {
 	.poll_put_char	= msm_poll_put_char,
 #endif
 };
-MODULE_DEVICE_TABLE(of, msm_match_table);
 
 static struct msm_port msm_uart_ports[] = {
 	{
@@ -1955,7 +1940,6 @@ static struct platform_driver msm_platform_driver = {
 		.pm = &msm_serial_pm_ops,
 	},
 };
-MODULE_DEVICE_TABLE(of, msm_match_table);
 
 static int __init msm_serial_init(void)
 {

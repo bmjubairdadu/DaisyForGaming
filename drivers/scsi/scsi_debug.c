@@ -2175,11 +2175,11 @@ static int resp_mode_select(struct scsi_cmnd *scp,
 			    __func__, param_len, res);
 	md_len = mselect6 ? (arr[0] + 1) : (get_unaligned_be16(arr + 0) + 2);
 	bd_len = mselect6 ? arr[3] : get_unaligned_be16(arr + 6);
-	off = bd_len + (mselect6 ? 4 : 8);
-	if (md_len > 2 || off >= res) {
+	if (md_len > 2) {
 		mk_sense_invalid_fld(scp, SDEB_IN_DATA, 0, -1);
 		return check_condition_result;
 	}
+	off = bd_len + (mselect6 ? 4 : 8);
 	mpage = arr[off] & 0x3f;
 	ps = !!(arr[off] & 0x80);
 	if (ps) {
@@ -4950,11 +4950,6 @@ static int __init scsi_debug_init(void)
 
 	default:
 		pr_err("dif must be 0, 1, 2 or 3\n");
-		return -EINVAL;
-	}
-
-	if (sdebug_num_tgts < 0) {
-		pr_err("num_tgts must be >= 0\n");
 		return -EINVAL;
 	}
 

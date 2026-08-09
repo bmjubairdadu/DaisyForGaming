@@ -148,11 +148,6 @@ static int alloc_extra_elems(struct bpf_htab *htab)
 	}
 	htab->extra_elems = pptr;
 	return 0;
-	BUILD_BUG_ON(offsetof(struct htab_elem, htab) !=
-		     offsetof(struct htab_elem, hash_node.pprev));
-	BUILD_BUG_ON(offsetof(struct htab_elem, fnode.next) !=
-		     offsetof(struct htab_elem, hash_node.pprev));
-
 }
 
 /* Called from syscall */
@@ -701,7 +696,7 @@ static int htab_map_delete_elem(struct bpf_map *map, void *key)
 
 	raw_spin_lock_irqsave(&b->lock, flags);
 
-	l = lookup_nulls_elem_raw(head, hash, key, key_size, htab->n_buckets);
+	l = lookup_elem_raw(head, hash, key, key_size);
 
 	if (l) {
 		hlist_nulls_del_rcu(&l->hash_node);

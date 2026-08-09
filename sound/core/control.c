@@ -380,40 +380,6 @@ static int __snd_ctl_add(struct snd_card *card, struct snd_kcontrol *kcontrol)
 	return 0;
 }
 
-/* add a new kcontrol object; call with card->controls_rwsem locked */
-static int __snd_ctl_add(struct snd_card *card, struct snd_kcontrol *kcontrol)
-{
-	struct snd_ctl_elem_id id;
-	unsigned int idx;
-	unsigned int count;
-
-	id = kcontrol->id;
-	if (id.index > UINT_MAX - kcontrol->count)
-		return -EINVAL;
-
-	if (snd_ctl_find_id(card, &id)) {
-		dev_err(card->dev,
-			"control %i:%i:%i:%s:%i is already present\n",
-			id.iface, id.device, id.subdevice, id.name, id.index);
-		return -EBUSY;
-	}
-
-	if (snd_ctl_find_hole(card, kcontrol->count) < 0)
-		return -ENOMEM;
-
-	list_add_tail(&kcontrol->list, &card->controls);
-	card->controls_count += kcontrol->count;
-	kcontrol->id.numid = card->last_numid + 1;
-	card->last_numid += kcontrol->count;
-
-	id = kcontrol->id;
-	count = kcontrol->count;
-	for (idx = 0; idx < count; idx++, id.index++, id.numid++)
-		snd_ctl_notify(card, SNDRV_CTL_EVENT_MASK_ADD, &id);
-
-	return 0;
-}
-
 /**
  * snd_ctl_add - add the control instance to the card
  * @card: the card instance

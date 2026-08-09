@@ -106,11 +106,7 @@
 /* Qualcomm implemented cores */
 #define ARM_CPU_PART_SCORPION		0x510002d0
 
-/* Qualcomm implemented cores */
-#define ARM_CPU_PART_SCORPION		0x510002d0
-
 extern unsigned int processor_id;
-struct proc_info_list *lookup_processor(u32 midr);
 struct proc_info_list *lookup_processor(u32 midr);
 
 #ifdef CONFIG_CPU_CP15

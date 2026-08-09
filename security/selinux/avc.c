@@ -679,7 +679,7 @@ static struct avc_node *avc_insert(u32 ssid, u32 tsid, u16 tclass,
 		avc_node_populate(node, ssid, tsid, tclass, avd);
 		rc = avc_xperms_populate(node, xp_node);
 		if (rc) {
-			avc_node_kill(node);
+			kmem_cache_free(avc_node_cachep, node);
 			return NULL;
 		}
 		head = &avc_cache.slots[hvalue];
@@ -867,7 +867,7 @@ static int avc_update_node(u32 event, u32 perms, u8 driver, u8 xperm, u32 ssid,
 	if (orig->ae.xp_node) {
 		rc = avc_xperms_populate(node, orig->ae.xp_node);
 		if (rc) {
-			avc_node_kill(node);
+			kmem_cache_free(avc_node_cachep, node);
 			goto out_unlock;
 		}
 	}

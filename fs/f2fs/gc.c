@@ -199,10 +199,6 @@ static void select_policy(struct f2fs_sb_info *sbi, int gc_type,
 		p->max_search = sbi->max_victim_search;
 
 	/* let's select beginning hot/small space first in no_heap mode*/
-
-		if (no_fggc_candidate(sbi, secno))
-			continue;
-
 	if (test_opt(sbi, NOHEAP) &&
 		(type == CURSEG_HOT_DATA || IS_NODESEG(type)))
 		p->offset = 0;
@@ -237,10 +233,6 @@ static unsigned int check_bg_victims(struct f2fs_sb_info *sbi)
 	for_each_set_bit(secno, dirty_i->victim_secmap, MAIN_SECS(sbi)) {
 		if (sec_usage_check(sbi, secno))
 			continue;
-
-		if (no_fggc_candidate(sbi, secno))
-			continue;
-
 		clear_bit(secno, dirty_i->victim_secmap);
 		return GET_SEG_FROM_SEC(sbi, secno);
 	}
@@ -631,10 +623,8 @@ static bool is_alive(struct f2fs_sb_info *sbi, struct f2fs_summary *sum,
 		return false;
 
 	if (f2fs_get_node_info(sbi, nid, dni)) {
-		f2fs_msg(sbi->sb, KERN_WARNING,
-				"%s: valid data with mismatched node version.",
-				__func__);
-		set_sbi_flag(sbi, SBI_NEED_FSCK);
+		f2fs_put_page(node_page, 1);
+		return false;
 	}
 
 	if (sum->version != dni->version) {

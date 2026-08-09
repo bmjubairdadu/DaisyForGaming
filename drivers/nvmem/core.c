@@ -87,12 +87,12 @@ static struct nvmem_device *of_nvmem_find(struct device_node *nvmem_np)
 	struct device *d;
 
 	if (!nvmem_np)
-		return ERR_PTR(-ENOENT);
+		return NULL;
 
 	d = bus_find_device(&nvmem_bus_type, NULL, nvmem_np, of_nvmem_match);
 
 	if (!d)
-		return ERR_PTR(-ENOENT);
+		return NULL;
 
 	return to_nvmem_device(d);
 }
@@ -516,8 +516,6 @@ static struct nvmem_cell *nvmem_cell_get_from_list(const char *cell_id)
 #if IS_ENABLED(CONFIG_NVMEM) && IS_ENABLED(CONFIG_OF)
 /**
  * of_nvmem_cell_get() - Get a nvmem cell from given device node and cell id
-		if (rc)
-			goto err;
  *
  * @dev node: Device tree node that uses the nvmem cell
  * @id: nvmem cell name from nvmem-cell-names property.
@@ -830,16 +828,11 @@ static inline void *nvmem_cell_prepare_write_buffer(struct nvmem_cell *cell,
 				    cell->offset + cell->bytes - 1, &v, 1);
 		if (rc)
 			goto err;
-		if (rc)
-			goto err;
 		*p |= GENMASK(7, (nbits + bit_offset) % BITS_PER_BYTE) & v;
 
 	}
 
 	return buf;
-err:
-	kfree(buf);
-	return ERR_PTR(rc);
 err:
 	kfree(buf);
 	return ERR_PTR(rc);

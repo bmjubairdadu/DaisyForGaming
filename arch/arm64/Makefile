@@ -130,7 +130,6 @@ KBUILD_CFLAGS	+= $(call cc-option,-march=armv8-a+crypto+crc,) $(call cc-option,-
 # Cortex-A53 optimizations
 arch-$(CONFIG_ARCH_MSM8953)	:= $(call cc-option,-mcpu=cortex-a53+crc+crypto,-march=armv8-a+crc+crypto)
 tune-$(CONFIG_ARCH_MSM8953)	:= -mtune=cortex-a53
-ifeq ($(KBUILD_EXTMOD),)
 arch-$(CONFIG_ARCH_SDM450)	:= $(call cc-option,-mcpu=cortex-a53+crc+crypto,-march=armv8-a+crc+crypto)
 tune-$(CONFIG_ARCH_SDM450)	:= -mtune=cortex-a53
 
@@ -140,7 +139,6 @@ KBUILD_AFLAGS	+= $(arch-y) $(tune-y)
 CHECKFLAGS	+= -D__aarch64__
 
 ifeq ($(CONFIG_ARM64_MODULE_CMODEL_LARGE), y)
-endif
 KBUILD_CFLAGS_MODULE	+= -mcmodel=large
 ifeq ($(CONFIG_LTO_CLANG), y)
 # Code model is not stored in LLVM IR, so we need to pass it also to LLVMgold

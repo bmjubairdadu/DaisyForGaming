@@ -297,7 +297,6 @@ enum arm_smmu_s2cr_privcfg {
 #define TTBRn_ASID_SHIFT		48
 
 #define FSR_MULTI			(1 << 31)
-	QCOM_SMMUV2,
 #define FSR_SS				(1 << 30)
 #define FSR_UUT				(1 << 8)
 #define FSR_ASF				(1 << 7)
@@ -1895,7 +1894,6 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 	 *     S1               N              S1
 	 *     S1             S1+S2            S1
 	 *     S1               S2             S2
-ARM_SMMU_MATCH_DATA(qcom_smmuv2, ARM_SMMU_V2, QCOM_SMMUV2);
 	 *     S1               S1             S1
 	 *     N                N              N
 	 *     N              S1+S2            S2
@@ -1904,7 +1902,6 @@ ARM_SMMU_MATCH_DATA(qcom_smmuv2, ARM_SMMU_V2, QCOM_SMMUV2);
 	 *
 	 * Note that you can't actually request stage-2 mappings.
 	 */
-	{ .compatible = "qcom,smmu-v2", .data = &qcom_smmuv2 },
 	if (!(smmu->features & ARM_SMMU_FEAT_TRANS_S1))
 		smmu_domain->stage = ARM_SMMU_DOMAIN_S2;
 	if (!(smmu->features & ARM_SMMU_FEAT_TRANS_S2))

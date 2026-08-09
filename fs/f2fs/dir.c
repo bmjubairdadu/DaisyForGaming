@@ -250,9 +250,6 @@ struct f2fs_dir_entry *f2fs_find_entry(struct inode *dir,
 	struct fscrypt_name fname;
 	int err;
 
-	/* This is to increase the speed of f2fs_create */
-	if (!de)
-		F2FS_I(dir)->task = current;
 	err = fscrypt_setup_filename(dir, child, 1, &fname);
 	if (err) {
 		if (err == -ENOENT)
@@ -744,7 +741,6 @@ void f2fs_delete_entry(struct f2fs_dir_entry *dentry, struct page *page,
 		f2fs_clear_radix_tree_dirty_tag(page);
 		clear_page_dirty_for_io(page);
 		f2fs_clear_page_private(page);
-		clear_cold_data(page);
 		ClearPageUptodate(page);
 		clear_cold_data(page);
 		inode_dec_dirty_pages(dir);
@@ -815,17 +811,6 @@ int f2fs_fill_dentries(struct dir_context *ctx, struct f2fs_dentry_ptr *d,
 
 	while (bit_pos < d->max) {
 		bit_pos = find_next_bit_le(d->bitmap, d->max, bit_pos);
-		/* check memory boundary before moving forward */
-		bit_pos += GET_DENTRY_SLOTS(le16_to_cpu(de->name_len));
-		if (unlikely(bit_pos > d->max ||
-				le16_to_cpu(de->name_len) > F2FS_NAME_LEN)) {
-			f2fs_msg(F2FS_I_SB(d->inode)->sb, KERN_WARNING,
-				"%s: corrupted namelen=%d, run fsck to fix.",
-				__func__, le16_to_cpu(de->name_len));
-			set_sbi_flag(F2FS_I_SB(d->inode)->sb->s_fs_info, SBI_NEED_FSCK);
-			return -EINVAL;
-		}
-
 		if (bit_pos >= d->max)
 			break;
 
@@ -847,6 +832,7 @@ int f2fs_fill_dentries(struct dir_context *ctx, struct f2fs_dentry_ptr *d,
 		de_name.len = le16_to_cpu(de->name_len);
 
 		/* check memory boundary before moving forward */
+		bit_pos += GET_DENTRY_SLOTS(le16_to_cpu(de->name_len));
 		if (unlikely(bit_pos > d->max ||
 				le16_to_cpu(de->name_len) > F2FS_NAME_LEN)) {
 			f2fs_warn(sbi, "%s: corrupted namelen=%d, run fsck to fix.",
