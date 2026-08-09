@@ -1,7 +1,0 @@
---- tools/gpio/Build
-+++ tools/gpio/Build
-@@ -1,3 +1,4 @@
-+gpio-utils-y += gpio-utils.o
- lsgpio-y += lsgpio.o gpio-utils.o
- gpio-hammer-y += gpio-hammer.o gpio-utils.o
- gpio-event-mon-y += gpio-event-mon.o gpio-utils.o

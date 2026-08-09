@@ -99,6 +99,7 @@ find_and_lock_process_key(const char *prefix,
 	down_read(&key->sem);
 	ukp = user_key_payload_locked(key);
 
+	down_read(&keyring_key->sem);
 	if (!ukp) /* was the key revoked before we acquired its semaphore? */
 		goto invalid;
 
@@ -276,6 +277,7 @@ err_free_tfm:
 	crypto_free_skcipher(tfm);
 	return ERR_PTR(err);
 }
+EXPORT_SYMBOL(fscrypt_get_encryption_info);
 
 /* Master key referenced by FS_POLICY_FLAG_DIRECT_KEY policy */
 struct fscrypt_master_key {

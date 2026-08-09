@@ -57,6 +57,8 @@ atomic_t watchdog_park_in_progress = ATOMIC_INIT(0);
 
 atomic_t watchdog_park_in_progress = ATOMIC_INIT(0);
 
+atomic_t watchdog_park_in_progress = ATOMIC_INIT(0);
+
 /*
  * The 'watchdog_running' variable is set to 1 when the watchdog threads
  * are registered/started and is set to 0 when the watchdog threads are
@@ -131,7 +133,6 @@ static int __init hardlockup_all_cpu_backtrace_setup(char *str)
 	return 1;
 }
 __setup("hardlockup_all_cpu_backtrace=", hardlockup_all_cpu_backtrace_setup);
-#endif
 
 /*
  * Hard-lockup warnings should be triggered after just a few seconds. Soft-
@@ -272,6 +273,9 @@ static enum hrtimer_restart watchdog_timer_fn(struct hrtimer *hrtimer)
 	struct pt_regs *regs = get_irq_regs();
 	int duration;
 	int softlockup_all_cpu_backtrace = sysctl_softlockup_all_cpu_backtrace;
+
+	if (atomic_read(&watchdog_park_in_progress) != 0)
+		return HRTIMER_NORESTART;
 
 	if (atomic_read(&watchdog_park_in_progress) != 0)
 		return HRTIMER_NORESTART;
@@ -525,11 +529,15 @@ static int watchdog_park_threads(void)
 
 	atomic_set(&watchdog_park_in_progress, 1);
 
+	atomic_set(&watchdog_park_in_progress, 1);
+
 	for_each_watchdog_cpu(cpu) {
 		ret = kthread_park(per_cpu(softlockup_watchdog, cpu));
 		if (ret)
 			break;
 	}
+
+	atomic_set(&watchdog_park_in_progress, 0);
 
 	atomic_set(&watchdog_park_in_progress, 0);
 

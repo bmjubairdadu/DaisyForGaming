@@ -18,6 +18,7 @@
 #include <linux/dirent.h>
 #include <linux/syscalls.h>
 #include <linux/utime.h>
+#include <linux/file.h>
 #include <linux/initramfs.h>
 #include <linux/file.h>
 
@@ -647,6 +648,7 @@ static int __init populate_rootfs(void)
 		printk(KERN_INFO "rootfs image is not initramfs (%s)"
 				"; looks like an initrd\n", err);
 		fd = sys_open("/initrd.image",
+		flush_delayed_fput();
 			      O_WRONLY|O_CREAT, 0700);
 		if (fd >= 0) {
 			ssize_t written = xwrite(fd, (char *)initrd_start,

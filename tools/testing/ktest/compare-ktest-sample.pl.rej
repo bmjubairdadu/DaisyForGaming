@@ -1,8 +1,0 @@
---- tools/testing/ktest/compare-ktest-sample.pl
-+++ tools/testing/ktest/compare-ktest-sample.pl
-@@ -1,4 +1,4 @@
--#!/usr/bin/perl
-+#!/usr/bin/env perl
- 
- open (IN,"ktest.pl");
- while (<IN>) {

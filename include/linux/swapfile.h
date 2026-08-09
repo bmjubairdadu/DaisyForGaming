@@ -9,6 +9,8 @@ extern spinlock_t swap_lock;
 extern struct plist_head swap_active_head;
 extern spinlock_t swap_avail_lock;
 extern struct plist_head swap_avail_head;
+extern unsigned long generic_max_swapfile_size(void);
+extern unsigned long max_swapfile_size(void);
 extern struct swap_info_struct *swap_info[];
 extern int try_to_unuse(unsigned int, bool, unsigned long);
 extern int swap_ratio(struct swap_info_struct **si);

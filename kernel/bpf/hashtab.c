@@ -148,6 +148,11 @@ static int alloc_extra_elems(struct bpf_htab *htab)
 	}
 	htab->extra_elems = pptr;
 	return 0;
+	BUILD_BUG_ON(offsetof(struct htab_elem, htab) !=
+		     offsetof(struct htab_elem, hash_node.pprev));
+	BUILD_BUG_ON(offsetof(struct htab_elem, fnode.next) !=
+		     offsetof(struct htab_elem, hash_node.pprev));
+
 }
 
 /* Called from syscall */

@@ -81,6 +81,8 @@ KCOV_INSTRUMENT_lkdtm_rodata.o	:= n
 
 KCOV_INSTRUMENT_lkdtm_rodata.o	:= n
 
+KCOV_INSTRUMENT_lkdtm_rodata.o	:= n
+
 OBJCOPYFLAGS :=
 OBJCOPYFLAGS_lkdtm_rodata_objcopy.o := \
 			--set-section-flags .text=alloc,readonly \

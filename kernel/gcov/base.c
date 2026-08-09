@@ -36,6 +36,12 @@ void __gcov_exit(void)
 }
 EXPORT_SYMBOL(__gcov_exit);
 
+void __gcov_exit(void)
+{
+	/* Unused. */
+}
+EXPORT_SYMBOL(__gcov_exit);
+
 /**
  * gcov_enable_events - enable event reporting through gcov_event()
  *

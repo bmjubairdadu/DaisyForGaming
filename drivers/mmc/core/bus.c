@@ -155,6 +155,9 @@ static void mmc_bus_shutdown(struct device *dev)
 
 #ifdef CONFIG_PM_SLEEP
 static int mmc_bus_suspend(struct device *dev)
+	if (ret)
+		pm_generic_resume(dev);
+
 {
 	struct mmc_card *card = mmc_dev_to_card(dev);
 	struct mmc_host *host = card->host;

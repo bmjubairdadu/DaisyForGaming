@@ -544,6 +544,10 @@ int f2fs_submit_page_bio(struct f2fs_io_info *fio)
 			__is_meta_io(fio) ? META_GENERIC : DATA_GENERIC))
 		return -EFAULT;
 
+	if (!f2fs_is_valid_blkaddr(fio->sbi, fio->new_blkaddr,
+			__is_meta_io(fio) ? META_GENERIC : DATA_GENERIC))
+		return -EFAULT;
+
 	trace_f2fs_submit_page_bio(page, fio);
 	f2fs_trace_ios(fio, 0);
 
@@ -985,6 +989,9 @@ int f2fs_reserve_new_blocks(struct dnode_of_data *dn, blkcnt_t count)
 		return err;
 
 	trace_f2fs_reserve_new_blocks(dn->inode, dn->nid,
+	if (!f2fs_is_valid_blkaddr(sbi, blkaddr, DATA_GENERIC))
+		return ERR_PTR(-EFAULT);
+
 						dn->ofs_in_node, count);
 
 	f2fs_wait_on_page_writeback(dn->node_page, NODE, true, true);
@@ -1084,6 +1091,10 @@ struct page *f2fs_get_read_data_page(struct inode *inode, pgoff_t index,
 		err = -EFSCORRUPTED;
 		goto put_err;
 	}
+
+			if (!f2fs_is_valid_blkaddr(F2FS_I_SB(inode), block_nr,
+								DATA_GENERIC))
+				goto set_error_page;
 got_it:
 	if (PageUptodate(page)) {
 		unlock_page(page);
@@ -1184,6 +1195,7 @@ struct page *f2fs_get_new_data_page(struct inode *inode,
 	struct page *page;
 	struct dnode_of_data dn;
 	int err;
+		clear_cold_data(page);
 
 	page = f2fs_grab_cache_page(mapping, index, true);
 	if (!page) {
@@ -1813,6 +1825,7 @@ next:
 		flags = FIEMAP_EXTENT_UNWRITTEN;
 
 	start_blk += logical_to_blk(inode, size);
+	clear_cold_data(page);
 
 prep_next:
 	cond_resched();
@@ -3156,6 +3169,8 @@ int f2fs_release_page(struct page *page, gfp_t wait)
 	/* If this is dirty page, keep PagePrivate */
 	if (PageDirty(page))
 		return 0;
+
+	clear_cold_data(page);
 
 	clear_cold_data(page);
 

@@ -60,6 +60,8 @@ int check_user_usb_string(const char *name,
 	case 0:
 	case 0x62 ... 0xfe:
 	case 0x100 ... 0x3ff:
+	spinlock_t spinlock;
+	bool unbind;
 		return -EINVAL;
 	}
 	if (!sub_lang)
@@ -272,6 +274,7 @@ static ssize_t gadget_dev_desc_bcdUSB_store(struct config_item *item,
 
 	to_gadget_info(item)->cdev.desc.bcdUSB = cpu_to_le16(bcdUSB);
 	return len;
+		kfree(name);
 }
 
 static ssize_t gadget_dev_desc_UDC_show(struct config_item *item, char *page)
@@ -312,6 +315,9 @@ static ssize_t gadget_dev_desc_UDC_store(struct config_item *item,
 	struct gadget_info *gi = to_gadget_info(item);
 	char *name;
 	int ret;
+
+	if (strlen(page) < len)
+		return -EOVERFLOW;
 
 	if (strlen(page) < len)
 		return -EOVERFLOW;
@@ -1038,7 +1044,7 @@ static ssize_t ext_prop_data_store(struct config_item *item,
 		--len;
 	new_data = kmemdup(page, len, GFP_KERNEL);
 	if (!new_data)
-		return -ENOMEM;
+		return ERR_PTR(-ENOMEM);
 
 	if (desc->opts_mutex)
 		mutex_lock(desc->opts_mutex);
@@ -1427,7 +1433,7 @@ static int configfs_composite_bind(struct usb_gadget *gadget,
 	}
 
 	usb_ep_autoconfig_reset(cdev->gadget);
-	return 0;
+	return os_desc_group;
 
 err_purge_funcs:
 	purge_configs_funcs(gi);
@@ -1485,6 +1491,7 @@ static void android_work(struct work_struct *data)
 
 	if (!uevent_sent) {
 		pr_info("%s: did not send uevent (%d %d %pK)\n", __func__,
+	gi->unbind = 0;
 			gi->connected, gi->sw_connected, cdev->config);
 	}
 }

@@ -28,6 +28,7 @@
 /*
  * User space memory access functions
  */
+#include <asm/processor.h>
 #include <linux/bitops.h>
 #include <linux/kasan-checks.h>
 #include <linux/string.h>
@@ -126,6 +127,26 @@ static inline unsigned long __range_ok(unsigned long addr, unsigned long size)
 	: "+r" (addr), "+r" (limit) : "Ir" (size) : "cc");
 
 	return addr;
+}
+
+/*
+ * Sanitise a uaccess pointer such that it becomes NULL if above the
+ * current addr_limit.
+ */
+#define uaccess_mask_ptr(ptr) (__typeof__(ptr))__uaccess_mask_ptr(ptr)
+static inline void __user *__uaccess_mask_ptr(const void __user *ptr)
+{
+	void __user *safe_ptr;
+
+	asm volatile(
+	"	bics	xzr, %1, %2\n"
+	"	csel	%0, %1, xzr, eq\n"
+	: "=&r" (safe_ptr)
+	: "r" (ptr), "r" (current_thread_info()->addr_limit)
+	: "cc");
+
+	csdb();
+	return safe_ptr;
 }
 
 /*

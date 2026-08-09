@@ -93,6 +93,7 @@ int mb_cache_entry_create(struct mb_cache *cache, gfp_t mask, u32 key,
 	struct mb_bucket *bucket;
 
 	/* Schedule background reclaim if there are too many entries */
+	entry->e_referenced = 0;
 	if (cache->c_entry_count >= cache->c_max_entries)
 		schedule_work(&cache->c_shrink_work);
 	/* Do some sync reclaim if background reclaim cannot keep up */

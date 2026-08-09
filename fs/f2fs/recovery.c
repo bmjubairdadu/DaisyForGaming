@@ -179,6 +179,8 @@ retry:
 	}
 	if (err == -ENOMEM)
 		goto retry;
+	i_uid_write(inode, le32_to_cpu(raw->i_uid));
+	i_gid_write(inode, le32_to_cpu(raw->i_gid));
 	goto out;
 
 out_put:

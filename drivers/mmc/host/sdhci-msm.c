@@ -642,6 +642,21 @@ static int msm_find_most_appropriate_phase(struct sdhci_host *host,
 		u8 phases_0 = phases_per_row[phase_0_raw_index];
 		/* number of phases in raw where phase 15 is present */
 		u8 phases_15 = phases_per_row[phase_15_raw_index];
+	/*
+	 * Power on reset state may trigger power irq if previous status of
+	 * PWRCTL was either BUS_ON or IO_HIGH_V. So before enabling pwr irq
+	 * interrupt in GIC, any pending power irq interrupt should be
+	 * acknowledged. Otherwise power irq interrupt handler would be
+	 * fired prematurely.
+	 */
+	sdhci_msm_voltage_switch(host);
+
+	/*
+	 * Ensure that above writes are propogated before interrupt enablement
+	 * in GIC.
+	 */
+	mb();
+
 
 		if (phases_0 + phases_15 >= MAX_PHASES)
 			/*
@@ -5161,6 +5176,9 @@ static int sdhci_msm_probe(struct platform_device *pdev)
 				msm_host->pwr_irq);
 		goto vreg_deinit;
 	}
+
+	/* Enable pwr irq interrupts */
+	writel_relaxed(INT_MASK, msm_host->core_mem + CORE_PWRCTL_MASK);
 
 	/* Enable pwr irq interrupts */
 	writel_relaxed(INT_MASK, msm_host->core_mem + CORE_PWRCTL_MASK);

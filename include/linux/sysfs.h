@@ -134,6 +134,12 @@ struct attribute_group {
 	.show	= _name##_show,						\
 }
 
+#define __ATTR_RO_MODE(_name, _mode) {					\
+	.attr	= { .name = __stringify(_name),				\
+		    .mode = VERIFY_OCTAL_PERMISSIONS(_mode) },		\
+	.show	= _name##_show,						\
+}
+
 #define __ATTR_WO(_name) {						\
 	.attr	= { .name = __stringify(_name), .mode = S_IWUSR },	\
 	.store	= _name##_store,					\
@@ -327,6 +333,11 @@ int sysfs_emit(char *buf, const char *fmt, ...);
 __printf(3, 4)
 int sysfs_emit_at(char *buf, int at, const char *fmt, ...);
 
+__printf(2, 3)
+int sysfs_emit(char *buf, const char *fmt, ...);
+__printf(3, 4)
+int sysfs_emit_at(char *buf, int at, const char *fmt, ...);
+
 #else /* CONFIG_SYSFS */
 
 static inline int sysfs_create_dir_ns(struct kobject *kobj, const void *ns)
@@ -379,6 +390,17 @@ static inline int sysfs_chmod_file(struct kobject *kobj,
 				   const struct attribute *attr, umode_t mode)
 {
 	return 0;
+}
+
+static inline struct kernfs_node *
+sysfs_break_active_protection(struct kobject *kobj,
+			      const struct attribute *attr)
+{
+	return NULL;
+}
+
+static inline void sysfs_unbreak_active_protection(struct kernfs_node *kn)
+{
 }
 
 static inline struct kernfs_node *

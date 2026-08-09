@@ -1,9 +1,0 @@
---- arch/x86/include/asm/pgtable-3level_types.h
-+++ arch/x86/include/asm/pgtable-3level_types.h
-@@ -42,5 +42,6 @@ typedef union {
-  */
- #define PTRS_PER_PTE	512
- 
-+#define MAX_POSSIBLE_PHYSMEM_BITS	36
- 
- #endif /* _ASM_X86_PGTABLE_3LEVEL_DEFS_H */

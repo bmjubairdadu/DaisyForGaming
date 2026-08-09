@@ -1,8 +1,0 @@
---- scripts/get_dvb_firmware
-+++ scripts/get_dvb_firmware
-@@ -1,4 +1,4 @@
--#!/usr/bin/perl
-+#!/usr/bin/env perl
- #     DVB firmware extractor
- #
- #     (c) 2004 Andrew de Quincey

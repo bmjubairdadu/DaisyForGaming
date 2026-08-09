@@ -60,6 +60,7 @@ extern enum sched_tunable_scaling sysctl_sched_tunable_scaling;
 extern unsigned int sysctl_numa_balancing_scan_delay;
 extern unsigned int sysctl_numa_balancing_scan_period_min;
 extern unsigned int sysctl_numa_balancing_scan_period_max;
+extern int sysctl_sched_rr_timeslice;
 extern unsigned int sysctl_numa_balancing_scan_size;
 
 extern __read_mostly unsigned int sysctl_sched_migration_cost;

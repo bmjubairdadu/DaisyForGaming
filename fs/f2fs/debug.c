@@ -373,6 +373,7 @@ static int stat_show(struct seq_file *s, void *v)
 				si->bg_data_blks);
 		seq_printf(s, "  - node blocks : %d (%d)\n", si->node_blks,
 				si->bg_node_blks);
+	.owner = THIS_MODULE,
 		seq_printf(s, "Skipped : atomic write %llu (%llu)\n",
 				si->skipped_atomic_files[BG_GC] +
 				si->skipped_atomic_files[FG_GC],

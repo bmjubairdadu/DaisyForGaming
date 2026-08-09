@@ -69,6 +69,7 @@ static struct page *__get_meta_page(struct f2fs_sb_info *sbi, pgoff_t index,
 		.is_por = !is_meta,
 	};
 	int err;
+		.is_meta = is_meta,
 
 	if (unlikely(!is_meta))
 		fio.op_flags &= ~REQ_META;
@@ -91,8 +92,10 @@ repeat:
 
 	lock_page(page);
 	if (unlikely(page->mapping != mapping)) {
-		f2fs_put_page(page, 1);
-		goto repeat;
+		memset(page_address(page), 0, PAGE_SIZE);
+		f2fs_stop_checkpoint(sbi, false);
+		f2fs_bug_on(sbi, 1);
+		return page;
 	}
 
 	if (unlikely(!PageUptodate(page))) {
@@ -168,6 +171,7 @@ bool f2fs_is_valid_blkaddr(struct f2fs_sb_info *sbi,
 		if (unlikely(blkaddr >= MAIN_BLKADDR(sbi) ||
 			blkaddr < SM_I(sbi)->ssa_blkaddr))
 			return false;
+		.is_meta = (type != META_POR),
 		break;
 	case META_CP:
 		if (unlikely(blkaddr >= SIT_I(sbi)->sit_base_addr ||
@@ -190,6 +194,8 @@ bool f2fs_is_valid_blkaddr(struct f2fs_sb_info *sbi,
 		if (unlikely(blkaddr < SEG0_BLKADDR(sbi) ||
 			blkaddr >= MAIN_BLKADDR(sbi)))
 			return false;
+			if (unlikely(blkno >= TOTAL_SEGS(sbi)))
+				goto out;
 		break;
 	case DATA_GENERIC:
 	case DATA_GENERIC_ENHANCE:
@@ -682,6 +688,7 @@ int f2fs_recover_orphan_inodes(struct f2fs_sb_info *sbi)
 	block_t start_blk, orphan_blocks, i, j;
 	unsigned int s_flags = sbi->sb->s_flags;
 	int err = 0;
+		f2fs_put_page(*cp_page, 1);
 #ifdef CONFIG_QUOTA
 	int quota_enabled;
 #endif
@@ -690,6 +697,7 @@ int f2fs_recover_orphan_inodes(struct f2fs_sb_info *sbi)
 		return 0;
 
 	if (bdev_read_only(sbi->sb->s_bdev)) {
+		f2fs_put_page(*cp_page, 1);
 		f2fs_info(sbi, "write access unavailable, skipping orphan cleanup");
 		return 0;
 	}
@@ -799,6 +807,9 @@ static void write_orphan_inodes(struct f2fs_sb_info *sbi, block_t start_blk)
 		}
 	}
 
+free_fail_no_cp:
+	f2fs_put_page(cp1, 1);
+	f2fs_put_page(cp2, 1);
 	if (page) {
 		orphan_blk->blk_addr = cpu_to_le16(index);
 		orphan_blk->blk_count = cpu_to_le16(orphan_blocks);
@@ -1193,6 +1204,7 @@ retry_flush_quotas:
 		int locked;
 
 		if (++cnt > DEFAULT_RETRY_QUOTA_FLUSH_COUNT) {
+	__set_cp_next_pack(sbi);
 			set_sbi_flag(sbi, SBI_QUOTA_SKIP_FLUSH);
 			set_sbi_flag(sbi, SBI_QUOTA_NEED_FLUSH);
 			goto retry_flush_dents;

@@ -23,6 +23,7 @@
 
 #include <linux/phy/phy.h>
 #include <linux/phy/phy-qcom-ufs.h>
+#include "ufs_quirks.h"
 
 #include "ufshcd.h"
 #include "ufshcd-pltfrm.h"
@@ -1316,8 +1317,11 @@ static void ufs_qcom_dev_ref_clk_ctrl(struct ufs_qcom_host *host, bool enable)
 
 		writel_relaxed(temp, host->dev_ref_clk_ctrl_mmio);
 
-		/* ensure that ref_clk is enabled/disabled before we return */
-		wmb();
+		/*
+		 * Make sure the write to ref_clk reaches the destination and
+		 * not stored in a Write Buffer (WB).
+		 */
+		readl(host->dev_ref_clk_ctrl_mmio);
 
 		/*
 		 * If we call hibern8 exit after this, we need to make sure that
@@ -1522,6 +1526,34 @@ static int ufs_qcom_apply_dev_quirks(struct ufs_hba *hba)
 	return err;
 }
 
+static int ufs_qcom_quirk_host_pa_saveconfigtime(struct ufs_hba *hba)
+{
+	int err;
+	u32 pa_vs_config_reg1;
+
+	err = ufshcd_dme_get(hba, UIC_ARG_MIB(PA_VS_CONFIG_REG1),
+			     &pa_vs_config_reg1);
+	if (err)
+		goto out;
+
+	/* Allow extension of MSB bits of PA_SaveConfigTime attribute */
+	err = ufshcd_dme_set(hba, UIC_ARG_MIB(PA_VS_CONFIG_REG1),
+			    (pa_vs_config_reg1 | (1 << 12)));
+
+out:
+	return err;
+}
+
+static int ufs_qcom_apply_dev_quirks(struct ufs_hba *hba)
+{
+	int err = 0;
+
+	if (hba->dev_quirks & UFS_DEVICE_QUIRK_HOST_PA_SAVECONFIGTIME)
+		err = ufs_qcom_quirk_host_pa_saveconfigtime(hba);
+
+	return err;
+}
+
 static u32 ufs_qcom_get_ufs_hci_version(struct ufs_hba *hba)
 {
 	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
@@ -1581,7 +1613,7 @@ static void ufs_qcom_set_caps(struct ufs_hba *hba)
 	}
 	hba->caps |= UFSHCD_CAP_AUTO_BKOPS_SUSPEND;
 
-	if (host->hw_ver.major >= 0x2) {
+	if (host->hw_ver.major == 0x2) {
 		if (!host->disable_lpm)
 			hba->caps |= UFSHCD_CAP_POWER_COLLAPSE_DURING_HIBERN8;
 		host->caps = UFS_QCOM_CAP_QUNIPRO |
@@ -2132,6 +2164,7 @@ static int ufs_qcom_parse_reg_info(struct ufs_qcom_host *host, char *name,
 	snprintf(prop_name, MAX_PROP_SIZE, "%s-max-microamp", name);
 	ret = of_property_read_u32(np, prop_name, &vreg->max_uA);
 	if (ret) {
+	.apply_dev_quirks	= ufs_qcom_apply_dev_quirks,
 		dev_err(dev, "%s: unable to find %s err %d\n",
 			__func__, prop_name, ret);
 		goto out;
@@ -2783,6 +2816,7 @@ static struct ufs_hba_pm_qos_variant_ops ufs_hba_pm_qos_variant_ops = {
 	.req_start	= ufs_qcom_pm_qos_req_start,
 	.req_end	= ufs_qcom_pm_qos_req_end,
 };
+MODULE_DEVICE_TABLE(of, ufs_qcom_of_match);
 
 static struct ufs_hba_variant ufs_hba_qcom_variant = {
 	.name		= "qcom",

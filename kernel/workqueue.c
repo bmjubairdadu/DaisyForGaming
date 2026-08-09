@@ -48,6 +48,8 @@
 #include <linux/nodemask.h>
 #include <linux/moduleparam.h>
 #include <linux/uaccess.h>
+#include <linux/nmi.h>
+#include <linux/kvm_para.h>
 #include <linux/bug.h>
 #include <linux/delay.h>
 #include <linux/nmi.h>
@@ -68,6 +70,7 @@ enum {
 	 * %WORKER_UNBOUND set and concurrency management disabled, and may
 	 * be executing on any CPU.  The pool behaves as an unbound one.
 	 *
+	POOL_MANAGER_ACTIVE	= 1 << 0,	/* being managed */
 	 * Note that DISASSOCIATED should be flipped only while holding
 	 * attach_mutex to avoid changing binding state while
 	 * worker_attach_to_pool() is in progress.
@@ -297,6 +300,7 @@ module_param_named(power_efficient, wq_power_efficient, bool, 0444);
 bool wq_online;				/* can kworkers be created yet? */
 
 static bool wq_numa_enabled;		/* unbound NUMA affinity enabled */
+static DECLARE_WAIT_QUEUE_HEAD(wq_manager_wait); /* wait for manager to go away */
 
 /* buf for wq_update_unbound_numa_attrs(), protected by CPU hotplug exclusion */
 static struct workqueue_attrs *wq_update_unbound_numa_attrs_buf;
@@ -1456,6 +1460,7 @@ retry:
 	 * pwq is determined and locked.  For unbound pools, we could have
 	 * raced with pwq release and it could already be dead.  If its
 	 * refcnt is zero, repeat pwq selection.  Note that pwqs never die
+	debug_work_activate(work);
 	 * without another pwq replacing it in the numa_pwq_tbl or while
 	 * work items are executing on it, so the retrying is guaranteed to
 	 * make forward-progress.
@@ -1505,6 +1510,7 @@ retry:
  * @wq: workqueue to use
  * @work: work to queue
  *
+	WARN_ON_ONCE(!wq);
  * We queue the work to a specific CPU, the caller must ensure it
  * can't go away.
  *
@@ -4016,6 +4022,16 @@ struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 	if ((flags & WQ_UNBOUND) && max_active == 1)
 		flags |= __WQ_ORDERED;
 
+	/*
+	 * Unbound && max_active == 1 used to imply ordered, which is no
+	 * longer the case on NUMA machines due to per-node pools.  While
+	 * alloc_ordered_workqueue() is the right way to create an ordered
+	 * workqueue, keep the previous behavior to avoid subtle breakages
+	 * on NUMA.
+	 */
+	if ((flags & WQ_UNBOUND) && max_active == 1)
+		flags |= __WQ_ORDERED;
+
 	/* see the comment above the definition of WQ_POWER_EFFICIENT */
 	if ((flags & WQ_POWER_EFFICIENT) && wq_power_efficient)
 		flags |= WQ_UNBOUND;
@@ -4129,8 +4145,28 @@ void destroy_workqueue(struct workqueue_struct *wq)
 	 */
 	workqueue_sysfs_unregister(wq);
 
+	/*
+	 * Remove it from sysfs first so that sanity check failure doesn't
+	 * lead to sysfs name conflicts.
+	 */
+	workqueue_sysfs_unregister(wq);
+
 	/* drain it before proceeding with destruction */
 	drain_workqueue(wq);
+
+	/* kill rescuer, if sanity checks fail, leave it w/o rescuer */
+	if (wq->rescuer) {
+		struct worker *rescuer = wq->rescuer;
+
+		/* this prevents new queueing */
+		spin_lock_irq(&wq_mayday_lock);
+		wq->rescuer = NULL;
+		spin_unlock_irq(&wq_mayday_lock);
+
+		/* rescuer will empty maydays list before exiting */
+		kthread_stop(rescuer->task);
+		kfree(rescuer);
+	}
 
 	/* kill rescuer, if sanity checks fail, leave it w/o rescuer */
 	if (wq->rescuer) {
@@ -4235,6 +4271,22 @@ void workqueue_set_max_active(struct workqueue_struct *wq, int max_active)
 	mutex_unlock(&wq->mutex);
 }
 EXPORT_SYMBOL_GPL(workqueue_set_max_active);
+
+/**
+ * current_work - retrieve %current task's work struct
+ *
+ * Determine if %current task is a workqueue worker and what it's working on.
+ * Useful to find out the context that the %current task is running in.
+ *
+ * Return: work struct if %current task is a workqueue worker, %NULL otherwise.
+ */
+struct work_struct *current_work(void)
+{
+	struct worker *worker = current_wq_worker();
+
+	return worker ? worker->current_work : NULL;
+}
+EXPORT_SYMBOL(current_work);
 
 /**
  * current_work - retrieve %current task's work struct
@@ -4522,6 +4574,12 @@ static void show_pwq(struct pool_workqueue *pwq)
 		bool comma = false;
 
 		pr_info("    pending:");
+			/*
+			 * We could be printing a lot from atomic context, e.g.
+			 * sysrq-t -> show_workqueue_state(). Avoid triggering
+			 * hard lockup.
+			 */
+			touch_nmi_watchdog();
 		list_for_each_entry(work, &pool->worklist, entry) {
 			if (get_work_pwq(work) != pwq)
 				continue;
@@ -4549,6 +4607,12 @@ static void show_pwq(struct pool_workqueue *pwq)
  *
  * Called from a sysrq handler or try_to_freeze_tasks() and prints out
  * all busy workqueues and pools.
+		/*
+		 * We could be printing a lot from atomic context, e.g.
+		 * sysrq-t -> show_workqueue_state(). Avoid triggering
+		 * hard lockup.
+		 */
+		touch_nmi_watchdog();
  */
 void show_workqueue_state(void)
 {
@@ -5425,6 +5489,7 @@ int workqueue_sysfs_register(struct workqueue_struct *wq)
 				return ret;
 			}
 		}
+	unsigned long now = jiffies;
 	}
 
 	dev_set_uevent_suppress(&wq_dev->dev, false);
@@ -5507,6 +5572,12 @@ static void wq_watchdog_timer_fn(unsigned long data)
 
 		if (list_empty(&pool->worklist))
 			continue;
+
+		/*
+		 * If a virtual machine is stopped by the host it can look to
+		 * the watchdog like a stall.
+		 */
+		kvm_check_and_clear_guest_paused();
 
 		/*
 		 * If a virtual machine is stopped by the host it can look to

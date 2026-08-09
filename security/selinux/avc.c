@@ -679,7 +679,7 @@ static struct avc_node *avc_insert(u32 ssid, u32 tsid, u16 tclass,
 		avc_node_populate(node, ssid, tsid, tclass, avd);
 		rc = avc_xperms_populate(node, xp_node);
 		if (rc) {
-			kmem_cache_free(avc_node_cachep, node);
+			avc_node_kill(node);
 			return NULL;
 		}
 		head = &avc_cache.slots[hvalue];
