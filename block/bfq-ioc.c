@@ -10,6 +10,12 @@
  * Copyright (C) 2010 Paolo Valente <paolo.valente@unimore.it>
  */
 
+#include <linux/kernel.h>
+#include <linux/iocontext.h>
+
+#include "bfq.h"
+#include "blk.h"
+
 /**
  * icq_to_bic - convert iocontext queue structure to bfq_io_cq.
  * @icq: the iocontext queue.

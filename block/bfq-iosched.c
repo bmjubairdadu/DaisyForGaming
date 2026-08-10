@@ -209,7 +209,7 @@ static void bfq_schedule_dispatch(struct bfq_data *bfqd);
  */
 static int bfq_bio_sync(struct bio *bio)
 {
-	if (bio_data_dir(bio) == READ || (bio->bi_rw & REQ_SYNC))
+	if (bio_data_dir(bio) == READ || (bio->bi_opf & REQ_SYNC))
 		return 1;
 
 	return 0;
@@ -1646,7 +1646,7 @@ static int bfq_merge(struct request_queue *q, struct request **req,
 	struct request *__rq;
 
 	__rq = bfq_find_rq_fmerge(bfqd, bio);
-	if (__rq && elv_rq_merge_ok(__rq, bio)) {
+	if (__rq && elv_bio_merge_ok(__rq, bio)) {
 		*req = __rq;
 		return ELEVATOR_FRONT_MERGE;
 	}
@@ -1691,7 +1691,7 @@ static void bfq_merged_request(struct request_queue *q, struct request *req,
 static void bfq_bio_merged(struct request_queue *q, struct request *req,
 			   struct bio *bio)
 {
-	bfqg_stats_update_io_merged(bfqq_group(RQ_BFQQ(req)), bio->bi_rw);
+	bfqg_stats_update_io_merged(bfqq_group(RQ_BFQQ(req)), bio->bi_opf);
 }
 #endif
 
@@ -4525,7 +4525,7 @@ static int __bfq_may_queue(struct bfq_queue *bfqq)
 	return ELV_MQUEUE_MAY;
 }
 
-static int bfq_may_queue(struct request_queue *q, int rw)
+static int bfq_may_queue(struct request_queue *q, int op, int op_flags)
 {
 	struct bfq_data *bfqd = q->elevator->elevator_data;
 	struct task_struct *tsk = current;
@@ -4542,7 +4542,7 @@ static int bfq_may_queue(struct request_queue *q, int rw)
 	if (!bic)
 		return ELV_MQUEUE_MAY;
 
-	bfqq = bic_to_bfqq(bic, rw_is_sync(rw));
+	bfqq = bic_to_bfqq(bic, rw_is_sync(op, op_flags));
 	if (bfqq)
 		return __bfq_may_queue(bfqq);
 
@@ -5267,7 +5267,7 @@ static struct elevator_type iosched_bfq = {
 #ifdef CONFIG_BFQ_GROUP_IOSCHED
 		.elevator_bio_merged_fn =	bfq_bio_merged,
 #endif
-		.elevator_allow_merge_fn =	bfq_allow_merge,
+		.elevator_allow_bio_merge_fn =	bfq_allow_merge,
 		.elevator_dispatch_fn =		bfq_dispatch_requests,
 		.elevator_add_req_fn =		bfq_insert_request,
 		.elevator_activate_req_fn =	bfq_activate_request,
