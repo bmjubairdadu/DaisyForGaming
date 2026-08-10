@@ -67,7 +67,7 @@ fi
 # --- 4. build ----------------------------------------------------------------
 echo "${YELLOW}== Building kernel ($(date)) ==${NC}"
 export ARCH=arm64
-export PATH="$TOOLCHAIN/bin:$PATH"
+export PATH="$PATH:$TOOLCHAIN/bin"
 if [ ! -f out/.config ]; then
     make O=out "$DEFCONFIG"
 fi

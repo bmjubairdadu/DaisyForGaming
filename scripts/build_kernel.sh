@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 export ARCH=arm64
-export PATH="/opt/toolchains/proton-clang-13/bin:$PATH"
+export PATH="$PATH:/opt/toolchains/proton-clang-13/bin"
 [ -f out/.config ] || make O=out daisy_defconfig
 make -j"$(nproc)" O=out \
   CC="clang-13" AR="llvm-ar" AS="llvm-as" NM="llvm-nm" LD="ld.lld" \
