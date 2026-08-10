@@ -4,6 +4,6 @@
   "download_url": "https://github.com/bmjubairdadu/DaisyForGaming/releases/download/kernel-v4.9.337-DaisyForGaming/DaisyForGaming_v4.9.337-DaisyForGaming.zip",
   "sha256": "d278473f65e3ba0799b0ad7653d983ba2ca26b58776efa1a6d79dce23608fc5c",
   "release_url": "https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/kernel-v4.9.337-DaisyForGaming",
-  "changelog": "d38dca2b064f scripts: refresh local release tag before fetch\n02379a80f5e6 scripts: let gh create the release tag (no duplicate tag push, no stale local check)",
+  "changelog": "Linux version 4.9.337-DaisyForGaming (Proton clang 13.0.0, LTO)\n\n- net: TCP BBR + FQ qdisc, runtime-switchable (Cubic stays default)\n- block: BFQ scheduler (4.9 legacy split backport), set as default I/O scheduler\n- security: KALLSYMS_HARDENED (masks addresses in /proc/kallsyms)\n- fs: dynamic fsync toggle (/sys/kernel/dyn_fsync/dyn_fsync)\n- power: gaming_charge sysfs toggle (FCC/vfloat cap, charger-present interlock, auto-restore on unplug)\n- cpufreq: interactive governor fixes for 4.9.337\n- version: 4.9.337, clean compiler string (no vendor git branding)",
   "mandatory": false
 }
