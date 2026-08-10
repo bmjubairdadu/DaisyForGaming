@@ -20,7 +20,7 @@ It exists to bring verified, gaming-oriented improvements to the stock
 - I/O responsiveness (BFQ scheduler as default)
 - Charging behavior control while gaming (gaming_charge toggle)
 - Storage/IO safety toggles (dynamic fsync)
-- Hardened symbol exposure (KALLSYMS_HARDENED)
+- Hardened symbol exposure (KALLSYMS_HARDENED code — dormant until enabled in the defconfig)
 - The project's own toolchain setup (Proton Clang 13, LTO)
 
 All features are verified from source, the committed `daisy_defconfig`,
@@ -58,7 +58,7 @@ The AnyKernel3 installer (in `pack/ak3`) enforces a device check for
 | ------- | ------ | ----------- |
 | TCP BBR + FQ qdisc | ✅ Implemented | `CONFIG_TCP_CONG_BBR=y`, Cubic stays the default (`CONFIG_DEFAULT_TCP_CONG="cubic"`); switch at runtime via `sysctl net.ipv4.tcp_congestion_control` |
 | BFQ I/O scheduler | ✅ Implemented | `CONFIG_IOSCHED_BFQ=y`, `CONFIG_DEFAULT_BFQ=y` (default scheduler) |
-| KALLSYMS_HARDENED | ✅ Implemented | Masks symbol addresses in `/proc/kallsyms` for unprivileged readers (`kernel/kallsyms.c`) |
+| KALLSYMS_HARDENED | 🟡 Partial (dormant) | Code + Kconfig option present (`kernel/kallsyms.c`); not enabled in `daisy_defconfig` — masks symbol addresses when enabled |
 | Dynamic fsync | ✅ Implemented | `echo 0 > /sys/kernel/dyn_fsync/dyn_fsync` (default on); toggle aggressive fsync behavior (`fs/sync.c`) |
 | Gaming charge toggle | ✅ Implemented | sysfs control in the daisy charger driver (`drivers/power/supply/qcom/qpnp-smbcharger_d1a.c`); caps charge current/vfloat, with charger-present interlock and auto-restore |
 | Interactive governor | ✅ Implemented | `CONFIG_CPU_FREQ_GOV_INTERACTIVE=y` with a 4.9.337 build fix (`cpufreq: interactive: add missing linux/irq_work.h`) |

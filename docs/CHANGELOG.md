@@ -20,7 +20,7 @@ First public release. Flashable ZIP:
 ### Kernel changes (project commits)
 
 - `net: enable TCP BBR + FQ qdisc, keep cubic as default (BBR runtime-switchable)`
-- `kallsyms: add KALLSYMS_HARDENED (mask addresses in /proc/kallsyms)`
+- `kallsyms: add KALLSYMS_HARDENED (mask addresses in /proc/kallsyms)` — code + Kconfig added; **not enabled** in `daisy_defconfig` (dormant by default)
 - `fs: sync: add dynamic fsync toggle (sysfs /sys/kernel/dyn_fsync/dyn_fsync)`
 - `arm64: daisy: default I/O scheduler to BFQ (set DEFAULT_BFQ choice member)`
 - `block: bfq: build as single merged object (bfq-iosched.c includes the other bfq files)`

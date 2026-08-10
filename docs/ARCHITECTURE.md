@@ -23,7 +23,7 @@ vendor-integration directories.
 | `arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-sakura.dts` | Device tree source for sakura (same msm8953-qrd-sku3 platform) |
 | `block/bfq-iosched.c` (+ merged `bfq-*` objects) | BFQ scheduler, backported and fixed for 4.9.337 |
 | `fs/sync.c` | Dynamic fsync toggle (`dyn_fsync`) |
-| `kernel/kallsyms.c` | KALLSYMS_HARDENED masking |
+| `kernel/kallsyms.c` | KALLSYMS_HARDENED masking (code present; not enabled in `daisy_defconfig`) |
 | `net/ipv4/tcp_bbr.c` | BBR congestion control |
 | `drivers/power/supply/qcom/qpnp-smbcharger_d1a.c` | daisy charger driver with `gaming_charge` toggle |
 | `pack/ak3/` | AnyKernel3 flashable template (boot-image patcher) |
