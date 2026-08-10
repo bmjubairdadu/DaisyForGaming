@@ -1,9 +1,9 @@
 {
   "kernel_version": "4.9.337-DaisyForGaming",
   "release_date": "2026-08-10",
-  "download_url": "",
-  "sha256": "",
-  "release_url": "",
-  "changelog": "",
+  "download_url": "https://github.com/bmjubairdadu/DaisyForGaming/releases/download/kernel-v4.9.337-DaisyForGaming/DaisyForGaming_v4.9.337-DaisyForGaming.zip",
+  "sha256": "d278473f65e3ba0799b0ad7653d983ba2ca26b58776efa1a6d79dce23608fc5c",
+  "release_url": "https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/kernel-v4.9.337-DaisyForGaming",
+  "changelog": "d38dca2b064f scripts: refresh local release tag before fetch\n02379a80f5e6 scripts: let gh create the release tag (no duplicate tag push, no stale local check)",
   "mandatory": false
 }
