@@ -112,6 +112,7 @@ gh release create "$TAG" "$DIST_DIR/$ZIP" \
     --notes "$BANNER
 
 $NOTES"
+git tag -d "$TAG" >/dev/null 2>&1 || true
 git fetch --tags origin
 
 # --- 8. real download URL -------------------------------------------------------
