@@ -27,6 +27,14 @@ jobs:
             gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi \
             make zip python3
 
+      - name: Toolchain diagnostics
+        run: |
+          echo "clang-13:"; clang-13 --version | head -2 || echo MISSING
+          echo "cc-name test:"; clang-13 -v 2>&1 | grep -q "clang version" && echo clang || echo gcc
+          echo "major:"; echo __clang_major__ | clang-13 -E -x c -
+          echo "clang-version.sh:"; scripts/clang-version.sh clang-13 || echo SCRIPT_FAILED
+          echo "ld.lld:"; ld.lld -v 2>&1 || echo LLD_MISSING
+
       - name: Build kernel (daisy_defconfig)
         env:
           ARCH: arm64
