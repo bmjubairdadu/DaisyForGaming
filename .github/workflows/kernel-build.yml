@@ -50,6 +50,7 @@ jobs:
 
       - name: Package AnyKernel3 ZIP
         run: |
+          mkdir -p dist
           rm -rf .pkg && cp -r pack/ak3 .pkg
           cp out/arch/arm64/boot/Image.gz-dtb .pkg/Image.gz-dtb
           cd .pkg && zip -r9q ../dist/DaisyForGaming_ci.zip .
