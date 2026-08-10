@@ -59,10 +59,6 @@ if gh release view "$TAG" --repo "$OWNER/$REPO" >/dev/null 2>&1; then
     echo "Remove/delete the release+tag first if you really need to redo it."
     exit 1
 fi
-if git tag -l "$TAG" | grep -qx "$TAG"; then
-    echo "${RED}Tag $TAG already exists locally. Refusing to duplicate.${NC}"
-    exit 1
-fi
 
 # --- 4. build ----------------------------------------------------------------
 echo "${YELLOW}== Building kernel ($(date)) ==${NC}"
@@ -79,7 +75,7 @@ make -j"$(nproc)" O=out \
   2>&1 | tee "$BUILD_LOG"
 IMAGE="out/arch/arm64/boot/Image.gz-dtb"
 [ -f "$IMAGE" ] || { echo "${RED}Build finished without $IMAGE${NC}"; tail -20 "$BUILD_LOG"; exit 1; }
-BANNER="$(gzip -dc "$IMAGE" | strings | grep -m1 'Linux version' || echo 'Linux version <unparsed>')"
+BANNER="$(gzip -dc "$IMAGE" | strings | grep -m1 'Linux version [0-9]' || echo 'Linux version <unparsed>')"
 echo "${GREEN}$BANNER${NC}"
 
 # --- 5. package AnyKernel3 ZIP -----------------------------------------------
@@ -109,14 +105,14 @@ fi
 
 # --- 7. create release ----------------------------------------------------------
 echo "${YELLOW}== Creating GitHub release $TAG ==${NC}"
-git tag "$TAG" -m "DaisyForGaming kernel $FULL"
+# gh release create creates the tag remotely itself; we only mirror it locally.
 gh release create "$TAG" "$DIST_DIR/$ZIP" \
     --repo "$OWNER/$REPO" \
     --title "DaisyForGaming kernel $FULL" \
     --notes "$BANNER
 
 $NOTES"
-git push origin "$TAG"
+git fetch --tags origin
 
 # --- 8. real download URL -------------------------------------------------------
 RELEASE_JSON="$(gh api "repos/$OWNER/$REPO/releases/tags/$TAG")"
