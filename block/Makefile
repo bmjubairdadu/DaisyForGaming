@@ -25,6 +25,5 @@ obj-$(CONFIG_BLK_DEV_INTEGRITY) += bio-integrity.o blk-integrity.o t10-pi.o
 obj-$(CONFIG_BLK_MQ_PCI)	+= blk-mq-pci.o
 
 obj-$(CONFIG_IOSCHED_BFQ) += bfq.o
-bfq-y := bfq-iosched.o bfq-ioc.o bfq-sched.o
-bfq-$(CONFIG_BFQ_GROUP_IOSCHED) += bfq-cgroup.o
+bfq-y := bfq-iosched.o
 
