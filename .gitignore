@@ -133,3 +133,8 @@ incremental/
 localv.txt
 out/
 proton-clang/
+dist/
+*.zip
+.pkg_stage/
+!.github/
+!.github/**
