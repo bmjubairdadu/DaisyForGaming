@@ -56,8 +56,10 @@ while IFS= read -r f; do
             echo "${RED}SECRET CANDIDATE (extension): $f${NC}"; SCAN_HITS=$((SCAN_HITS+1));;
     esac
     if [ -f "$f" ]; then
-        if grep -Eaq 'gh[ps]_[A-Za-z0-9]{15,}|AKIA[0-9A-Z]{16}|BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY|BEGIN CERTIFICATE|api[_-]?key[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9]{16,}|password[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9]{8,}' "$f" 2>/dev/null; then
-            echo "${RED}SECRET CANDIDATE (content): $f${NC}"; SCAN_HITS=$((SCAN_HITS+1))
+        if file -b "$f" | grep -q 'text'; then
+            if grep -Eaq 'gh[ps]_[A-Za-z0-9]{15,}|AKIA[0-9A-Z]{16}|BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY|BEGIN CERTIFICATE|api[_-]?key[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9]{16,}|password[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9]{8,}' "$f" 2>/dev/null; then
+                echo "${RED}SECRET CANDIDATE (content): $f${NC}"; SCAN_HITS=$((SCAN_HITS+1))
+            fi
         fi
     fi
 done < <(git diff --cached --name-only)

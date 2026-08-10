@@ -97,8 +97,9 @@ if [ -n "${CHANGELOG:-}" ]; then
 else
     LAST_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
     if [ -n "$LAST_TAG" ]; then
-        NOTES="$(git log --oneline "$LAST_TAG"..HEAD)"
-    else
+        NOTES="$(git log --oneline "$LAST_TAG"..HEAD -- . ':(exclude)scripts' ':(exclude)docs' ':(exclude).github' ':(exclude)DFGController-update-checker' ':(exclude)kernel_update.json' ':(exclude)README.md')"
+    fi
+    if [ -z "${NOTES:-}" ]; then
         NOTES="$(git log --oneline -12)"
     fi
 fi
