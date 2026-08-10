@@ -591,10 +591,20 @@ static void s_stop(struct seq_file *m, void *p)
 static int s_show(struct seq_file *m, void *p)
 {
 	struct kallsym_iter *iter = m->private;
+	unsigned long value = iter->value;
 
 	/* Some debugging symbols have no name.  Ignore them. */
 	if (!iter->name[0])
 		return 0;
+
+#ifdef CONFIG_KALLSYMS_HARDENED
+	/*
+	 * Mask out everything but the low bits so that /proc/kallsyms
+	 * cannot be used to derive the kernel mapping base for ROP/JOP
+	 * style attacks.
+	 */
+	value &= 0x0000ffffUL;
+#endif
 
 	if (iter->module_name[0]) {
 		char type;
@@ -605,10 +615,10 @@ static int s_show(struct seq_file *m, void *p)
 		 */
 		type = iter->exported ? toupper(iter->type) :
 					tolower(iter->type);
-		seq_printf(m, "%pK %c %s\t[%s]\n", (void *)iter->value,
+		seq_printf(m, "%pK %c %s\t[%s]\n", (void *)value,
 			   type, iter->name, iter->module_name);
 	} else
-		seq_printf(m, "%pK %c %s\n", (void *)iter->value,
+		seq_printf(m, "%pK %c %s\n", (void *)value,
 			   iter->type, iter->name);
 	return 0;
 }

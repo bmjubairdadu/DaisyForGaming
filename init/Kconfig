@@ -1693,6 +1693,15 @@ config KALLSYMS_BASE_RELATIVE
 	  time constants, and no relocation pass is required at runtime to fix
 	  up the entries based on the runtime load address of the kernel.
 
+config KALLSYMS_HARDENED
+	bool "Mask kallsyms addresses in /proc/kallsyms"
+	depends on KALLSYMS
+	default y
+	help
+	  Masks the symbol addresses printed by /proc/kallsyms, so that the
+	  kernel mapping base cannot be derived from the table for ROP/JOP
+	  style attacks. Only the low bits of each address are printed.
+
 config PRINTK
 	default y
 	bool "Enable support for printk" if EXPERT
