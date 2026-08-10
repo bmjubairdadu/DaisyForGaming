@@ -79,7 +79,7 @@ The release ZIP is an **AnyKernel3** package. Install it in TWRP:
 
 1. Boot to **TWRP recovery**.
 2. **Backup** (TWRP → Backup → Boot + System) — or back up the boot image manually.
-3. TWRP → **Install** → select the downloaded `DaisyForGaming_v4.9.337-DaisyForGaming.zip`.
+3. TWRP → **Install** → select the downloaded `DaisyForGaming-4.9.337-10-08-2026.zip`.
 4. **Swipe to confirm** the flash.
 5. Reboot to system.
 
@@ -171,7 +171,7 @@ Full description: [docs/UPDATE_SYSTEM.md](docs/UPDATE_SYSTEM.md)
 ## Releases
 
 - **Tag format:** `kernel-v<version>-DaisyForGaming` (e.g. `kernel-v4.9.337-DaisyForGaming`)
-- **Assets:** flashable ZIP `DaisyForGaming_v<version>.zip` + SHA-256 in the
+- **Assets:** flashable ZIP `DaisyForGaming-<version>-<dd-mm-yyyy>.zip` + SHA-256 in the
   release notes and manifest
 - **Release process:** `./scripts/release_kernel.sh` (never duplicates an existing tag)
 

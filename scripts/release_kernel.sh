@@ -45,7 +45,7 @@ E="$(sed -n 's/^EXTRAVERSION = *\(.*\)/\1/p' Makefile | head -1)"
 KVER="${V}.${P}.${S}${E}"
 FULL="${KVER}-${BRAND}"
 TAG="kernel-v${KVER}-${BRAND}"
-ZIP="DaisyForGaming_v${KVER}-${BRAND}.zip"
+ZIP="DaisyForGaming-${KVER}-$(date +%d-%m-%Y).zip"
 echo "${GREEN}== Kernel version: $FULL ==${NC}"
 
 # --- 2. prerequisites --------------------------------------------------------

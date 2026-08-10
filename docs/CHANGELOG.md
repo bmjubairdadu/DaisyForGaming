@@ -14,7 +14,7 @@ see [ARCHITECTURE.md](ARCHITECTURE.md) for the base.
 ## 2026-08-10 — 4.9.337-DaisyForGaming (kernel-v4.9.337-DaisyForGaming)
 
 First public release. Flashable ZIP:
-`DaisyForGaming_v4.9.337-DaisyForGaming.zip`
+`DaisyForGaming-4.9.337-10-08-2026.zip`
 (SHA-256: `d278473f65e3ba0799b0ad7653d983ba2ca26b58776efa1a6d79dce23608fc5c`).
 
 ### Kernel changes (project commits)

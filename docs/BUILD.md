@@ -74,7 +74,7 @@ make -j$(nproc) O=out \
 | Compressed | `out/arch/arm64/boot/Image.gz` |
 | Compressed + DTB | `out/arch/arm64/boot/Image.gz-dtb` ← used for flashing |
 | Device trees | `out/arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-{daisy,sakura}.dtb` |
-| Flashable ZIP | `dist/DaisyForGaming_v<version>.zip` (via `release_kernel.sh`) |
+| Flashable ZIP | `dist/DaisyForGaming-<version>-<dd-mm-yyyy>.zip` (via `release_kernel.sh`) |
 | Build log | terminal output (or `tee` to a file) |
 
 Verify the banner:
@@ -90,7 +90,7 @@ Packaging is part of `scripts/release_kernel.sh` (see
 [RELEASE_PROCESS.md](RELEASE_PROCESS.md)):
 
 1. Copy `out/arch/arm64/boot/Image.gz-dtb` into `pack/ak3/` (AnyKernel3).
-2. `zip -r9` the template → `dist/DaisyForGaming_v4.9.337-DaisyForGaming.zip`.
+2. `zip -r9` the template → `dist/DaisyForGaming-4.9.337-10-08-2026.zip`.
 3. `sha256sum` the ZIP.
 
 To package manually:

@@ -64,7 +64,7 @@ flowchart TD
     IMG --> GZ[Image.gz]
     GZ --> DTB[concat: Image.gz + daisy/sakura DTB -> Image.gz-dtb]
     DTB --> P[AnyKernel3 packaging]
-    P --> ZIP[dist/DaisyForGaming_v4.9.337-DaisyForGaming.zip]
+    P --> ZIP[dist/DaisyForGaming-4.9.337-10-08-2026.zip]
     ZIP --> REL[GitHub Release kernel-v...]
     REL --> M[kernel_update.json]
     M --> APP[DFG Controller checker]
@@ -77,7 +77,7 @@ flowchart TD
    `msm8953-qrd-sku3-sakura.dtb` being compiled and appended, then the whole
    thing is gzip-compressed into `Image.gz-dtb` (about 12.5 MB).
 3. `scripts/release_kernel.sh` copies `Image.gz-dtb` into `pack/ak3/`
-   (AnyKernel3) and zips the directory into `dist/DaisyForGaming_v<version>.zip`.
+   (AnyKernel3) and zips the directory into `dist/DaisyForGaming-<version>-<dd-mm-yyyy>.zip`.
 
 ## Packaging (AnyKernel3)
 

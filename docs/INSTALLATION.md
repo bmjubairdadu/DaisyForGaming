@@ -36,7 +36,7 @@ a full stock boot image (`fastboot flash boot boot.img`) — see below.
    and place it on internal or external storage.
 2. **Verify the checksum** (optional but recommended):
    ```sh
-   sha256sum DaisyForGaming_v4.9.337-DaisyForGaming.zip
+   sha256sum DaisyForGaming-4.9.337-10-08-2026.zip
    # compare against the manifest / release notes:
    curl -s https://raw.githubusercontent.com/bmjubairdadu/DaisyForGaming/main/kernel_update.json
    ```

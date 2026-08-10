@@ -27,7 +27,7 @@ CHANGELOG="my release notes" ./scripts/release_kernel.sh
 4. **Verify** — checks `out/arch/arm64/boot/Image.gz-dtb` exists and prints
    the `Linux version` banner.
 5. **Package** — copies `Image.gz-dtb` into `pack/ak3/` (AnyKernel3) and
-   zips → `dist/DaisyForGaming_v4.9.337-DaisyForGaming.zip`.
+   zips → `dist/DaisyForGaming-4.9.337-10-08-2026.zip`.
 6. **SHA-256** — `sha256sum` of the ZIP.
 7. **Changelog** — commits since the last release tag (kernel-source-only),
    or the last 12 commits for the first release; override with `CHANGELOG=`.
@@ -58,14 +58,14 @@ If you cannot use the script (e.g. no `gh` on another machine):
 # 2. package
 mkdir -p dist && rm -rf .pkg && cp -r pack/ak3 .pkg
 cp out/arch/arm64/boot/Image.gz-dtb .pkg/Image.gz-dtb
-(cd .pkg && zip -r9q ../dist/DaisyForGaming_v4.9.337-DaisyForGaming.zip .)
+(cd .pkg && zip -r9q ../dist/DaisyForGaming-4.9.337-10-08-2026.zip .)
 
 # 3. checksum
-sha256sum dist/DaisyForGaming_v4.9.337-DaisyForGaming.zip
+sha256sum dist/DaisyForGaming-4.9.337-10-08-2026.zip
 
 # 4. release (tag exactly kernel-v4.9.337-DaisyForGaming)
 gh release create kernel-v4.9.337-DaisyForGaming \
-  dist/DaisyForGaming_v4.9.337-DaisyForGaming.zip \
+  dist/DaisyForGaming-4.9.337-10-08-2026.zip \
   --title "DaisyForGaming kernel 4.9.337-DaisyForGaming" --notes "..."
 
 # 5. update kernel_update.json with the real download URL + sha256,
@@ -75,7 +75,7 @@ gh release create kernel-v4.9.337-DaisyForGaming \
 ## Naming rules
 
 - Release tag: `kernel-v<version>-<brand>` e.g. `kernel-v4.9.337-DaisyForGaming`
-- ZIP: `DaisyForGaming_v<version>.zip`
+- ZIP: `DaisyForGaming-<version>-<dd-mm-yyyy>.zip` (e.g. `DaisyForGaming-4.9.337-10-08-2026.zip`)
 - Kernel version reported on device: `<version>-DaisyForGaming` (from
   `CONFIG_LOCALVERSION`)
 

@@ -12,7 +12,7 @@ assignees: ""
 ## Kernel information
 
 - Kernel version (`uname -r`): <!-- e.g. 4.9.337-DaisyForGaming -->
-- Release ZIP used: <!-- e.g. DaisyForGaming_v4.9.337-DaisyForGaming.zip -->
+- Release ZIP used: <!-- e.g. DaisyForGaming-4.9.337-10-08-2026.zip -->
 - SHA-256 of the ZIP (if you verified): 
 
 ## Device information
