@@ -15,6 +15,8 @@
 #include <linux/pagemap.h>
 #include <linux/quotaops.h>
 #include <linux/backing-dev.h>
+#include <linux/kobject.h>
+#include <linux/string.h>
 #include "internal.h"
 
 #define VALID_FLAGS (SYNC_FILE_RANGE_WAIT_BEFORE|SYNC_FILE_RANGE_WRITE| \
@@ -223,15 +225,70 @@ static int do_fsync(unsigned int fd, int datasync)
 	return ret;
 }
 
+/*
+ * Dynamic fsync: fsync()/fdatasync() become no-ops when disabled, for
+ * a performance gain on gaming workloads (data integrity is traded off).
+ */
+static int dyn_fsync = 1;
+
 SYSCALL_DEFINE1(fsync, unsigned int, fd)
 {
+	if (unlikely(!dyn_fsync))
+		return 0;
 	return do_fsync(fd, 0);
 }
 
 SYSCALL_DEFINE1(fdatasync, unsigned int, fd)
 {
+	if (unlikely(!dyn_fsync))
+		return 0;
 	return do_fsync(fd, 1);
 }
+
+static ssize_t dyn_fsync_show(struct kobject *kobj,
+		struct kobj_attribute *attr, char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%d\n", dyn_fsync);
+}
+
+static ssize_t dyn_fsync_store(struct kobject *kobj,
+		struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	int val;
+
+	if (kstrtoint(buf, 10, &val))
+		return -EINVAL;
+
+	if (val != 0 && val != 1)
+		return -EINVAL;
+
+	dyn_fsync = val;
+	return count;
+}
+
+static struct kobj_attribute dyn_fsync_attr =
+	__ATTR(dyn_fsync, 0644, dyn_fsync_show, dyn_fsync_store);
+
+static struct attribute *dyn_fsync_attrs[] = {
+	&dyn_fsync_attr.attr,
+	NULL,
+};
+
+static struct attribute_group dyn_fsync_attr_group = {
+	.attrs = dyn_fsync_attrs,
+};
+
+static int __init dyn_fsync_init(void)
+{
+	struct kobject *kobj;
+
+	kobj = kobject_create_and_add("dyn_fsync", kernel_kobj);
+	if (!kobj)
+		return -ENOMEM;
+
+	return sysfs_create_group(kobj, &dyn_fsync_attr_group);
+}
+late_initcall(dyn_fsync_init);
 
 /*
  * sys_sync_file_range() permits finely controlled syncing over a segment of
