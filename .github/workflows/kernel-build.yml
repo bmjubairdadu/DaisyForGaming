@@ -26,8 +26,11 @@ jobs:
             gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
             gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi \
             make zip python3
-          # kernel links with `-fuse-ld=lld` / `$(LD)`, which resolves plain "ld.lld"
-          sudo ln -sf /usr/bin/ld.lld-13 /usr/local/bin/ld.lld
+          # kernel LTO invokes unversioned names; map the clang-13 tools
+          for t in clang clang++ llvm-ar llvm-as llvm-nm llvm-strip llvm-objcopy \
+                   llvm-objdump llvm-size llvm-readelf ld.lld; do
+            sudo ln -sf "/usr/bin/$t-13" "/usr/local/bin/$t"
+          done
 
       - name: Build kernel (daisy_defconfig)
         # Toolchain MUST be passed on the make command line: the kernel
