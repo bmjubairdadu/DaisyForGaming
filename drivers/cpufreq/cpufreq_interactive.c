@@ -28,6 +28,7 @@
 #include <linux/time.h>
 #include <linux/timer.h>
 #include <linux/hrtimer.h>
+#include <linux/irq_work.h>
 #include <linux/workqueue.h>
 #include <linux/kthread.h>
 #include <linux/slab.h>
