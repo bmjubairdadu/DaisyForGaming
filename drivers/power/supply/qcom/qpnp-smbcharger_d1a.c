@@ -136,6 +136,9 @@ struct smbchg_chip {
 	bool				bmd_algo_disabled;
 	bool				soft_vfloat_comp_disabled;
 	bool				chg_enabled;
+	int				gaming_charge;
+	int				gaming_saved_fcc_ma;
+	int				gaming_saved_vfloat_mv;
 	bool				charge_unknown_battery;
 	bool				chg_inhibit_en;
 	bool				chg_inhibit_source_fg;
@@ -1594,6 +1597,8 @@ static int smbchg_request_dpdm(struct smbchg_chip *chip, bool enable)
 	return rc;
 }
 
+static int smbchg_gaming_charge_set(struct smbchg_chip *chip, bool enable);
+
 static void smbchg_usb_update_online_work(struct work_struct *work)
 {
 	struct smbchg_chip *chip = container_of(work,
@@ -1612,6 +1617,9 @@ static void smbchg_usb_update_online_work(struct work_struct *work)
 		power_supply_changed(chip->usb_psy);
 	}
 	mutex_unlock(&chip->usb_set_online_lock);
+
+	if (chip->gaming_charge && !online)
+		smbchg_gaming_charge_set(chip, false);
 }
 
 #define CHGPTH_CFG		0xF4
@@ -3237,6 +3245,62 @@ static int smbchg_float_voltage_set(struct smbchg_chip *chip, int vfloat_mv)
 static int smbchg_float_voltage_get(struct smbchg_chip *chip)
 {
 	return chip->vfloat_mv;
+}
+
+#define GAMING_CHARGE_FCC_MA		1200
+#define GAMING_CHARGE_VFLOAT_MV		4000
+static int smbchg_gaming_charge_set(struct smbchg_chip *chip, bool enable)
+{
+	int rc = 0;
+
+	if (enable) {
+		if (chip->gaming_charge)
+			return 0;
+
+		if (!chip->usb_present) {
+			pr_smb(PR_STATUS, "gaming charge: charger not present\n");
+			return -EINVAL;
+		}
+
+		chip->gaming_saved_fcc_ma =
+				get_effective_result(chip->fcc_votable);
+		if (chip->gaming_saved_fcc_ma < 0)
+			chip->gaming_saved_fcc_ma = chip->fastchg_current_ma;
+		chip->gaming_saved_vfloat_mv = chip->vfloat_mv;
+
+		rc = smbchg_set_fastchg_current_user(chip,
+						GAMING_CHARGE_FCC_MA);
+		if (rc) {
+			dev_err(chip->dev, "gaming charge: FCC set failed rc=%d\n", rc);
+			return rc;
+		}
+		rc = smbchg_float_voltage_set(chip, GAMING_CHARGE_VFLOAT_MV);
+		if (rc) {
+			dev_err(chip->dev, "gaming charge: vfloat set failed rc=%d\n", rc);
+			smbchg_set_fastchg_current_user(chip,
+						chip->gaming_saved_fcc_ma);
+			return rc;
+		}
+		chip->gaming_charge = 1;
+		pr_smb(PR_STATUS, "gaming charge enabled: FCC %d mA, vfloat %d mV\n",
+				GAMING_CHARGE_FCC_MA, GAMING_CHARGE_VFLOAT_MV);
+	} else {
+		if (!chip->gaming_charge)
+			return 0;
+
+		rc = smbchg_set_fastchg_current_user(chip,
+						chip->gaming_saved_fcc_ma);
+		if (rc)
+			dev_err(chip->dev, "gaming charge: FCC restore failed rc=%d\n", rc);
+		rc = smbchg_float_voltage_set(chip,
+						chip->gaming_saved_vfloat_mv);
+		if (rc)
+			dev_err(chip->dev, "gaming charge: vfloat restore failed rc=%d\n", rc);
+		chip->gaming_charge = 0;
+		pr_smb(PR_STATUS, "gaming charge disabled\n");
+	}
+
+	return rc;
 }
 
 #define SFT_CFG				0xFD
@@ -5950,6 +6014,7 @@ static enum power_supply_property smbchg_battery_properties[] = {
 	POWER_SUPPLY_PROP_PRESENT,
 	POWER_SUPPLY_PROP_BATTERY_CHARGING_ENABLED,
 	POWER_SUPPLY_PROP_CHARGING_ENABLED,
+	POWER_SUPPLY_PROP_GAMING_CHARGE,
 	POWER_SUPPLY_PROP_CHARGE_TYPE,
 	POWER_SUPPLY_PROP_CAPACITY,
 	POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN,
@@ -5998,6 +6063,9 @@ static int smbchg_battery_set_property(struct power_supply *psy,
 				!val->intval, 0);
 		chip->chg_enabled = val->intval;
 		schedule_work(&chip->usb_set_online_work);
+		break;
+	case POWER_SUPPLY_PROP_GAMING_CHARGE:
+		rc = smbchg_gaming_charge_set(chip, val->intval);
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY:
 		chip->fake_battery_soc = val->intval;
@@ -6075,6 +6143,7 @@ static int smbchg_battery_is_writeable(struct power_supply *psy,
 	switch (prop) {
 	case POWER_SUPPLY_PROP_BATTERY_CHARGING_ENABLED:
 	case POWER_SUPPLY_PROP_CHARGING_ENABLED:
+	case POWER_SUPPLY_PROP_GAMING_CHARGE:
 	case POWER_SUPPLY_PROP_CAPACITY:
 	case POWER_SUPPLY_PROP_SYSTEM_TEMP_LEVEL:
 	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX:
@@ -6116,6 +6185,9 @@ static int smbchg_battery_get_property(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_CHARGING_ENABLED:
 		val->intval = chip->chg_enabled;
+		break;
+	case POWER_SUPPLY_PROP_GAMING_CHARGE:
+		val->intval = chip->gaming_charge;
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_TYPE:
 		val->intval = get_prop_charge_type(chip);
