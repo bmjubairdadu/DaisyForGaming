@@ -89,7 +89,7 @@ static int __init daisy_mm_init(void)
 
 	vm_swappiness = 100;
 
-	ret = sysfs_create_group(mm_kobj, &daisy_mm_attr_group);
+	ret = sysfs_create_groups(mm_kobj, daisy_mm_groups);
 	if (ret)
 		pr_err("daisy_mm: failed to create /sys/kernel/mm nodes: %d\n",
 		       ret);
