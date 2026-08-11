@@ -11,6 +11,31 @@ see [ARCHITECTURE.md](ARCHITECTURE.md) for the base.
 
 ---
 
+## 2026-08-11 — 4.9.337-DaisyForGaming (kernel-v4.9.337-DaisyForGaming, republished)
+
+Updated build of the same version (banner unchanged). Flashable ZIP:
+`DaisyForGaming-4.9.337-11-08-2026.zip`
+(SHA-256: `ff38dae0c81c455af53d62776847d4bc742cb5b90df21f7abccde7d4620d24e6`).
+
+### New in this build
+
+- **CPU input boost** (`drivers/cpufreq/input_boost.c`): adapted the touch
+  boost driver to the `input_boost` interface — `/sys/module/input_boost/
+  parameters/{enabled, boost_freq, boost_duration_ms}` (default 1.4 GHz /
+  60 ms; `boost_freq` clamped to a safe sub-maximum, duration clamped to
+  20–150 ms).
+- **lmk_aggressive** (`drivers/staging/android/lowmemorykiller.c`,
+  `drivers/misc/daisy_mm.c`): `/sys/kernel/mm/lmk_aggressive` — moderate
+  6-level minfree tuning (32–96 MB, adj 0/100/200/300/900/906), dormant by
+  default (`enable_lmk=0`), snapshot/restore on disable.
+- **Swappiness control** (`drivers/misc/daisy_mm.c`): `/sys/kernel/mm/
+  swappiness` (0–200, boot default 100 instead of the baked 60) for
+  zRAM-appropriate reclaim behavior.
+- `CONFIG_ANDROID_LOW_MEMORY_KILLER=y` (dormant until toggled),
+  `CONFIG_DAISY_MM=y`.
+
+---
+
 ## 2026-08-10 — 4.9.337-DaisyForGaming (kernel-v4.9.337-DaisyForGaming)
 
 First public release. Flashable ZIP:

@@ -17,6 +17,46 @@ Everything a user needs to know about running DaisyForGaming.
 
 ## Feature toggles
 
+### CPU input boost
+
+Automatic — no action needed. On touch events the CPU min frequency is
+briefly raised (default **1.4 GHz / 60 ms**) so the first frames after a
+touch render immediately. Controls (root, `/sys/module/input_boost/parameters/`):
+
+- `enabled` — `0/1`, default `1`
+- `boost_freq` — clamped to a safe sub-maximum (≈ 80 % of the policy max);
+  default `1401600` (1.4 GHz)
+- `boost_duration_ms` — clamp `20–150`, default `60`
+
+The boost does not change the max frequency or sustained performance and is
+suppressed while the screen is off.
+
+### Memory pressure (not gaming-only, general multitasking)
+
+- **lmk_aggressive** — `/sys/kernel/mm/lmk_aggressive` (`0/1`, default `0`).
+  Dormant until enabled; when enabled it applies a moderate 6-level minfree
+  table (32/40/48/64/80/96 MB) so background apps are reclaimed somewhat
+  sooner under pressure. Disable restores the previous table. Combined with
+  Android's userspace lmkd — deliberately not maximally aggressive, so apps
+  don't reload from scratch when you switch back.
+- **swappiness** — `/sys/kernel/mm/swappiness` (clamp `0–200`, boot default
+  `100`; the kernel-baked value is `60`). zRAM-appropriate: with lz4 zRAM as
+  swap, a moderately higher swappiness smooths multitasking on a 3 GB device.
+  The ROM may override it at boot; re-apply from this node anytime:
+  ```sh
+  echo 100 > /sys/kernel/mm/swappiness     # requires root
+  ```
+
+### Verify zRAM is actually used as swap
+
+zRAM is compiled in, but **only helps if the ROM mounts it as swap**:
+```sh
+cat /proc/swaps            # look for /dev/block/zram0 with a nonzero size
+cat /proc/sys/vm/swappiness
+```
+If `/proc/swaps` lists no `zram0` device, the kernel cannot activate swap
+itself — support from the ROM's init or a root app is required.
+
 ### Dynamic fsync
 
 - Default: **on** (`1`) — safe, standard behavior.
