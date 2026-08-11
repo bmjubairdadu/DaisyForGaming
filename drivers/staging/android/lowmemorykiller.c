@@ -67,8 +67,12 @@
 #define CREATE_TRACE_POINTS
 #include "trace/lowmemorykiller.h"
 
-/* to enable lowmemorykiller */
-static int enable_lmk = 1;
+/*
+ * to enable lowmemorykiller
+ * DaisyForGaming: dormant by default (0) so stock behavior is unchanged;
+ * the /sys/kernel/mm/lmk_aggressive toggle activates it on demand.
+ */
+static int enable_lmk = 0;
 module_param_named(enable_lmk, enable_lmk, int, 0644);
 
 static u32 lowmem_debug_level = 1;
@@ -89,6 +93,67 @@ static int lowmem_minfree[6] = {
 
 static int lowmem_minfree_size = 4;
 static int lmk_fast_run = 1;
+
+/*
+ * DaisyForGaming: moderate lmk_aggressive tuning.
+ *
+ * Extends the stock 4-level table to the modern 6-level Android scheme so
+ * that background/empty apps (oom_score_adj 900/906) are reclaimed somewhat
+ * sooner under pressure. Deliberately NOT maximally aggressive: killing too
+ * eagerly makes apps reload from scratch when switched back to, which feels
+ * laggier, not smoother. Foreground/visible thresholds (32/40/48 MB) stay low
+ * so the running app is never at risk.
+ *
+ * minfree values are in 4 KB pages: 32/40/48/64/80/96 MB.
+ */
+static const short daisy_lmk_adj[6] = {
+	0, 100, 200, 300, 900, 906,
+};
+
+static const int daisy_lmk_minfree[6] = {
+	8 * 1024,	/* 32MB */
+	10 * 1024,	/* 40MB */
+	12 * 1024,	/* 48MB */
+	16 * 1024,	/* 64MB */
+	20 * 1024,	/* 80MB */
+	24 * 1024,	/* 96MB */
+};
+
+static int daisy_lmk_aggressive;
+static int daisy_saved_enable_lmk;
+static short daisy_saved_adj[6];
+static int daisy_saved_minfree[6];
+static int daisy_saved_adj_size;
+static int daisy_saved_minfree_size;
+
+void daisy_lmk_set_aggressive(bool on)
+{
+	if (on && !daisy_lmk_aggressive) {
+		daisy_saved_enable_lmk = enable_lmk;
+		memcpy(daisy_saved_adj, lowmem_adj, sizeof(lowmem_adj));
+		memcpy(daisy_saved_minfree, lowmem_minfree,
+		       sizeof(lowmem_minfree));
+		daisy_saved_adj_size = lowmem_adj_size;
+		daisy_saved_minfree_size = lowmem_minfree_size;
+
+		memcpy(lowmem_adj, daisy_lmk_adj, sizeof(lowmem_adj));
+		memcpy(lowmem_minfree, daisy_lmk_minfree,
+		       sizeof(lowmem_minfree));
+		lowmem_adj_size = ARRAY_SIZE(lowmem_adj);
+		lowmem_minfree_size = ARRAY_SIZE(lowmem_minfree);
+		enable_lmk = 1;
+		daisy_lmk_aggressive = 1;
+	} else if (!on && daisy_lmk_aggressive) {
+		enable_lmk = daisy_saved_enable_lmk;
+		memcpy(lowmem_adj, daisy_saved_adj, sizeof(lowmem_adj));
+		memcpy(lowmem_minfree, daisy_saved_minfree,
+		       sizeof(lowmem_minfree));
+		lowmem_adj_size = daisy_saved_adj_size;
+		lowmem_minfree_size = daisy_saved_minfree_size;
+		daisy_lmk_aggressive = 0;
+	}
+}
+EXPORT_SYMBOL(daisy_lmk_set_aggressive);
 
 static unsigned long lowmem_deathpending_timeout;
 

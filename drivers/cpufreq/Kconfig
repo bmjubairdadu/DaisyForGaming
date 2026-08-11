@@ -270,9 +270,9 @@ if CPU_INPUT_BOOST
 
 config INPUT_BOOST_DURATION_MS
 	int "Input boost duration"
-	default "100"
+	default "60"
 	help
-	  Input boost duration in milliseconds.
+	  Input boost duration in milliseconds (sysfs clamp: 20-150).
 
 config WAKE_BOOST_DURATION_MS
 	int "Wake boost duration"

@@ -4,7 +4,7 @@
  * Copyright (C) 2019 Danny Lin <danny@kdrag0n.dev>.
  */
 
-#define pr_fmt(fmt) "cpu_input_boost: " fmt
+#define pr_fmt(fmt) "input_boost: " fmt
 
 #include <linux/cpu.h>
 #include <linux/cpufreq.h>
@@ -20,24 +20,98 @@
 #include <uapi/linux/sched/types.h>
 #endif
 
-static unsigned int input_boost_freq __read_mostly =
+static unsigned int boost_freq __read_mostly =
 	CONFIG_INPUT_BOOST_FREQ;
 static unsigned int max_boost_freq __read_mostly =
 	CONFIG_MAX_BOOST_FREQ;
 static unsigned int boost_min_freq __read_mostly =
         CONFIG_BASE_BOOST_FREQ;
 
-static unsigned short input_boost_duration __read_mostly =
+static unsigned int boost_duration_ms __read_mostly =
 	CONFIG_INPUT_BOOST_DURATION_MS;
 static unsigned short wake_boost_duration __read_mostly =
 	CONFIG_WAKE_BOOST_DURATION_MS;
 
-module_param(input_boost_freq, uint, 0644);
+static bool input_boost_enabled = true;
+module_param_named(enabled, input_boost_enabled, bool, 0644);
 module_param(max_boost_freq, uint, 0644);
 module_param_named(remove_input_boost_freq, boost_min_freq, uint, 0644);
-
-module_param(input_boost_duration, short, 0644);
 module_param(wake_boost_duration, short, 0644);
+
+/* Cap applied to boost_freq: 80% of the highest policy max frequency. */
+static unsigned int boost_freq_submax_cap;
+
+static void compute_boost_freq_cap(void)
+{
+	unsigned int cpu, max_freq = 0;
+
+	get_online_cpus();
+	for_each_online_cpu(cpu) {
+		struct cpufreq_policy *policy = cpufreq_cpu_get(cpu);
+
+		if (policy) {
+			max_freq = max(max_freq, policy->cpuinfo.max_freq);
+			cpufreq_cpu_put(policy);
+		}
+	}
+	put_online_cpus();
+
+	if (max_freq)
+		boost_freq_submax_cap = max_freq * 8 / 10;
+}
+
+static int set_boost_freq(const char *buf, const struct kernel_param *kp)
+{
+	unsigned int val;
+	int ret;
+
+	ret = kstrtouint(buf, 10, &val);
+	if (ret)
+		return ret;
+
+	if (!boost_freq_submax_cap)
+		compute_boost_freq_cap();
+
+	if (boost_freq_submax_cap && val > boost_freq_submax_cap)
+		return -EINVAL;
+
+	boost_freq = val;
+	return 0;
+}
+
+static int get_boost_freq(char *buf, const struct kernel_param *kp)
+{
+	return scnprintf(buf, PAGE_SIZE, "%u\n", boost_freq);
+}
+
+static const struct kernel_param_ops boost_freq_param_ops = {
+	.set = set_boost_freq,
+	.get = get_boost_freq,
+};
+module_param_cb(boost_freq, &boost_freq_param_ops, NULL, 0644);
+
+static int set_boost_duration_ms(const char *buf,
+				 const struct kernel_param *kp)
+{
+	unsigned int val;
+	int ret;
+
+	ret = kstrtouint(buf, 10, &val);
+	if (ret)
+		return ret;
+
+	if (val < 20 || val > 150)
+		return -EINVAL;
+
+	boost_duration_ms = val;
+	return 0;
+}
+
+static const struct kernel_param_ops boost_duration_ms_param_ops = {
+	.set = set_boost_duration_ms,
+	.get = param_get_uint,
+};
+module_param_cb(boost_duration_ms, &boost_duration_ms_param_ops, NULL, 0644);
 
 /* Available bits for boost state */
 enum {
@@ -69,11 +143,11 @@ static void max_unboost_worker(struct work_struct *work);
 	.boost_waitq = __WAIT_QUEUE_HEAD_INITIALIZER(boost_drv_g.boost_waitq)
 };
 
-static unsigned int get_input_boost_freq(struct cpufreq_policy *policy)
+static unsigned int get_boost_freq_for_policy(struct cpufreq_policy *policy)
 {
 	unsigned int freq;
 
-	freq = input_boost_freq;
+	freq = boost_freq;
 
 	return min(freq, policy->max);
 }
@@ -117,15 +191,18 @@ bool cpu_input_boost_within_input(unsigned long timeout_ms)
 
 static void __cpu_input_boost_kick(struct boost_drv *b)
 {
+	if (!input_boost_enabled)
+		return;
+
 	if (test_bit(SCREEN_OFF, &b->state))
 		return;
 
-	if (!input_boost_duration)
+	if (!boost_duration_ms)
 		return;
 
 	set_bit(INPUT_BOOST, &b->state);
 	if (!mod_delayed_work(system_unbound_wq, &b->input_unboost,
-			      msecs_to_jiffies(input_boost_duration)))
+			      msecs_to_jiffies(boost_duration_ms)))
 		wake_up(&b->boost_waitq);
 }
 
@@ -266,7 +343,7 @@ static int cpu_notifier_cb(struct notifier_block *nb, unsigned long action,
 	 * unboosting, set policy->min to the absolute min freq for the CPU.
 	 */
 	if (test_bit(INPUT_BOOST, &b->state))
-		policy->min = get_input_boost_freq(policy);
+		policy->min = get_boost_freq_for_policy(policy);
 	else
 		policy->min = get_min_freq(policy);
 
@@ -323,7 +400,7 @@ static int cpu_input_boost_input_connect(struct input_handler *handler,
 
 	handle->dev = dev;
 	handle->handler = handler;
-	handle->name = "cpu_input_boost_handle";
+	handle->name = "input_boost_handle";
 
 	ret = input_register_handle(handle);
 	if (ret)
@@ -379,15 +456,17 @@ static struct input_handler cpu_input_boost_input_handler = {
 	.event		= cpu_input_boost_input_event,
 	.connect	= cpu_input_boost_input_connect,
 	.disconnect	= cpu_input_boost_input_disconnect,
-	.name		= "cpu_input_boost_handler",
+	.name		= "input_boost_handler",
 	.id_table	= cpu_input_boost_ids
 };
 
-static int __init cpu_input_boost_init(void)
+static int __init input_boost_init(void)
 {
 	struct boost_drv *b = &boost_drv_g;
 	struct task_struct *thread;
 	int ret;
+
+	compute_boost_freq_cap();
 
 	b->cpu_notif.notifier_call = cpu_notifier_cb;
 	ret = cpufreq_register_notifier(&b->cpu_notif, CPUFREQ_POLICY_NOTIFIER);
@@ -411,7 +490,7 @@ static int __init cpu_input_boost_init(void)
 		goto unregister_handler;
 	}
 
-	thread = kthread_run(cpu_thread, b, "cpu_boostd");
+	thread = kthread_run(cpu_thread, b, "input_boostd");
 	if (IS_ERR(thread)) {
 		ret = PTR_ERR(thread);
 		pr_err("Failed to start CPU boost thread, err: %d\n", ret);
@@ -428,4 +507,4 @@ unregister_cpu_notif:
 	cpufreq_unregister_notifier(&b->cpu_notif, CPUFREQ_POLICY_NOTIFIER);
 	return ret;
 }
-subsys_initcall(cpu_input_boost_init);
+subsys_initcall(input_boost_init);

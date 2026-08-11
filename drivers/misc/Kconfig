@@ -4,6 +4,14 @@
 
 menu "Misc devices"
 
+config DAISY_MM
+	bool "DaisyForGaming memory pressure controls"
+	depends on SYSFS
+	help
+	  Exposes /sys/kernel/mm/swappiness (vm.swappiness, boot default 100)
+	  and /sys/kernel/mm/lmk_aggressive (moderate in-kernel LMK minfree
+	  tuning, dormant until enabled) on daisy.
+
 config SENSORS_LIS3LV02D
 	tristate
 	depends on INPUT
