@@ -1,0 +1,9 @@
+{
+  "kernel_version": "4.9.337-DaisyForGaming",
+  "release_date": "2026-08-11",
+  "download_url": "https://github.com/bmjubairdadu/DaisyForGaming/releases/download/kernel-v4.9.337-DaisyForGaming/DaisyForGaming-4.9.337-11-08-2026.zip",
+  "sha256": "ff38dae0c81c455af53d62776847d4bc742cb5b90df21f7abccde7d4620d24e6",
+  "release_url": "https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/kernel-v4.9.337-DaisyForGaming",
+  "changelog": "- input_boost: touch input boost (1.4 GHz / 60 ms default), /sys/module/input_boost/parameters/{enabled, boost_freq, boost_duration_ms}\n- mm: /sys/kernel/mm/lmk_aggressive (moderate 6-level minfree tuning, dormant until enabled)\n- mm: /sys/kernel/mm/swappiness (boot default 100, clamp 0-200)\n- net: TCP BBR + FQ qdisc, runtime-switchable (Cubic stays default)\n- block: BFQ scheduler, default I/O scheduler\n- fs: dynamic fsync toggle (/sys/kernel/dyn_fsync/dyn_fsync)\n- power: gaming_charge sysfs toggle",
+  "mandatory": false
+}
