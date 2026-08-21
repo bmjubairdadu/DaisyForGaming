@@ -19,96 +19,68 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show system info
-        run: |
-          echo "=== System Info ==="
-          uname -a
-          free -h
-          df -h
-          echo "=== CPU Info ==="
-          lscpu | head -20
-
-      - name: Install toolchain and build dependencies
+      - name: Install toolchain and dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
-            clang-13 llvm-13 lld-13 \
+            clang-14 llvm-14 lld-14 \
             gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
             gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi \
-            make zip python3 \
-            bc flex bison libssl-dev libelf-dev dwarves \
-            kmod cpio rsync \
-            2>&1 | tail -20
-          # Verify toolchain
-          clang-13 --version
-          aarch64-linux-gnu-gcc --version
-          arm-linux-gnueabi-gcc --version
-          # kernel LTO invokes unversioned names; map the clang-13 tools
+            make zip python3 bc flex bison libssl-dev libelf-dev dwarves \
+            kmod cpio rsync 2>&1 | tail -10
+          # Map clang-14 tools
           for t in clang clang++ llvm-ar llvm-as llvm-nm llvm-strip llvm-objcopy \
                    llvm-objdump llvm-size llvm-readelf ld.lld; do
-            sudo ln -sf "/usr/bin/$t-13" "/usr/local/bin/$t"
+            sudo ln -sf "/usr/bin/$t-14" "/usr/local/bin/$t"
           done
-          # Verify symlinks
           clang --version
-          ld.lld --version
+          aarch64-linux-gnu-gcc --version
 
-      - name: Show kernel config
+      - name: Configure kernel
         run: |
           make O=out daisy_defconfig
-          echo "=== Key config options ==="
-          grep -E "CONFIG_(ANDROID|FUTEX2|DFG|MEMCG|CRYPTO_USER|DEBUG_INFO|LTO)" out/.config | head -30
+          grep -E "CONFIG_(ANDROID|FUTEX2|DFG|MEMCG|CRYPTO_USER|DEBUG_INFO|LTO_CLANG)" out/.config
 
-      - name: Build kernel (daisy_defconfig)
+      - name: Build kernel
         run: |
           make -j$(nproc) O=out \
-            CC=clang-13 AR=llvm-ar-13 AS=llvm-as-13 NM=llvm-nm-13 LD=ld.lld \
-            STRIP=llvm-strip-13 OBJCOPY=llvm-objcopy-13 OBJDUMP=llvm-objdump-13 \
-            OBJSIZE=llvm-size-13 READELF=llvm-readelf-13 \
+            CC=clang AR=llvm-ar AS=llvm-as NM=llvm-nm LD=ld.lld \
+            STRIP=llvm-strip OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump \
+            OBJSIZE=llvm-size READELF=llvm-readelf \
             HOSTCC=gcc HOSTCXX=g++ \
             CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
             KBUILD_BUILD_USER=ci KBUILD_BUILD_HOST=github-actions \
-            Image.gz-dtb dtbs modules 2>&1 | tail -50
+            Image.gz-dtb dtbs modules 2>&1 | tail -30
 
-      - name: Verify artifacts
+      - name: Verify kernel image
         run: |
-          ls -la out/arch/arm64/boot/
           test -f out/arch/arm64/boot/Image.gz-dtb && echo "Image.gz-dtb OK"
-          gzip -dc out/arch/arm64/boot/Image.gz-dtb | strings | grep -m1 'Linux version [0-9]'
+          gzip -dc out/arch/arm64/boot/Image.gz-dtb | strings | grep -m1 'Linux version'
 
-      - name: Install kernel modules
+      - name: Install modules
         run: |
           rm -rf out/modules
           make -j$(nproc) O=out \
-            CC=clang-13 AR=llvm-ar-13 AS=llvm-as-13 NM=llvm-nm-13 LD=ld.lld \
-            STRIP=llvm-strip-13 OBJCOPY=llvm-objcopy-13 OBJDUMP=llvm-objdump-13 \
-            OBJSIZE=llvm-size-13 READELF=llvm-readelf-13 \
+            CC=clang AR=llvm-ar AS=llvm-as NM=llvm-nm LD=ld.lld \
+            STRIP=llvm-strip OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump \
+            OBJSIZE=llvm-size READELF=llvm-readelf \
             HOSTCC=gcc HOSTCXX=g++ \
             CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
             KBUILD_BUILD_USER=ci KBUILD_BUILD_HOST=github-actions \
-            INSTALL_MOD_PATH=out/modules modules_install 2>&1 | tail -30
-
-      - name: Show modules
-        run: |
-          if [ -d "out/modules" ]; then
-            find out/modules -name "*.ko" | head -20
-            echo "Total modules: $(find out/modules -name "*.ko" | wc -l)"
-          else
-            echo "No modules directory found"
-          fi
+            INSTALL_MOD_PATH=out/modules modules_install 2>&1 | tail -20
 
       - name: Package AnyKernel3 ZIP
         run: |
           mkdir -p dist
           rm -rf .pkg && cp -r pack/ak3 .pkg
           cp out/arch/arm64/boot/Image.gz-dtb .pkg/Image.gz-dtb
-          # Copy modules if any
           if [ -d "out/modules" ]; then
             find out/modules -name "*.ko" -exec cp {} .pkg/ \;
           fi
           cd .pkg && zip -r9q ../dist/DaisyForGaming_ci.zip .
           cd .. && sha256sum dist/DaisyForGaming_ci.zip
 
-      - name: Package Magisk module ZIP
+      - name: Package Magisk ZIP
         run: |
           mkdir -p magisk-module/system/lib/modules
           cp out/arch/arm64/boot/Image.gz-dtb magisk-module/
@@ -137,51 +109,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Download build artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           name: DaisyForGaming_ci
           path: dist
-
       - name: List artifacts
         run: ls -la dist/
-
       - name: Install gh CLI
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq gh
-
-      - name: Create GitHub Release
+          sudo apt-get update -qq && sudo apt-get install -y -qq gh
+      - name: Create Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
           ANYKERNEL_ZIP=$(ls dist/DaisyForGaming_ci.zip 2>/dev/null || true)
           MAGISK_ZIP=$(ls dist/dfg_kernel-*.zip 2>/dev/null | head -1 || true)
-          
           ASSETS=()
           [ -n "$ANYKERNEL_ZIP" ] && ASSETS+=("$ANYKERNEL_ZIP")
           [ -n "$MAGISK_ZIP" ] && ASSETS+=("$MAGISK_ZIP")
-          
-          if [ ${#ASSETS[@]} -eq 0 ]; then
-            echo "No artifacts found!"
-            exit 1
-          fi
-          
+          if [ ${#ASSETS[@]} -eq 0 ]; then echo "No artifacts!"; exit 1; fi
           NOTES="CI build from $(git rev-parse --short HEAD)
-
 **Artifacts:**
-- \`DaisyForGaming_ci.zip\` - AnyKernel3 TWRP flashable ZIP
-- \`dfg_kernel-*.zip\` - Magisk module ZIP
-
-**Installation:**
-- **TWRP**: Flash \`DaisyForGaming_ci.zip\`
-- **Magisk**: Install \`dfg_kernel-*.zip\` via Magisk Manager
-- **Fastboot**: \`fastboot boot out/arch/arm64/boot/Image.gz-dtb\`
-
-See [flash_instructions.md](https://github.com/bmjubairdadu/DaisyForGaming/blob/main/flash_instructions.md) for details."
-
-          gh release create "$TAG" "${ASSETS[@]}" \
-            --title "DaisyForGaming kernel $TAG" \
-            --notes "$NOTES"
+- DaisyForGaming_ci.zip - AnyKernel3 TWRP flashable ZIP
+- dfg_kernel-*.zip - Magisk module ZIP
+**Installation:** TWRP (AnyKernel3), Magisk Manager (Magisk ZIP), or fastboot boot Image.gz-dtb
+See flash_instructions.md"
+          gh release create "$TAG" "${ASSETS[@]}" --title "DaisyForGaming kernel $TAG" --notes "$NOTES"
