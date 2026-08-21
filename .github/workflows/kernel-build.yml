@@ -29,7 +29,6 @@ jobs:
             gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi \
             make zip python3 bc flex bison libssl-dev libelf-dev dwarves \
             kmod cpio rsync 2>&1 | tail -5
-          # Map clang-14 tools
           for t in clang clang++ llvm-ar llvm-as llvm-nm llvm-strip llvm-objcopy \
                    llvm-objdump llvm-size llvm-readelf ld.lld; do
             sudo ln -sf "/usr/bin/$t-14" "/usr/local/bin/$t"
@@ -162,15 +161,15 @@ jobs:
           NOTES="CI build from $(git rev-parse --short HEAD)
 
 **Artifacts:**
-- \`DaisyForGaming_ci.zip\` - AnyKernel3 TWRP flashable ZIP
-- \`dfg_kernel-*.zip\` - Magisk module ZIP
+- DaisyForGaming_ci.zip - AnyKernel3 TWRP flashable ZIP
+- dfg_kernel-*.zip - Magisk module ZIP
 
 **Installation:**
-- **TWRP**: Flash \`DaisyForGaming_ci.zip\`
-- **Magisk**: Install \`dfg_kernel-*.zip\` via Magisk Manager
-- **Fastboot**: \`fastboot boot out/arch/arm64/boot/Image.gz-dtb\`
+- TWRP: Flash DaisyForGaming_ci.zip
+- Magisk: Install dfg_kernel-*.zip via Magisk Manager
+- Fastboot: fastboot boot out/arch/arm64/boot/Image.gz-dtb
 
-See [flash_instructions.md](https://github.com/bmjubairdadu/DaisyForGaming/blob/main/flash_instructions.md) for details."
+See flash_instructions.md for details."
 
           gh release create "$TAG" "${ASSETS[@]}" \
             --title "DaisyForGaming kernel $TAG" \
