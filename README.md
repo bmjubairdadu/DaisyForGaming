@@ -99,15 +99,19 @@ Requirements: Linux (WSL works), Proton Clang 13 at
 git clone https://github.com/bmjubairdadu/DaisyForGaming.git
 cd DaisyForGaming
 
-# plain build (out-of-tree, O=out)
-./scripts/build_kernel.sh
+# plain build (out-of-tree, O=out) - uses clang auto-detect
+./build_kernel.sh
 
 # full release pipeline (build + package + GitHub Release + manifest)
 ./scripts/release_kernel.sh
+
+# also create flashable Magisk module ZIP
+./make_flashable.sh
 ```
 
 Artifacts appear in `out/arch/arm64/boot/` (`Image`, `Image.gz`,
-`Image.gz-dtb`), the flashable ZIP in `dist/`.
+`Image.gz-dtb`), the AnyKernel3 flashable ZIP in `dist/`,
+Magisk module ZIP in project root (`dfg_kernel-<date>.zip`).
 
 Complete guide: [docs/BUILD.md](docs/BUILD.md)
 
@@ -119,19 +123,26 @@ DaisyForGaming/
 │   └── configs/daisy_defconfig
 │   └── boot/dts/qcom/         # msm8953-qrd-sku3-daisy(.dts) + sakura
 ├── block/                     # BFQ scheduler (bfq-iosched.c + merged objects)
+├── drivers/platform/dfg/      # DFG sysfs control interface
 ├── drivers/power/supply/qcom/ # qpnp-smbcharger_d1a.c (gaming_charge)
 ├── fs/sync.c                  # dynamic fsync toggle
 ├── kernel/kallsyms.c          # KALLSYMS_HARDENED
 ├── net/ipv4/tcp_bbr.c         # BBR congestion control
 ├── pack/ak3/                  # AnyKernel3 template (TWRP flashable)
+├── magisk-module/             # Magisk module template
 ├── scripts/                   # kernel build scripts + project tooling
-│   ├── build_kernel.sh        # plain build
+│   ├── build_kernel.sh        # plain build (wrapper)
 │   ├── release_kernel.sh      # build + package + release + manifest
 │   └── sync_to_github.sh      # safe source synchronization
+├── ci/                        # CI static checks
 ├── docs/                      # this documentation
 ├── DFGController-update-checker/  # app-side update checker module
 ├── .github/workflows/         # CI (validate + build)
 ├── kernel_update.json         # update manifest for DFG Controller
+├── build_kernel.sh            # main build script (clang/GCC auto-detect)
+├── make_flashable.sh          # Magisk module ZIP creator
+├── flash_instructions.md      # flashing guide
+├── MIGRATION.md               # upgrade notes
 ├── Makefile                   # Linux 4.9.337 build system
 └── README.md
 ```

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # ci/check.sh - static checks for the DaisyForGaming kernel
 #

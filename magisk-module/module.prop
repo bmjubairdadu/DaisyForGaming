@@ -1,0 +1,8 @@
+id=daisyforgaming-kernel
+name=DaisyForGaming Kernel
+version=4.9.337
+versionCode=49337
+author=JUBAIR HOSEN
+description=DaisyForGaming custom kernel for Xiaomi Mi A2 Lite (daisy) with gaming optimizations, DFG control interface, and thermal management.
+support=https://github.com/bmjubairdadu/DaisyForGaming
+minMagisk=23000
