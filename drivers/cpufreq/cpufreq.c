@@ -682,6 +682,35 @@ static struct cpufreq_governor *find_governor(const char *str_governor)
 	return NULL;
 }
 
+static int cpufreq_parse_governor(char *str_governor, unsigned int *policy,
+				  struct cpufreq_governor **governor);
+static int cpufreq_set_policy(struct cpufreq_policy *policy,
+			      struct cpufreq_policy *new_policy);
+
+/**
+ * cpufreq_set_policy_governor - switch a policy to a named governor
+ * @policy: target policy
+ * @governor_name: name of a registered governor
+ *
+ * Mirrors the userspace "scaling_governor" sysfs store so kernel
+ * drivers (e.g. the DFG control interface) can switch governors.
+ * Returns 0 on success or a negative errno.
+ */
+int cpufreq_set_policy_governor(struct cpufreq_policy *policy,
+				const char *governor_name)
+{
+	struct cpufreq_policy new_policy;
+
+	memcpy(&new_policy, policy, sizeof(*policy));
+
+	if (cpufreq_parse_governor((char *)governor_name, &new_policy.policy,
+				   &new_policy.governor))
+		return -EINVAL;
+
+	return cpufreq_set_policy(policy, &new_policy);
+}
+EXPORT_SYMBOL_GPL(cpufreq_set_policy_governor);
+
 /**
  * cpufreq_parse_governor - parse a governor string
  */
