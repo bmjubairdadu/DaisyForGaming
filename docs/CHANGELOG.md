@@ -7,11 +7,37 @@ see [ARCHITECTURE.md](ARCHITECTURE.md) for the base.
 
 ## Unreleased
 
-- (nothing yet)
+- **DFG control interface** (`drivers/platform/dfg/dfg.c`,
+  `CONFIG_DFG`): unified runtime control at `/sys/devices/platform/dfg/` —
+  `profile` (performance/balanced/battery), `cpu_min_freq`/`cpu_max_freq`,
+  `governor`, `io_scheduler`, `thermal_override`, `boost_ms`, `deep_idle`,
+  `thermal_events`, `thermal_limits`, `vendor_compat`.
+- **Default performance mode** (`CONFIG_DFG_DEFAULT_PERF=y`): boots with
+  the performance profile (schedutil, min 1401 MHz) applied from an early
+  initcall, before userspace starts.
+- **Thermal override + hard limits** (DFG watchdog): soft cap 50 °C
+  (liftable via `thermal_override`), hard cap 60 °C that always enforces
+  safe frequencies and resets the override; transitions logged to dmesg
+  and `thermal_events` ring buffer; stock tsens/limiter framework
+  remains fully active.
+- **cpufreq governor switching helper** (`drivers/cpufreq/cpufreq.c`):
+  `cpufreq_set_policy_governor()` exported so drivers can switch
+  governors from kernel space.
+- **Android 11 cgroup baseline**: `CONFIG_MEMCG=y` +
+  `CONFIG_MEMCG_KMEM=y` added to `daisy_defconfig`; binder/ashmem/
+  cgroup scheduling already present.
+- **Build & CI**: `build_kernel.sh` (reproducible, clang/GCC auto-detect,
+  `--with-zip`), `ci/check.sh` + `ci/static-checks.yml` (checkpatch,
+  defconfig validation, Kconfig cross-check), `sepolicy/` sample for
+  DFG-Controller.
+- **Documentation**: `docs/SYSFS_API.md`, `Documentation/dfg/dfg-sysfs.rst`,
+  `MIGRATION.md`, `flash_instructions.md`, README overhaul.
+- **Boot boost**: `CONFIG_DFG_BOOT_BOOST_MS` (default 0) — optional
+  one-shot boost shortly after boot when default profile is performance.
 
 ---
 
-## 2026-08-11 — 4.9.337-DaisyForGaming (kernel-v4.9.337-DaisyForGaming, republished)
+## 2026-08-11 — 4.9.337-DaisyForGaming
 
 Updated build of the same version (banner unchanged). Flashable ZIP:
 `DaisyForGaming-4.9.337-11-08-2026.zip`

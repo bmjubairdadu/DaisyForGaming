@@ -1,0 +1,15 @@
+# SELinux contexts for the DFG control interface.
+#
+# file_contexts (label the sysfs nodes at boot; the kernel types them
+# sysfs_dfg because the label matches, per the sysfs SELinux LSM):
+#
+#   /sys/devices/platform/dfg(/.*)?  u:object_r:sysfs_dfg:s0
+#
+# seapp_contexts (run the app in its own domain):
+#
+#   user=system domain=dfg_controller_app name=com.daisyforgaming.controller
+#
+# If genfscon-based sysfs labelling is used instead (some Android
+# versions), add to genfs_contexts:
+#
+#   genfscon sysfs /devices/platform/dfg u:object_r:sysfs_dfg:s0

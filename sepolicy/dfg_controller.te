@@ -1,0 +1,32 @@
+# SELinux policy for the DFG-Controller app (daisy / msm8953 device policy)
+#
+# Merge this file into the device sepolicy tree, e.g.:
+#   device/xiaomi/daisy/sepolicy/dfg_controller.te
+# and add the contexts from dfg_controller_contexts. The app runs as
+# its own domain; only this domain (and root) can write the DFG nodes.
+
+type dfg_controller_app, domain;
+type dfg_controller_app_data_file, file_type, data_file_type;
+
+appdomain(dfg_controller_app)
+
+# Sysfs DFG control interface (kernel sets the type via sysfs_type()
+# macro from the attached file_contexts entry).
+type sysfs_dfg, fs_type, sysfs_type;
+
+# Read/write the DFG nodes
+allow dfg_controller_app sysfs_dfg:dir { search open read getattr };
+allow dfg_controller_app sysfs_dfg:file { open read write getattr };
+
+# Read the cpufreq/thermal informational nodes the app may display
+allow dfg_controller_app sysfs:dir search;
+allow dfg_controller_app sysfs_devices_system_cpu:file { open read getattr };
+allow dfg_controller_app sysfs_devices_system_cpu_cpufreq:file { open read getattr };
+allow dfg_controller_app sysfs_thermal:file { open read getattr };
+allow dfg_controller_app sysfs_thermal:dir search;
+
+# /proc info for status display
+allow dfg_controller_app proc_cpuinfo:file { open read getattr };
+allow dfg_controller_app proc_version:file { open read getattr };
+
+# dmesg not granted; use /sys/devices/platform/dfg/thermal_events instead.

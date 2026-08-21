@@ -29,7 +29,6 @@ Status legend: ✅ Implemented (verified) · 🟡 Partial · 🚧 Planned · ❓
 The following are **not** claimed as features of this kernel because they are
 not verified in the current source/config:
 
-- Custom CPU frequency tables or thermal policies
 - GPU overclock/underclock
 - Display or touch panel modifications (input boost tuning only — no panel, sensitivity, or calibration changes)
 - Audio modifications
