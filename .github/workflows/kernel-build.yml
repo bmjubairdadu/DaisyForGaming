@@ -14,10 +14,19 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Show system info
+        run: |
+          echo "=== System Info ==="
+          uname -a
+          free -h
+          df -h
+          echo "=== CPU Info ==="
+          lscpu | head -20
 
       - name: Install toolchain and build dependencies
         run: |
@@ -28,16 +37,29 @@ jobs:
             gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi \
             make zip python3 \
             bc flex bison libssl-dev libelf-dev dwarves \
-            kmod cpio rsync
+            kmod cpio rsync \
+            2>&1 | tail -20
+          # Verify toolchain
+          clang-13 --version
+          aarch64-linux-gnu-gcc --version
+          arm-linux-gnueabi-gcc --version
           # kernel LTO invokes unversioned names; map the clang-13 tools
           for t in clang clang++ llvm-ar llvm-as llvm-nm llvm-strip llvm-objcopy \
                    llvm-objdump llvm-size llvm-readelf ld.lld; do
             sudo ln -sf "/usr/bin/$t-13" "/usr/local/bin/$t"
           done
+          # Verify symlinks
+          clang --version
+          ld.lld --version
+
+      - name: Show kernel config
+        run: |
+          make O=out daisy_defconfig
+          echo "=== Key config options ==="
+          grep -E "CONFIG_(ANDROID|FUTEX2|DFG|MEMCG|CRYPTO_USER|DEBUG_INFO|LTO)" out/.config | head -30
 
       - name: Build kernel (daisy_defconfig)
         run: |
-          make O=out daisy_defconfig
           make -j$(nproc) O=out \
             CC=clang-13 AR=llvm-ar-13 AS=llvm-as-13 NM=llvm-nm-13 LD=ld.lld \
             STRIP=llvm-strip-13 OBJCOPY=llvm-objcopy-13 OBJDUMP=llvm-objdump-13 \
@@ -45,10 +67,11 @@ jobs:
             HOSTCC=gcc HOSTCXX=g++ \
             CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
             KBUILD_BUILD_USER=ci KBUILD_BUILD_HOST=github-actions \
-            Image.gz-dtb dtbs modules
+            Image.gz-dtb dtbs modules 2>&1 | tail -50
 
       - name: Verify artifacts
         run: |
+          ls -la out/arch/arm64/boot/
           test -f out/arch/arm64/boot/Image.gz-dtb && echo "Image.gz-dtb OK"
           gzip -dc out/arch/arm64/boot/Image.gz-dtb | strings | grep -m1 'Linux version [0-9]'
 
@@ -62,7 +85,16 @@ jobs:
             HOSTCC=gcc HOSTCXX=g++ \
             CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
             KBUILD_BUILD_USER=ci KBUILD_BUILD_HOST=github-actions \
-            INSTALL_MOD_PATH=out/modules modules_install
+            INSTALL_MOD_PATH=out/modules modules_install 2>&1 | tail -30
+
+      - name: Show modules
+        run: |
+          if [ -d "out/modules" ]; then
+            find out/modules -name "*.ko" | head -20
+            echo "Total modules: $(find out/modules -name "*.ko" | wc -l)"
+          else
+            echo "No modules directory found"
+          fi
 
       - name: Package AnyKernel3 ZIP
         run: |
@@ -111,6 +143,9 @@ jobs:
         with:
           name: DaisyForGaming_ci
           path: dist
+
+      - name: List artifacts
+        run: ls -la dist/
 
       - name: Install gh CLI
         run: |
