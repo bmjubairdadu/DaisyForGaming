@@ -23,7 +23,6 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq
-          # Install clang-13 from LLVM apt repository (required for LTO with this kernel)
           sudo apt-get install -y -qq wget gnupg lsb-release software-properties-common
           wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/llvm.gpg
           echo "deb [signed-by=/usr/share/keyrings/llvm.gpg] http://apt.llvm.org/jammy/ llvm-toolchain-jammy-13 main" | sudo tee /etc/apt/sources.list.d/llvm-toolchain-jammy-13.list
@@ -44,6 +43,64 @@ jobs:
           aarch64-linux-gnu-gcc --version | head -1
           ld.lld --version | head -1
 
+      - name: Toolchain diagnostics
+        run: |
+          set -euxo pipefail
+          echo "=== System info ==="
+          uname -a
+          lsb_release -a || true
+          echo ""
+          echo "=== Tool discovery ==="
+          which clang || true
+          clang --version || true
+          echo "---"
+          which clang-13 || true
+          clang-13 --version || true
+          echo "---"
+          which ld.lld || true
+          ld.lld --version || true
+          echo "---"
+          which ld.lld-13 || true
+          ld.lld-13 --version || true
+          echo "---"
+          which llvm-ar || true
+          llvm-ar --version || true
+          echo "---"
+          which llvm-ar-13 || true
+          llvm-ar-13 --version || true
+          echo "---"
+          which llvm-nm || true
+          llvm-nm --version || true
+          echo "---"
+          which llvm-objcopy || true
+          llvm-objcopy --version || true
+          echo "---"
+          dpkg -l | grep -E 'clang|llvm|lld' || true
+          echo ""
+          echo "=== Environment ==="
+          echo "PATH=$PATH"
+          echo "CC=$CC"
+          echo "CXX=$CXX"
+          echo "LLVM=$LLVM"
+          echo "LLVM_IAS=$LLVM_IAS"
+          echo "CROSS_COMPILE=$CROSS_COMPILE"
+          echo "CROSS_COMPILE_COMPAT=$CROSS_COMPILE_COMPAT"
+
+      - name: Verify LLVM apt repository
+        run: |
+          set -euo pipefail
+          echo "=== LLVM repo check ==="
+          cat /etc/apt/sources.list.d/llvm-toolchain-jammy-13.list
+          echo "---"
+          apt-cache policy clang-13 || true
+          apt-cache policy llvm-13 || true
+          apt-cache policy lld-13 || true
+          echo "---"
+          echo "=== Package availability ==="
+          apt-cache search '^clang-13$' || true
+          apt-cache search '^llvm-13$' || true
+          apt-cache search '^lld-13$' || true
+
       - name: Configure kernel
         run: |
           set -euo pipefail
@@ -61,7 +118,7 @@ jobs:
             HOSTCC=gcc HOSTCXX=g++ \
             CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
             KBUILD_BUILD_USER=ci KBUILD_BUILD_HOST=github-actions \
-            Image.gz-dtb dtbs modules 2>&1 | tail -30
+            Image.gz-dtb dtbs modules 2>&1 | tail -50
 
       - name: Verify kernel image
         run: |
