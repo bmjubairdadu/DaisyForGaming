@@ -23,15 +23,21 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq
+          # Install clang-13 from LLVM apt repository (required for LTO with this kernel)
+          sudo apt-get install -y -qq wget gnupg lsb-release software-properties-common
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/llvm.gpg
+          echo "deb [signed-by=/usr/share/keyrings/llvm.gpg] http://apt.llvm.org/jammy/ llvm-toolchain-jammy-13 main" | sudo tee /etc/apt/sources.list.d/llvm-toolchain-jammy-13.list
+          sudo apt-get update -qq
           sudo apt-get install -y -qq \
-            clang-14 llvm-14 lld-14 \
+            clang-13 llvm-13 lld-13 \
             gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
             gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi \
             make zip python3 bc flex bison libssl-dev libelf-dev dwarves \
             kmod cpio rsync 2>&1 | tail -5
+          # Map clang-13 tools
           for t in clang clang++ llvm-ar llvm-as llvm-nm llvm-strip llvm-objcopy \
                    llvm-objdump llvm-size llvm-readelf ld.lld; do
-            sudo ln -sf "/usr/bin/$t-14" "/usr/local/bin/$t"
+            sudo ln -sf "/usr/bin/$t-13" "/usr/local/bin/$t"
           done
           echo "=== Toolchain verified ==="
           clang --version | head -1
