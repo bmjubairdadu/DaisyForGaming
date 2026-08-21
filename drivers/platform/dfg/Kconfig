@@ -1,0 +1,149 @@
+#
+# DaisyForGaming control interface
+#
+
+config DFG
+	bool "DaisyForGaming control interface (DFG)"
+	depends on ARCH_QCOM && SYSFS && CPU_FREQ && BLOCK && THERMAL
+	help
+	  Exposes a runtime control interface for the DaisyForGaming
+	  kernel at /sys/devices/platform/dfg/:
+
+	    profile          - "performance" | "balanced" | "battery"
+	    cpu_min_freq     - per-policy minimum frequency (kHz)
+	    cpu_max_freq     - per-policy maximum frequency (kHz)
+	    governor         - cpufreq governor, applied to all policies
+	    io_scheduler     - block I/O elevator of the boot disk
+	    thermal_override - bool; allow the performance profile past
+	                       the soft thermal limit (the hard limit
+	                       always applies)
+	    boost_ms         - one-shot frequency boost duration (ms)
+	    deep_idle        - bool; disable deep cpuidle states
+	    thermal_events   - ring buffer of the last thermal events
+	    thermal_limits   - current soft/hard limits and thermal state
+	    vendor_compat    - result of the vendor/platform runtime check
+
+	  Writes require root (or the DFG-Controller app under the
+	  shipped SELinux policy). All tunables keep their defaults if
+	  the interface is disabled.
+
+if DFG
+
+config DFG_DEFAULT_PERF
+	bool "Apply the performance profile by default at boot"
+	default y
+	help
+	  Boots with the "performance" profile (see DFG_PERF_*) applied
+	  from kernel init, before userspace starts. Disable for a
+	  "balanced" boot default; the profile can always be switched at
+	  runtime through /sys/devices/platform/dfg/profile.
+
+config DFG_PERF_DISABLE_DEEP_IDLE
+	bool "Disable deep CPU idle states in performance mode"
+	depends on CPU_IDLE
+	default n
+	help
+	  Disables all cpuidle states on every CPU when the performance
+	  profile is applied at boot. Removes deep-sleep wake latency
+	  jank at the cost of battery life. Can be toggled at runtime
+	  via /sys/devices/platform/dfg/deep_idle.
+
+config DFG_PERF_GOVERNOR
+	string "Performance profile cpufreq governor"
+	default "schedutil"
+	help
+	  Governor applied when the "performance" profile is selected.
+	  Any registered governor name can be used at runtime.
+
+config DFG_BAL_GOVERNOR
+	string "Balanced profile cpufreq governor"
+	default "schedutil"
+
+config DFG_BAT_GOVERNOR
+	string "Battery profile cpufreq governor"
+	default "schedutil"
+
+config DFG_PERF_IOSCHED
+	string "Performance profile I/O scheduler"
+	default "noop"
+	help
+	  I/O scheduler applied to the boot disk with the "performance"
+	  profile. noop/mq-deadline minimize request latency; bfq/cfq
+	  trade latency for fairness.
+
+config DFG_BAL_IOSCHED
+	string "Balanced profile I/O scheduler"
+	default "bfq"
+
+config DFG_BAT_IOSCHED
+	string "Battery profile I/O scheduler"
+	default "cfq"
+
+config DFG_PERF_MIN_FREQ
+	int "Performance profile minimum frequency (kHz)"
+	default 1401600
+	help
+	  msm8953 boot-time baseline: 1401600 kHz keeps all cores above
+	  the freq/voltage cliff where frame pacing jank appears.
+
+config DFG_PERF_MAX_FREQ
+	int "Performance profile maximum frequency (kHz)"
+	default 2016000
+
+config DFG_BAL_MIN_FREQ
+	int "Balanced profile minimum frequency (kHz)"
+	default 652800
+
+config DFG_BAL_MAX_FREQ
+	int "Balanced profile maximum frequency (kHz)"
+	default 2016000
+
+config DFG_BAT_MIN_FREQ
+	int "Battery profile minimum frequency (kHz)"
+	default 300000
+
+config DFG_BAT_MAX_FREQ
+	int "Battery profile maximum frequency (kHz)"
+	default 1401600
+
+config DFG_THERM_SOFT_LIMIT
+	int "Soft thermal limit (milli-Celsius)"
+	default 50000
+	help
+	  Above this temperature the DFG watchdog caps the CPU frequency
+	  at DFG_THERMAL_SAFE_FREQ unless thermal_override is set.
+
+config DFG_THERM_HARD_LIMIT
+	int "Hard thermal limit (milli-Celsius)"
+	default 60000
+	help
+	  Above this temperature the DFG watchdog always caps the CPU
+	  frequency at DFG_THERMAL_SAFE_FREQ/MIN and resets
+	  thermal_override. The hard limit can never be disabled from
+	  userspace; the kernel thermal framework (tsens) remains fully
+	  active on top of this.
+
+config DFG_THERM_HYSTERESIS
+	int "Thermal recovery hysteresis (milli-Celsius)"
+	default 3000
+
+config DFG_THERMAL_SAFE_FREQ
+	int "Thermally safe maximum frequency (kHz)"
+	default 1401600
+
+config DFG_THERMAL_SAFE_MIN_FREQ
+	int "Thermally safe minimum frequency (kHz)"
+	default 652800
+
+config DFG_THERMAL_SAMPLE_MS
+	int "Thermal watchdog sample period (ms)"
+	default 2000
+
+config DFG_BOOT_BOOST_MS
+	int "Boot-time frequency boost duration (ms)"
+	default 0
+	help
+	  Duration of a full-frequency boost applied shortly after boot
+	  when the default profile is performance. 0 disables.
+
+endif # DFG
