@@ -36,8 +36,6 @@ jobs:
           done
 
       - name: Build kernel (daisy_defconfig)
-        # Toolchain MUST be passed on the make command line: the kernel
-        # Makefile assigns CC = $(CROSS_COMPILE)gcc, which overrides env vars.
         run: |
           make O=out daisy_defconfig
           make -j$(nproc) O=out \
@@ -58,8 +56,12 @@ jobs:
         run: |
           rm -rf out/modules
           make -j$(nproc) O=out \
-            CROSS_COMPILE=aarch64-linux-gnu- \
-            CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+            CC=clang-13 AR=llvm-ar-13 AS=llvm-as-13 NM=llvm-nm-13 LD=ld.lld \
+            STRIP=llvm-strip-13 OBJCOPY=llvm-objcopy-13 OBJDUMP=llvm-objdump-13 \
+            OBJSIZE=llvm-size-13 READELF=llvm-readelf-13 \
+            HOSTCC=gcc HOSTCXX=g++ \
+            CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+            KBUILD_BUILD_USER=ci KBUILD_BUILD_HOST=github-actions \
             INSTALL_MOD_PATH=out/modules modules_install
 
       - name: Package AnyKernel3 ZIP
@@ -75,7 +77,6 @@ jobs:
           cd .. && sha256sum dist/DaisyForGaming_ci.zip
 
       - name: Package Magisk module ZIP
-        if: always()
         run: |
           mkdir -p magisk-module/system/lib/modules
           cp out/arch/arm64/boot/Image.gz-dtb magisk-module/
@@ -121,7 +122,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
-          # Find the ZIP files
           ANYKERNEL_ZIP=$(ls dist/DaisyForGaming_ci.zip 2>/dev/null || true)
           MAGISK_ZIP=$(ls dist/dfg_kernel-*.zip 2>/dev/null | head -1 || true)
           
