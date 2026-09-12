@@ -4,7 +4,7 @@ S=/root/daisy-build/kernel_source
 D=/mnt/d/Kernel
 AK3=/root/daisy-build/AnyKernel3
 DATE=$(date +%Y%m%d)
-ZNAME="DaisyForGaming-v1.0-Gaming-4.9.337-${DATE}-AnyKernel3.zip"
+ZNAME="DaisyForGaming-v1.1-Gaming-4.9.337-${DATE}-AnyKernel3.zip"
 echo "=== 1. refresh AK3 ==="
 if [ ! -d "$AK3/.git" ]; then
   rm -rf "$AK3"

@@ -20,7 +20,7 @@ DEV_NAME="JUBAIR HOSEN"
 export KBUILD_BUILD_USER="JUBAIR"
 export KBUILD_BUILD_HOST="JUBAIR-HOSEN"
 LOCALVERSION="-DaisyForGaming"
-VERSION="v1.0-Gaming-4.9.337"
+VERSION="v1.1-Gaming-4.9.337"
 BUILD_DATE=$(date +%Y%m%d)
 ZIP_NAME="${KERNEL_NAME}-${VERSION}-${BUILD_DATE}-AnyKernel3.zip"
 
@@ -95,6 +95,11 @@ is_valid_daisy_49337() {
     grep -qE '^PATCHLEVEL[[:space:]]*=[[:space:]]*9$' "$KERNEL_SRC/Makefile" &&
     grep -qE '^SUBLEVEL[[:space:]]*=[[:space:]]*337$' "$KERNEL_SRC/Makefile" &&
     git -C "$KERNEL_SRC" remote -v 2>/dev/null | grep -q "TogoFire/kernel_xiaomi_panda"
+}
+
+apply_tree_patches() {
+  msg "Applying tree patches (FolkPatch compat + embedded IKCONFIG fix)..."
+  bash "$BASE_DIR/scripts/apply-tree-patches.sh" "$KERNEL_SRC"
 }
 
 clone_kernel_source() {
@@ -245,6 +250,7 @@ case "${1:-all}" in
     setup_toolchain
     clone_kernel_source
     verify_no_root
+    apply_tree_patches
     apply_gaming_config
     do_build
     ;;
@@ -254,6 +260,7 @@ case "${1:-all}" in
     setup_toolchain
     clone_kernel_source
     verify_no_root
+    apply_tree_patches
     apply_gaming_config
     do_build
     do_mkzip

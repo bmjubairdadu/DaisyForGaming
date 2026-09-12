@@ -1,0 +1,25 @@
+diff --git a/kernel/kallsyms.c b/kernel/kallsyms.c
+index c2e59ed3acc..87e067cac8e 100644
+--- a/kernel/kallsyms.c
++++ b/kernel/kallsyms.c
+@@ -198,7 +198,9 @@ static unsigned long kallsyms_sym_address(int idx)
+ }
+ 
+ /* Lookup the address for this symbol. Returns 0 if not found. */
+-unsigned long kallsyms_lookup_name(const char *name)
++/* __used: keep for post-build patchers (FolkPatch/KernelPatch) even when
++   CONFIG_MODULES is off and --gc-sections would otherwise discard it. */
++__attribute__((__section__(".text.kallsyms_lookup_name"))) unsigned long __used kallsyms_lookup_name(const char *name)
+ {
+ 	char namebuf[KSYM_NAME_LEN];
+ 	unsigned long i;
+@@ -214,7 +216,8 @@ unsigned long kallsyms_lookup_name(const char *name)
+ }
+ EXPORT_SYMBOL_GPL(kallsyms_lookup_name);
+ 
+-int kallsyms_on_each_symbol(int (*fn)(void *, const char *, struct module *,
++/* __used: same reason - runtime symbol resolution anchor for patchers. */
++__attribute__((__section__(".text.kallsyms_on_each_symbol"))) int __used kallsyms_on_each_symbol(int (*fn)(void *, const char *, struct module *,
+ 				      unsigned long),
+ 			    void *data)
+ {

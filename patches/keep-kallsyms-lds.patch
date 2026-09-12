@@ -1,0 +1,13 @@
+diff --git a/arch/arm64/kernel/vmlinux.lds.S b/arch/arm64/kernel/vmlinux.lds.S
+index 21ff622c9b2..ba6bd8a5cbf 100644
+--- a/arch/arm64/kernel/vmlinux.lds.S
++++ b/arch/arm64/kernel/vmlinux.lds.S
+@@ -140,6 +140,8 @@ SECTIONS
+ 			IRQENTRY_TEXT
+ 			SOFTIRQENTRY_TEXT
+ 			ENTRY_TEXT
++			KEEP(*(.text.kallsyms_lookup_name))
++			KEEP(*(.text.kallsyms_on_each_symbol))
+ 			TEXT_TEXT
+ 			SCHED_TEXT
+ 			CPUIDLE_TEXT

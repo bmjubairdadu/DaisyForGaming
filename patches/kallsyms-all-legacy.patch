@@ -1,3 +1,5 @@
+diff --git a/init/Kconfig b/init/Kconfig
+index 8c0dcc3da63..f9cdc1982cd 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
 @@ -1380,7 +1380,7 @@ config KALLSYMS

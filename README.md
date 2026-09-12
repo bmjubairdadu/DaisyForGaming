@@ -1,4 +1,4 @@
-# DaisyForGaming v1.0 Kernel for Xiaomi Mi A2 Lite (daisy) - 4.9.337 Gaming Kernel by JUBAIR HOSEN
+# DaisyForGaming v1.1 Kernel for Xiaomi Mi A2 Lite (daisy) - 4.9.337 Gaming Kernel by JUBAIR HOSEN
 
 > **Daisy kernel | Mi A2 Lite custom kernel | msm8953 Snapdragon 625 kernel | Cool & Smooth - No Heat, No Lag | 100% SAFE - No Pre-Root**
 
@@ -8,8 +8,10 @@ Kernel **4.9.337 `-DaisyForGaming`** only - this project contains no 3.18 code.
 Base: verified **TogoFire/kernel_xiaomi_panda** Linux 4.9.337 (`daisy_defconfig`)
 + gaming branding, safe no-root policy, Treble/BBR/ZRAM tweaks, modern AK3 flash UI.
 
-v1.0 adds (all boot-safe, researched in-tree): `performance` + `gaming` CPU governors,
+v1.1 adds (all boot-safe, researched in-tree): `performance` + `gaming` CPU governors,
 wakelock filter (default OFF), DT2W gesture sysfs, devfreq boost, BFQ/BBR/KCAL.
+v1.1 fixes FolkPatch boot: embedded IKCONFIG now matches the real build
+(KALLSYMS_ALL=y) + keeps `kallsyms_lookup_name` for KernelPatch.
 
 Compatible with **Android 9-14**, Stock + LineageOS / PE / Evolution X / crDroid / Havoc / Arrow.
 
@@ -17,16 +19,16 @@ Compatible with **Android 9-14**, Stock + LineageOS / PE / Evolution X / crDroid
 
 Get the latest AnyKernel3 flashable zip from
 [Releases](https://github.com/bmjubairdadu/DaisyForGaming/releases) -
-`DaisyForGaming-v2.3-Gaming-4.9.337-*-AnyKernel3.zip`. Flash with TWRP / OrangeFox.
+`DaisyForGaming-v1.1-Gaming-4.9.337-*-AnyKernel3.zip`. Flash with TWRP / OrangeFox.
 
 ## Flash
-1. Download `DaisyForGaming-v2.3-Gaming-4.9.337-*.zip`
+1. Download `DaisyForGaming-v1.1-Gaming-4.9.337-*.zip`
 2. TWRP/OrangeFox -> backup boot -> flash zip -> wipe cache/dalvik -> reboot
 
 ## Build
 ```bash
 bash build.sh all
-# out/DaisyForGaming-v2.3-Gaming-4.9.337-*.zip
+# out/DaisyForGaming-v1.1-Gaming-4.9.337-*.zip
 ```
 
 ## Project
@@ -41,7 +43,7 @@ DaisyForGaming/
 └── .github/workflows/build.yml     # CI build
 ```
 
-- Name: DaisyForGaming v1.0-Gaming-4.9.337
+- Name: DaisyForGaming v1.1-Gaming-4.9.337
 - Developer: JUBAIR HOSEN (`JUBAIR` / `JUBAIR-HOSEN` / `-DaisyForGaming`)
 - Base: TogoFire/kernel_xiaomi_panda Linux 4.9.337
 - SAFE: No Pre-Root (No KernelSU/APatch) - anti-cheat safe
@@ -58,7 +60,7 @@ daisy treble kernel, xiaomi msm8953 kernel, daisy anykernel3, daisy folkpatch re
 
 ## FAQ
 
-- **Best custom kernel for Mi A2 Lite (daisy)?** DaisyForGaming v2.3 - 4.9.337 gaming kernel, cool & smooth, no heat no lag.
+- **Best custom kernel for Mi A2 Lite (daisy)?** DaisyForGaming v1.1 - 4.9.337 gaming kernel, cool & smooth, no heat no lag.
 - **Which Android versions?** Android 9, 10, 11, 12, 13, 14 (Stock, LineageOS, Pixel Experience, Evolution X, crDroid, Havoc, Arrow).
 - **Safe for games / anti-cheat?** Yes - 100% SAFE, no pre-root (no KernelSU/APatch inside); optionally root later with FolkPatch.
 - **Kernel version?** Linux 4.9.337 `-DaisyForGaming` for msm8953 / Snapdragon 625 (MSM8953 + PMI8950).
