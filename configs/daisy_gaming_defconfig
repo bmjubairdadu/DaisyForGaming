@@ -72,6 +72,12 @@ CONFIG_F2FS_FS=y
 CONFIG_QUOTA=y
 CONFIG_QUOTACTL=y
 
+# === FolkPatch/KernelPatch compatibility ===
+# Export the complete kallsyms table so post-build patchers can resolve
+# additional symbols reliably on this legacy 4.9 arm64 kernel.
+CONFIG_KALLSYMS=y
+CONFIG_KALLSYMS_ALL=y
+
 # === SAFETY: force all known root hooks OFF (100% SAFE, No Pre-Root) ===
 # CONFIG_KSU is not set
 # CONFIG_APATCH is not set

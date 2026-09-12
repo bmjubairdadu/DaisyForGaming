@@ -1,4 +1,4 @@
-DaisyForGaming v2.3-Gaming-4.9.337 by JUBAIR HOSEN
+DaisyForGaming v1.0-Gaming-4.9.337 by JUBAIR HOSEN
 Device: Mi A2 Lite (daisy/msm8953)
 Base: TogoFire/kernel_xiaomi_panda Linux 4.9.337
 Localversion: -DaisyForGaming
@@ -9,4 +9,3 @@ DT2W gesture sysfs, wakelock filter (default OFF), dyn-fsync sysfs,
 ZRAM, Treble/Binder/F2FS
 NOT included (unsupported in tree): interactive gov, CPU_BOOST (broken),
 GPU/CPU OC, FastCharge tunable, sound mod, HZ300
-

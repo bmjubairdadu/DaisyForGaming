@@ -1,0 +1,11 @@
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -1380,7 +1380,7 @@ config KALLSYMS
+ 
+ config KALLSYMS_ALL
+ 	bool "Include all symbols in kallsyms"
+-	depends on DEBUG_KERNEL && KALLSYMS
++	depends on KALLSYMS
+ 	help
+ 	   Normally kallsyms only contains the symbols of functions for nicer
+ 	   OOPS messages and backtraces (i.e., symbols from the text and inittext

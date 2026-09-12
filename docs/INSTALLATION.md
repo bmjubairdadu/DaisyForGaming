@@ -10,4 +10,4 @@ Requirements: Xiaomi Mi A2 Lite (daisy) only (NOT jasmine_sprout / Mi A2), unloc
 Works on Stock + LineageOS / PE / Evolution X / crDroid / Havoc / Arrow (Android 9-14)
 because AnyKernel3 keeps your ramdisk.
 
-Latest flashable zip: https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/v2.3-4.9.337
+Latest flashable zip: https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/v1.0-4.9.337
