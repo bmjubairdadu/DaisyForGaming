@@ -1,6 +1,6 @@
-# DaisyForGaming - Mi A2 Lite (daisy) - by JUBAIR HOSEN
+# DaisyForGaming Kernel for Xiaomi Mi A2 Lite (daisy) - 4.9.337 Gaming Kernel by JUBAIR HOSEN
 
-> **Cool & Smooth - No Heat, No Lag | 100% SAFE - No Pre-Root**
+> **Daisy kernel | Mi A2 Lite custom kernel | msm8953 Snapdragon 625 kernel | Cool & Smooth - No Heat, No Lag | 100% SAFE - No Pre-Root**
 
 Gaming kernel for **Xiaomi Mi A2 Lite (daisy)** - Snapdragon 625 (MSM8953).
 Kernel **4.9.337 `-DaisyForGaming`** only - this project contains no 3.18 code.
@@ -12,6 +12,12 @@ v2.3 adds (all boot-safe, researched in-tree): `performance` + `gaming` CPU gove
 wakelock filter (default OFF), DT2W gesture sysfs, devfreq boost, BFQ/BBR/KCAL.
 
 Compatible with **Android 9-14**, Stock + LineageOS / PE / Evolution X / crDroid / Havoc / Arrow.
+
+## Download (flashable zip)
+
+Get the latest AnyKernel3 flashable zip from
+[Releases](https://github.com/bmjubairdadu/DaisyForGaming/releases) -
+`DaisyForGaming-v2.3-Gaming-4.9.337-*-AnyKernel3.zip`. Flash with TWRP / OrangeFox.
 
 ## Flash
 1. Download `DaisyForGaming-v2.3-Gaming-4.9.337-*.zip`
@@ -41,3 +47,19 @@ DaisyForGaming/
 - SAFE: No Pre-Root (No KernelSU/APatch) - anti-cheat safe
 
 Flash at your own risk. Always backup boot first.
+
+## Keywords (search: daisy kernel, Mi A2 Lite kernel, msm8953 kernel)
+
+daisy kernel, xiaomi daisy kernel, mi a2 lite kernel, mi a2 lite custom kernel,
+msm8953 kernel, snapdragon 625 kernel, sdm625 kernel, daisy custom kernel,
+4.9.337 kernel daisy, daisy gaming kernel, best kernel for mi a2 lite,
+daisy lineageos kernel, daisy crdroid kernel, daisy evolution x kernel,
+daisy treble kernel, xiaomi msm8953 kernel, daisy anykernel3, daisy folkpatch ready kernel.
+
+## FAQ
+
+- **Best custom kernel for Mi A2 Lite (daisy)?** DaisyForGaming v2.3 - 4.9.337 gaming kernel, cool & smooth, no heat no lag.
+- **Which Android versions?** Android 9, 10, 11, 12, 13, 14 (Stock, LineageOS, Pixel Experience, Evolution X, crDroid, Havoc, Arrow).
+- **Safe for games / anti-cheat?** Yes - 100% SAFE, no pre-root (no KernelSU/APatch inside); optionally root later with FolkPatch.
+- **Kernel version?** Linux 4.9.337 `-DaisyForGaming` for msm8953 / Snapdragon 625 (MSM8953 + PMI8950).
+- **Treble / vendor?** Yes - Project Treble compatible, binderized HALs, vendor partition mounting for msm8953.
