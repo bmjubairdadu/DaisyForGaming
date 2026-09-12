@@ -14,10 +14,10 @@ device.name2=msm8953
 supported.versions=9-14
 '; }
 
-block=/dev/block/bootdevice/by-name/boot;
-is_slot_device=1;
-ramdisk_compression=auto;
-patch_vbmeta_flag=auto;
+BLOCK=boot;
+IS_SLOT_DEVICE=1;
+RAMDISK_COMPRESSION=auto;
+PATCH_VBMETA_FLAG=auto;
 
 ### AnyKernel3 install ###
 . tools/ak3-core.sh;
