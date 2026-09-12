@@ -1,0 +1,3 @@
+[submodule "kernel_source"]
+	path = kernel_source
+	url = https://github.com/TogoFire/kernel_xiaomi_panda.git
