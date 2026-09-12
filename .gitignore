@@ -1,0 +1,8 @@
+# Build outputs and fetched trees - never commit these.
+kernel_source/
+out/
+toolchain/proton-clang/
+AnyKernel3/
+*.orig
+*.rej
+*.log

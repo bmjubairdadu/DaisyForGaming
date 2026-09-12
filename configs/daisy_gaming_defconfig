@@ -1,0 +1,79 @@
+# DaisyForGaming - gaming + Treble fragment for verified 4.9.337 daisy
+# Base: TogoFire/kernel_xiaomi_panda @ ff7b84e (VERSION=4 PATCHLEVEL=9 SUBLEVEL=337)
+# Merged over stock daisy_defconfig by build.sh.
+# Minimal-safe only: no choice/default overrides, no arch-incompatible symbols.
+
+# === CPU governors (v2.3: performance.c proven in tree + gaming backport) ===
+# Proven files: cpufreq_performance.c + cpufreq_powersave.c exist in tree.
+# v2.3 wires them via Kconfig/Makefile (powersave-template API, boot-safe).
+# INTERACTIVE does NOT exist in tree - excluded to avoid bootloop.
+CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y
+CONFIG_CPU_FREQ_GOV_ONDEMAND=y
+CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
+CONFIG_CPU_FREQ_GOV_POWERSAVE=y
+CONFIG_CPU_FREQ_GOV_USERSPACE=y
+CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
+CONFIG_CPU_FREQ_GOV_GAMING=y
+# NOTE: CONFIG_CPU_BOOST intentionally OFF - cpu-boost.c in this tree includes
+# <uapi/linux/sched/types.h> which does not exist -> compile break / boot risk.
+# Stock INPUT_BOOST (already y with safe 652800/1401600 freqs) covers touch boost.
+CONFIG_CPU_INPUT_BOOST=y
+CONFIG_CGROUP_SCHEDTUNE=y
+
+# === TCP congestion: BBR available for gaming, keep stock westwood default ===
+# Proven: TCP_CONG_BBR/CUBIC/WESTWOOD exist. Do NOT touch DEFAULT_* choice
+# (choice override = silentoldconfig hang risk). Default stays westwood,
+# user can echo bbr > /proc/sys/net/ipv4/tcp_congestion_control.
+CONFIG_TCP_CONG_BBR=y
+CONFIG_TCP_CONG_CUBIC=y
+CONFIG_TCP_CONG_WESTWOOD=y
+
+# === IO scheduler: BFQ exists in tree, CFQ stays default (boot-safe) ===
+# Proven: IOSCHED_BFQ/CFQ/NOOP exist, default CFQ. Do NOT touch DEFAULT_*
+# choice. BFQ available at runtime via /sys/block/*/queue/scheduler.
+CONFIG_IOSCHED_BFQ=y
+CONFIG_BFQ_GROUP_IOSCHED=y
+CONFIG_IOSCHED_CFQ=y
+CONFIG_IOSCHED_NOOP=y
+
+# === GPU: msm-adreno-tz already default, adreno_idler present ===
+# Proven: DEVFREQ_GOV_QCOM_ADRENO_TZ=y + ADRENO_IDLER=y + default
+# "msm-adreno-tz" already in stock defconfig. No DTB OC (GPU 650MHz stock
+# table kept - DTB freq edit = hard-brick/bootloop risk on daisy panel).
+CONFIG_DEVFREQ_GOV_QCOM_ADRENO_TZ=y
+CONFIG_ADRENO_IDLER=y
+
+# === Display: KCAL driver exists, enable control (proven symbol) ===
+# Proven: FB_MSM_MDSS=y + mdss_mdp_kcal_ctrl.c + symbol FB_MSM_MDSS_KCAL_CTRL.
+CONFIG_FB_MSM_MDSS_KCAL_CTRL=y
+
+# === ZRAM: stock defconfig already y, keep (no LZ4 symbol exists) ===
+# Proven: ZRAM=y + CRYPTO_LZ4=y + default comp "lz4" already in tree.
+CONFIG_ZRAM=y
+CONFIG_ZSMALLOC=y
+
+# === Wakelock blocker (v2.3 minimal sysfs filter, default OFF = stock boot) ===
+# Patched in kernel/power/wakelock.c: module param "wakelock_block".
+# Empty by default -> pm_wake_lock path unchanged -> boot-safe.
+# User enables at runtime: echo "wlan_rx" > /sys/module/wakelock/parameters/wakelock_block
+CONFIG_PM_WAKELOCKS=y
+
+# === DT2W: Focaltech gesture sysfs already present (FTS_GESTURE_EN=1) ===
+# Proven: fts_gesture_mode sysfs node in focaltech_gesture.c.
+# Enable via: echo 1 > /sys/devices/soc/.../i2c.../fts_gesture_mode (Kernel Adiutor/EXKM).
+# No DTS edit (panel DTS touch node edit = bootloop risk).
+# Fsync sysfs (fsync_enabled @ /sys/module/sync/parameters) + powersuspend hooks already y.
+CONFIG_DEBUG_FS=y
+CONFIG_ANDROID_BINDER_IPC=y
+CONFIG_ION=y
+CONFIG_OVERLAY_FS=y
+CONFIG_DM_VERITY=y
+CONFIG_F2FS_FS=y
+CONFIG_QUOTA=y
+CONFIG_QUOTACTL=y
+
+# === SAFETY: force all known root hooks OFF (100% SAFE, No Pre-Root) ===
+# CONFIG_KSU is not set
+# CONFIG_APATCH is not set
+# CONFIG_KPM is not set
+# CONFIG_FOLKPATCH is not set

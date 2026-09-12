@@ -1,0 +1,27 @@
+name: Build DaisyForGaming 4.9.337
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt update
+          sudo apt install -y git make bc bison flex libssl-dev libelf-dev \
+            build-essential gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi \
+            python3 cpio zip unzip curl
+      - name: Toolchain info (4.9.337 safe, no pre-root)
+        run: echo "DaisyForGaming v2.3 4.9.337 by JUBAIR HOSEN - GCC cross + Proton ld.lld, No KSU/APatch"
+      - name: Build Kernel (verified TogoFire 4.9.337 daisy + gaming + GCC)
+        run: bash build.sh all
+      - name: Upload zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: DaisyForGaming-4.9.337
+          path: out/DaisyForGaming-v2.3-Gaming-4.9.337-*.zip
