@@ -40,8 +40,9 @@ DaisyForGaming/
 ├── configs/daisy_gaming_defconfig  # gaming + Treble fragment (4.9.337-safe only)
 ├── .ak3-custom/                    # our anykernel.sh banner + version + thermal conf
 ├── AnyKernel3/                     # fetched osm0sis engine (ignored by git)
-├── scripts/                        # STORE repack + banner check
-├── toolchain/setup-clang.sh        # Proton host tools (GCC cross from apt)
+├── scripts/                        # apply-tree-patches + wsl-build + watch-progress + vintf-perblock
+├── patches/                        # 4 FolkPatch-safe tree patches (banner, kallsyms x2, ikconfig)
+├── toolchain/                      # Proton host tools (ignored, fetched by build.sh)
 └── .github/workflows/build.yml     # CI build
 ```
 
