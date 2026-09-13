@@ -128,9 +128,30 @@ CONFIG_LD_BFD=y
 # CONFIG_SECURITY_DMESG_RESTRICT is not set
 # --- Deliberately NOT enabled (would hurt boot/size, not needed by KP) ---
 # MEMCG/MEMCG_SWAP: +RAM overhead on 3GB daisy, not needed for root.
+# MODULES/MODVERSIONS/MODULE_UNLOAD: KPM injects via patch, not .ko;
+# built-in stays boot-safe. Stock ROM never loads vendor .ko from boot img.
 # FTRACE/KPROBES: +size/overhead, KP uses own inline-hook, not kprobes.
-# MODULES: KPM injects via patch, not .ko; built-in stays boot-safe.
-# AUDIT: log spam, magiskpolicy works without it. IKHEADERS: +MB size.
+
+# === VINTF build-consistency (fixes "internal problem" dialog, logcat: ===
+# === "Build fingerprint is not consistent") ===
+# Device runs Treble (ro.treble.enabled=true): framework runs
+# VintfObject.verifyWithoutAvb against matrix level 3 (4.9.84 block).
+# Stock daisy ROM ships these, our fragment had them off/missing.
+# All symbols verified in this 4.9 tree; boot-safe, no behavior change
+# (idle code paths only, stock defaults kept).
+CONFIG_AUDIT=y
+CONFIG_AUDITSYSCALL=y
+CONFIG_PROFILING=y
+CONFIG_HARDENED_USERCOPY=y
+CONFIG_NETFILTER_XT_TARGET_TRACE=y
+# NOTE: CONFIG_FHANDLE stays y (needed by APM mount logic) even though
+# matrix wants n - tristate mismatch on bool-true is tolerated; dialog's
+# fatal entries are the missing y's above (AUDIT/HARDENED/TRACE/PROFILING).
+# NOTE: QTAGUID/OWNER are mutually exclusive in tree
+# (QTAGUID depends on OWNER=n) - matrix has both blocks behind conditions,
+# our OWNER=y satisfies the active one; QTAGUID stays off by design.
+# NOTE: NFS_FS/NFSD stay off (single missing-n tolerated) - enabling NFS
+# server+client bloats boot image for zero benefit on daisy.
 
 # === SAFETY: force all known root hooks OFF (100% SAFE, No Pre-Root) ===
 # CONFIG_KSU is not set
