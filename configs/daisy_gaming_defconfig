@@ -81,9 +81,11 @@ CONFIG_KALLSYMS_ALL=y
 # made explicit; symbols verified in fs/Kconfig).
 CONFIG_TMPFS_XATTR=y
 CONFIG_TMPFS_POSIX_ACL=y
-# File-handle syscalls used by mount/module logic (init/Kconfig, default y,
-# boot-safe; base had it off).
-CONFIG_FHANDLE=y
+# File-handle syscalls (init/Kconfig, default y in tree).
+# VINTF matrix wants n and stock daisy base has it off, so keep it OFF
+# to stay byte-consistent with stock. KP/APM do NOT require it
+# (official KP requirement is only KALLSYMS).
+# CONFIG_FHANDLE is not set
 # Let FolkPatch app read running config via /proc/config.gz (already in base).
 CONFIG_IKCONFIG=y
 CONFIG_IKCONFIG_PROC=y
@@ -144,9 +146,8 @@ CONFIG_AUDITSYSCALL=y
 CONFIG_PROFILING=y
 CONFIG_HARDENED_USERCOPY=y
 CONFIG_NETFILTER_XT_TARGET_TRACE=y
-# NOTE: CONFIG_FHANDLE stays y (needed by APM mount logic) even though
-# matrix wants n - tristate mismatch on bool-true is tolerated; dialog's
-# fatal entries are the missing y's above (AUDIT/HARDENED/TRACE/PROFILING).
+# NOTE: CONFIG_FHANDLE stays off to match VINTF matrix (want n) and stock
+# base. KP official requirement is only KALLSYMS; APM works without it.
 # NOTE: QTAGUID/OWNER are mutually exclusive in tree
 # (QTAGUID depends on OWNER=n) - matrix has both blocks behind conditions,
 # our OWNER=y satisfies the active one; QTAGUID stays off by design.

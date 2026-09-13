@@ -25,20 +25,23 @@ echo 1 > /sys/devices/system/cpu/cpufreq/schedutil/iowait_boost_enabled 2>/dev/n
 echo msm-adreno-tz > /sys/class/kgsl/kgsl-3d0/devfreq/governor 2>/dev/null
 echo Y > /sys/module/adreno_idler/parameters/adreno_idler_active 2>/dev/null
 
-# === I/O: BFQ available, CFQ default (maple does NOT exist in this tree) ===
-echo bfq > /sys/block/mmcblk0/queue/scheduler 2>/dev/null
-echo 1024 > /sys/block/mmcblk0/queue/read_ahead_kb 2>/dev/null
-echo 0 > /sys/block/mmcblk0/queue/iostats 2>/dev/null
-echo 0 > /sys/block/mmcblk0/queue/add_random 2>/dev/null
+# === I/O: keep stock CFQ default (video-smooth). BFQ only on demand: ===
+# BFQ forces deep queue reordering that stalls video decode on msm8953.
+# Keep CFQ (stock, low jitter). Switch manually only for benchmarks:
+# echo bfq > /sys/block/mmcblk0/queue/scheduler 2>/dev/null
+echo 512 > /sys/block/mmcblk0/queue/read_ahead_kb 2>/dev/null
+echo 1 > /sys/block/mmcblk0/queue/iostats 2>/dev/null
+echo 1 > /sys/block/mmcblk0/queue/add_random 2>/dev/null
 
-# === Memory ===
-echo 0 > /proc/sys/vm/swappiness 2>/dev/null
-echo 10 > /proc/sys/vm/dirty_ratio 2>/dev/null
-echo 5 > /proc/sys/vm/dirty_background_ratio 2>/dev/null
+# === Memory (video-smooth: keep swap + background writeback stock-ish) ===
+echo 60 > /proc/sys/vm/swappiness 2>/dev/null
+echo 20 > /proc/sys/vm/dirty_ratio 2>/dev/null
+echo 10 > /proc/sys/vm/dirty_background_ratio 2>/dev/null
 
-# === Network: BBR available, westwood stock default ===
-echo bbr > /proc/sys/net/ipv4/tcp_congestion_control 2>/dev/null
-echo 1 > /proc/sys/net/ipv4/tcp_low_latency 2>/dev/null
+# === Network: keep stock westwood (video-stable). BBR only on demand: ===
+# BBR's aggressive pacing + tcp_low_latency cause rebuffering on weak links.
+# echo bbr > /proc/sys/net/ipv4/tcp_congestion_control 2>/dev/null
+echo 0 > /proc/sys/net/ipv4/tcp_low_latency 2>/dev/null
 
 # === Fsync stays ON (data safety). Toggle only if you accept data-loss risk:
 # echo N > /sys/module/sync/parameters/fsync_enabled 2>/dev/null
