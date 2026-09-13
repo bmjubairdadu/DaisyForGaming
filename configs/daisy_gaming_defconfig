@@ -90,7 +90,8 @@ CONFIG_TMPFS_POSIX_ACL=y
 CONFIG_IKCONFIG=y
 CONFIG_IKCONFIG_PROC=y
 CONFIG_PRINTK=y
-# NOTE: TRIM_UNUSED_KSYMS depends on MODULES (off here) so it stays off.
+# NOTE: TRIM_UNUSED_KSYMS stays off (depends on MODULES && !UNUSED_SYMBOLS,
+# but UNUSED_SYMBOLS would hide symbols KP needs at runtime).
 # KP stability needs gc-sections OFF: stock .text layout keeps hook anchors
 # deterministic. The 2 anchor symbols stay protected by KEEP() LDS patch.
 
@@ -130,8 +131,6 @@ CONFIG_LD_BFD=y
 # CONFIG_SECURITY_DMESG_RESTRICT is not set
 # --- Deliberately NOT enabled (would hurt boot/size, not needed by KP) ---
 # MEMCG/MEMCG_SWAP: +RAM overhead on 3GB daisy, not needed for root.
-# MODULES/MODVERSIONS/MODULE_UNLOAD: KPM injects via patch, not .ko;
-# built-in stays boot-safe. Stock ROM never loads vendor .ko from boot img.
 # FTRACE/KPROBES: +size/overhead, KP uses own inline-hook, not kprobes.
 
 # === VINTF build-consistency (fixes "internal problem" dialog, logcat: ===
@@ -153,6 +152,35 @@ CONFIG_NETFILTER_XT_TARGET_TRACE=y
 # our OWNER=y satisfies the active one; QTAGUID stays off by design.
 # NOTE: NFS_FS/NFSD stay off (single missing-n tolerated) - enabling NFS
 # server+client bloats boot image for zero benefit on daisy.
+
+# === VINTF MODULES block (matrix 4.9 main block wants MODULES=y) ===
+# Symbols verified in init/Kconfig (1853/1884/1902). Boot-safe:
+# no .ko ships in boot img; vendor modules (if any) load from vendor.
+# MODVERSIONS=n + MODULE_SIG=n keeps the classic unsigned-module path
+# stock daisy ROMs use, so Play Integrity module checks stay quiet.
+CONFIG_MODULES=y
+CONFIG_MODULE_UNLOAD=y
+# CONFIG_MODVERSIONS is not set
+# CONFIG_MODULE_SIG is not set
+# CONFIG_UNUSED_SYMBOLS is not set
+
+# === Play Integrity hardening (kernel side, no userspace spoof) ===
+# Honest posture: stock-like provenance so BASIC + DEVICE verdicts pass on
+# unlocked-bootloader custom kernel. STRONG needs locked BL + keybox, which
+# no custom kernel can provide - not claimed here.
+# - LOCALVERSION stays -DaisyForGaming (no "dirty"/test tags that scream custom)
+# - PRINTK stays y: KP/kmsg/dmesg/FolkPatch debugging needs it; scanners
+#   read props, not dmesg chatter. Turning it off blinds early-boot debug.
+# - No BUILD_SALT tampering: keep stock build fingerprint derivation.
+# - BUG=y: HARDENED_USERCOPY selects it; also gives clean WARN() instead of
+#   silent corruption that SafetyNet/PI native checks flag as tampering.
+CONFIG_PRINTK=y
+CONFIG_BUG=y
+# Play Integrity userspace (NOT in kernel - do these on device):
+# 1. Magisk/FolkPatch root + PlayIntegrityFix or TrickyStore module
+#    (valid keybox/FP spoof lives in userspace, never in kernel source).
+# 2. Do NOT add ro.build.fingerprint overrides to anykernel.sh - props
+#    set from boot img are trivially detectable vs module-based resetprop.
 
 # === SAFETY: force all known root hooks OFF (100% SAFE, No Pre-Root) ===
 # CONFIG_KSU is not set
