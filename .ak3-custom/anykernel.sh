@@ -7,11 +7,14 @@ properties() { '
 kernel.string=DaisyForGaming by JUBAIR HOSEN - 4.9.337 Safe (No Pre-Root)
 do.devicecheck=1
 do.modules=0
+do.systemless=1
 do.cleanup=1
 do.cleanuponabort=0
 device.name1=daisy
 device.name2=msm8953
 supported.versions=9-14
+supported.patchlevels=
+supported.vendorpatchlevels=
 '; }
 
 BLOCK=boot;
@@ -31,9 +34,11 @@ ui_print "  Mi A2 Lite (daisy) | 100% SAFE - No Root";
 ui_print "==============================================";
 ui_print " ";
 ui_print "[##------------------] 10% Starting...";
-dump_boot;
-ui_print "[######--------------] 30% Boot image unpacked";
+# Kernel-only flash: split_boot leaves the stock ramdisk bit-identical.
+# dump_boot would unpack+repack the ramdisk, which trips Android's
+# "There's an internal problem with your device" dialog on daisy.
 split_boot;
+ui_print "[######--------------] 30% Boot image split (ramdisk untouched)";
 ui_print "[##########----------] 50% Kernel patched";
 ui_print " ";
 ui_print " Installing features step by step:";
