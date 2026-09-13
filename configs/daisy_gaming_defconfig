@@ -12,8 +12,8 @@ CONFIG_CPU_FREQ_GOV_ONDEMAND=y
 CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
 CONFIG_CPU_FREQ_GOV_POWERSAVE=y
 CONFIG_CPU_FREQ_GOV_USERSPACE=y
-CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
-CONFIG_CPU_FREQ_GOV_GAMING=y
+# NOTE: GOV_PERFORMANCE/GAMING intentionally absent - no Kconfig symbol in
+# drivers/cpufreq/Kconfig, no Makefile object; olddefconfig drops them.
 # NOTE: CONFIG_CPU_BOOST intentionally OFF - cpu-boost.c in this tree includes
 # <uapi/linux/sched/types.h> which does not exist -> compile break / boot risk.
 # Stock INPUT_BOOST (already y with safe 652800/1401600 freqs) covers touch boost.
@@ -72,11 +72,65 @@ CONFIG_F2FS_FS=y
 CONFIG_QUOTA=y
 CONFIG_QUOTACTL=y
 
-# === FolkPatch/KernelPatch compatibility ===
-# Export the complete kallsyms table so post-build patchers can resolve
-# additional symbols reliably on this legacy 4.9 arm64 kernel.
+# === FolkPatch/KernelPatch compatibility (official requirement) ===
+# Official requirement is ONLY: KALLSYMS=y + KALLSYMS_ALL=y
+# (arm64, kernel 3.18-6.15). Rest below stabilizes APM/OverlayFS on 4.9.
 CONFIG_KALLSYMS=y
 CONFIG_KALLSYMS_ALL=y
+# APM Magic Mount needs xattr/acl on tmpfs upper layer (already in base,
+# made explicit; symbols verified in fs/Kconfig).
+CONFIG_TMPFS_XATTR=y
+CONFIG_TMPFS_POSIX_ACL=y
+# File-handle syscalls used by mount/module logic (init/Kconfig, default y,
+# boot-safe; base had it off).
+CONFIG_FHANDLE=y
+# Let FolkPatch app read running config via /proc/config.gz (already in base).
+CONFIG_IKCONFIG=y
+CONFIG_IKCONFIG_PROC=y
+CONFIG_PRINTK=y
+# NOTE: TRIM_UNUSED_KSYMS depends on MODULES (off here) so it stays off.
+# KP stability needs gc-sections OFF: stock .text layout keeps hook anchors
+# deterministic. The 2 anchor symbols stay protected by KEEP() LDS patch.
+
+# === Future-proof root ecosystem (verified symbols only, boot-safe) ===
+# Goal: any future APatch/FolkPatch/KSU-next style boot-image patcher works
+# without rebuilding kernel. All symbols below verified in this 4.9 tree.
+# Namespaces/cgroups used by modules/containers (lightweight, boot-safe).
+CONFIG_PID_NS=y
+CONFIG_CHECKPOINT_RESTORE=y
+CONFIG_CGROUP_DEVICE=y
+CONFIG_CGROUP_PIDS=y
+# USER_NS default n in tree (init/Kconfig:1066). Safe to enable, needed by
+# future container/sandbox features. Does not change stock boot path.
+CONFIG_USER_NS=y
+# --- Keep patcher-friendly protections OFF (do NOT turn these ON) ---
+# DEBUG_RODATA / STRICT_DEVMEM / CFI / LTO would make kernel text
+# read-only or break inline-hook. Base already has them off - pin it here
+# so future merges never flip them on.
+# KALLSYMS_BASE_RELATIVE off = absolute table. This fixes the KP log
+# "kallsyms_markers elem_size 8 rejected" fallback on 4.9 and stops the
+# app-open freeze/poweroff caused by hooks landing on wrong addresses.
+# (patches/kallsyms-all-legacy.patch sets default n in init/Kconfig.)
+# CONFIG_KALLSYMS_BASE_RELATIVE is not set
+# KP hook stability: era-correct GNU BFD linker + no gc-sections.
+# Fixes log "can't find arm64 relocation table" (LLD+RELR) and hooks
+# landing on wrong addresses (gc-sections reordering .text on 4.9/GCC).
+CONFIG_LD_BFD=y
+# CONFIG_LD_LLD is not set
+# CONFIG_LD_DEAD_CODE_DATA_ELIMINATION is not set
+# CONFIG_DEBUG_RODATA is not set
+# CONFIG_DEBUG_SET_MODULE_RONX is not set
+# CONFIG_DEBUG_ALIGN_RODATA is not set
+# CONFIG_STRICT_DEVMEM is not set
+# CONFIG_LTO_CLANG is not set
+# CONFIG_CFI_CLANG is not set
+# CONFIG_TRIM_UNUSED_KSYMS is not set
+# CONFIG_SECURITY_DMESG_RESTRICT is not set
+# --- Deliberately NOT enabled (would hurt boot/size, not needed by KP) ---
+# MEMCG/MEMCG_SWAP: +RAM overhead on 3GB daisy, not needed for root.
+# FTRACE/KPROBES: +size/overhead, KP uses own inline-hook, not kprobes.
+# MODULES: KPM injects via patch, not .ko; built-in stays boot-safe.
+# AUDIT: log spam, magiskpolicy works without it. IKHEADERS: +MB size.
 
 # === SAFETY: force all known root hooks OFF (100% SAFE, No Pre-Root) ===
 # CONFIG_KSU is not set

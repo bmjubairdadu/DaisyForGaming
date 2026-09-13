@@ -1,5 +1,5 @@
 diff --git a/init/Kconfig b/init/Kconfig
-index 8c0dcc3da63..f9cdc1982cd 100644
+index 8c0dcc3da63a..ae36b0883c0e 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
 @@ -1380,7 +1380,7 @@ config KALLSYMS
@@ -11,3 +11,12 @@ index 8c0dcc3da63..f9cdc1982cd 100644
  	help
  	   Normally kallsyms only contains the symbols of functions for nicer
  	   OOPS messages and backtraces (i.e., symbols from the text and inittext
+@@ -1403,7 +1403,7 @@ config KALLSYMS_ABSOLUTE_PERCPU
+ config KALLSYMS_BASE_RELATIVE
+ 	bool
+ 	depends on KALLSYMS
+-	default !IA64
++	default n
+ 	help
+ 	  Instead of emitting them as absolute values in the native word size,
+ 	  emit the symbol references in the kallsyms table as 32-bit entries,

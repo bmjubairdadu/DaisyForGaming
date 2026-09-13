@@ -90,7 +90,7 @@ setup_toolchain() {
 }
 
 is_valid_daisy_49337() {
-  [ -d "$KERNEL_SRC/.git" ] &&
+  [ -e "$KERNEL_SRC/.git" ] &&
     grep -qE '^VERSION[[:space:]]*=[[:space:]]*4$' "$KERNEL_SRC/Makefile" &&
     grep -qE '^PATCHLEVEL[[:space:]]*=[[:space:]]*9$' "$KERNEL_SRC/Makefile" &&
     grep -qE '^SUBLEVEL[[:space:]]*=[[:space:]]*337$' "$KERNEL_SRC/Makefile" &&
@@ -107,7 +107,7 @@ clone_kernel_source() {
     err "Invalid kernel_source: expected TogoFire daisy Linux 4.9.337 tree."
     exit 1
   fi
-  if [ ! -d "$KERNEL_SRC/.git" ]; then
+  if [ ! -e "$KERNEL_SRC/.git" ]; then
     msg "Cloning TogoFire daisy Linux 4.9.337 source..."
     git clone --filter=blob:none "$KERNEL_REPO" "$KERNEL_SRC" || {
       err "Kernel source clone failed!"

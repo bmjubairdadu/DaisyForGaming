@@ -17,11 +17,11 @@ jobs:
             build-essential gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi \
             python3 cpio zip unzip curl
       - name: Toolchain info (4.9.337 safe, no pre-root)
-        run: echo "DaisyForGaming v2.3 4.9.337 by JUBAIR HOSEN - GCC cross + Proton ld.lld, No KSU/APatch"
+        run: echo "DaisyForGaming v1.2 4.9.337 by JUBAIR HOSEN - GCC cross + GNU BFD ld, No KSU/APatch"
       - name: Build Kernel (verified TogoFire 4.9.337 daisy + gaming + GCC)
         run: bash build.sh all
       - name: Upload zip
         uses: actions/upload-artifact@v4
         with:
           name: DaisyForGaming-4.9.337
-          path: out/DaisyForGaming-v2.3-Gaming-4.9.337-*.zip
+          path: out/*.zip

@@ -30,7 +30,7 @@ Get the latest AnyKernel3 flashable zip from
 ## Build
 ```bash
 bash build.sh all
-# out/DaisyForGaming-v1.1-Gaming-4.9.337-*.zip
+# out/DaisyForGaming-v1.2-Gaming-4.9.337-*.zip
 ```
 
 ## Project
