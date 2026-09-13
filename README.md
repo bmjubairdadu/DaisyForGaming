@@ -67,3 +67,4 @@ daisy treble kernel, xiaomi msm8953 kernel, daisy anykernel3, daisy folkpatch re
 - **Safe for games / anti-cheat?** Yes - 100% SAFE, no pre-root (no KernelSU/APatch inside); optionally root later with FolkPatch.
 - **Kernel version?** Linux 4.9.337 `-DaisyForGaming` for msm8953 / Snapdragon 625 (MSM8953 + PMI8950).
 - **Treble / vendor?** Yes - Project Treble compatible, binderized HALs, vendor partition mounting for msm8953.
+- **"There's an internal problem with your device" after flashing?** Cosmetic Android warning for a modified boot image (unlocked bootloader + custom kernel). Press OK. Confirm the kernel in About phone (`4.9.337-DaisyForGaming`). Restoring the stock boot backup removes it.
