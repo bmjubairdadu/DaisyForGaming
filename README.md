@@ -1,4 +1,4 @@
-# DaisyForGaming v1.2 Kernel for Xiaomi Mi A2 Lite (daisy) - 4.9.337 Gaming Kernel by JUBAIR HOSEN
+# DaisyForGaming v1.2.4 Kernel for Xiaomi Mi A2 Lite (daisy) - 4.9.337 Gaming Kernel by JUBAIR HOSEN
 
 > **Daisy kernel | Mi A2 Lite custom kernel | msm8953 Snapdragon 625 kernel | Cool & Smooth - No Heat, No Lag | 100% SAFE - No Pre-Root**
 

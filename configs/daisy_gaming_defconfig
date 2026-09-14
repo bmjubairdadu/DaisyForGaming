@@ -154,13 +154,19 @@ CONFIG_NETFILTER_XT_TARGET_TRACE=y
 # server+client bloats boot image for zero benefit on daisy.
 
 # === VINTF MODULES block (matrix 4.9 main block wants MODULES=y) ===
-# Symbols verified in init/Kconfig (1853/1884/1902). Boot-safe:
-# no .ko ships in boot img; vendor modules (if any) load from vendor.
-# MODVERSIONS=n + MODULE_SIG=n keeps the classic unsigned-module path
-# stock daisy ROMs use, so Play Integrity module checks stay quiet.
+# Proven 2026-09-14 on live daisy (crDroid 11 + DaisyForGaming 4.9.337):
+# /system/etc/vintf/compatibility_matrix.3.xml 4.9.84 main block (185 cfgs,
+# no conditions) mismatches ONLY these 3 when MODULES=n:
+#   CONFIG_MODULES=y, CONFIG_MODULE_UNLOAD=y, CONFIG_MODVERSIONS=y
+# (NFS_FS/NFSD want n = absent->n already matches; QTAGUID/OWNER/ARM blocks
+# are conditional and already satisfied by OWNER=y). That mismatch is what
+# VintfObject.verifyWithoutAvb fails on -> "internal problem" dialog.
+# Boot-safe: no .ko ships in boot img; vendor modules (if any) load from
+# vendor. MODULE_SIG stays n (not in matrix = unsigned path stock uses),
+# UNUSED_SYMBOLS stays n (KP needs symbols visible).
 CONFIG_MODULES=y
 CONFIG_MODULE_UNLOAD=y
-# CONFIG_MODVERSIONS is not set
+CONFIG_MODVERSIONS=y
 # CONFIG_MODULE_SIG is not set
 # CONFIG_UNUSED_SYMBOLS is not set
 
