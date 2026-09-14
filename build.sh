@@ -208,6 +208,18 @@ setup_ak3() {
   else
     msg "AnyKernel3 exists - keeping"
   fi
+  # Always refresh our custom files (fixes stale v1.2/42C wrapper bug:
+  # setup_ak3 used to copy these only on first clone, so later .ak3-custom
+  # fixes never reached the zip).
+  if [ -f "$BASE_DIR/.ak3-custom/anykernel.sh" ]; then
+    cp "$BASE_DIR/.ak3-custom/anykernel.sh" "$AK3_DIR/anykernel.sh"
+  fi
+  if [ -f "$BASE_DIR/.ak3-custom/version" ]; then
+    cp "$BASE_DIR/.ak3-custom/version" "$AK3_DIR/version"
+  fi
+  if [ -f "$BASE_DIR/.ak3-custom/thermal-engine-daisy-gaming.conf" ]; then
+    cp "$BASE_DIR/.ak3-custom/thermal-engine-daisy-gaming.conf" "$AK3_DIR/thermal-engine-daisy-gaming.conf"
+  fi
 }
 
 do_mkzip() {
