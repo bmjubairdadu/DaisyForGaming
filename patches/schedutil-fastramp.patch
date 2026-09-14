@@ -1,0 +1,13 @@
+diff --git a/kernel/sched/cpufreq_schedutil.c b/kernel/sched/cpufreq_schedutil.c
+index 8c98d76d0f5..6bc848e6560 100644
+--- a/kernel/sched/cpufreq_schedutil.c
++++ b/kernel/sched/cpufreq_schedutil.c
+@@ -574,7 +574,7 @@ static int sugov_init(struct cpufreq_policy *policy)
+ 	}
+ 
+ 	/* Hard-code some sane rate-limit values */
+-	tunables->up_rate_limit_us = 20000;
++	tunables->up_rate_limit_us = 500;
+ 	tunables->down_rate_limit_us = 500;
+ 
+ 	policy->governor_data = sg_policy;
