@@ -1,6 +1,6 @@
 # DaisyForGaming install guide - Mi A2 Lite (daisy), 4.9.337
 
-1. Download `DaisyForGaming-v1.0-Gaming-4.9.337-*.zip`.
+1. Download `DaisyForGaming-v2.0-Gaming-4.9.337-*.zip`.
 2. Reboot to TWRP / OrangeFox.
 3. Backup boot (important!).
 4. Flash the zip, wipe cache/dalvik, reboot.

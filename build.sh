@@ -20,7 +20,7 @@ DEV_NAME="JUBAIR HOSEN"
 export KBUILD_BUILD_USER="JUBAIR"
 export KBUILD_BUILD_HOST="JUBAIR-HOSEN"
 LOCALVERSION="-DaisyForGaming"
-VERSION="v1.1-Gaming-4.9.337"
+VERSION="v2.0-Gaming-4.9.337"
 BUILD_DATE=$(date +%Y%m%d)
 ZIP_NAME="${KERNEL_NAME}-${VERSION}-${BUILD_DATE}-AnyKernel3.zip"
 
@@ -172,8 +172,21 @@ apply_gaming_config() {
     sed -i 's/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-DaisyForGaming"/' "$KERNEL_SRC/out/.config"
   grep -q '^CONFIG_LOCALVERSION=' "$KERNEL_SRC/out/.config" || \
     echo 'CONFIG_LOCALVERSION="-DaisyForGaming"' >> "$KERNEL_SRC/out/.config"
+  # ULTIMATE v2.0: merge_config+olddefconfig drops some symbols whose deps
+  # resolve only after a first pass (verified: scripts/config --enable sticks
+  # them). Force-enable the proven-safe set, then final olddefconfig.
+  "$KERNEL_SRC/scripts/config" --file "$KERNEL_SRC/out/.config" \
+    --enable DEVMEM \
+    --enable KSM \
+    --enable MEMCG --enable MEMCG_SWAP --enable MEMCG_SWAP_ENABLED \
+    --enable F2FS_FS_ENCRYPTION --enable F2FS_FS_COMPRESSION --enable F2FS_CHECK_FS \
+    --enable BPF_JIT_ALWAYS_ON \
+    --enable MAGIC_SYSRQ --enable SCHED_DEBUG --enable DEBUG_KERNEL \
+    --enable VM_EVENT_COUNTERS --enable ZRAM_WRITEBACK --enable ZSMALLOC_STAT \
+    --enable DETECT_HUNG_TASK 2>/dev/null || true
   make -C "$KERNEL_SRC" O=out ARCH=arm64 olddefconfig
   msg "Config ready: $(grep '^CONFIG_LOCALVERSION=' "$KERNEL_SRC/out/.config")"
+  msg "Ultimate check: $(grep -cE '^CONFIG_(DEVMEM|KSM|MEMCG|F2FS_FS_ENCRYPTION|BPF_JIT_ALWAYS_ON|MAGIC_SYSRQ|DEBUG_KERNEL|ZRAM_WRITEBACK)=y' "$KERNEL_SRC/out/.config")/8 ultimate symbols on"
 }
 
 do_build() {

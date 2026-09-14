@@ -205,3 +205,39 @@ CONFIG_BUG=y
 # CONFIG_APATCH is not set
 # CONFIG_KPM is not set
 # CONFIG_FOLKPATCH is not set
+
+# === ULTIMATE v2.0: every in-tree feature a modern kernel can offer ===
+# Verified 2026-09-14 against 4.9.337 tree via olddefconfig probe: symbols
+# below STICK (have satisfiable deps). Things NOT added (verified dropped):
+#  FTRACE family + KPROBES + UPROBES (arch/arm64 forces STACKTRACE_SUPPORT=n
+#  -> TRACING_SUPPORT off -> whole FTRACE menu dead), KRETPROBES, NFS_FS/CIFS
+#  (need NFS_COMMON/SUNRPC bits this tree's base disables), QTAGUID+OWNER
+#  (mutually exclusive, OWNER=y kept for active VINTF block),
+#  interactive gov, CPU/GPU OC tables, DEBUG_RODATA off (arm64 def_bool y),
+#  LTO/CFI (needs clang runtime this 4.9 lacks), KEXEC/LKDTM (reboot risk).
+# --- kernel-level mod apps (mem/debug that CAN work) ---
+CONFIG_DEVMEM=y
+# CONFIG_DEVKMEM is not set
+# --- memory mgmt: KSM + memcg + zram writeback + reclaim stats ---
+CONFIG_KSM=y
+CONFIG_MEMCG=y
+CONFIG_MEMCG_SWAP=y
+CONFIG_MEMCG_SWAP_ENABLED=y
+CONFIG_ZRAM_WRITEBACK=y
+CONFIG_ZSMALLOC_STAT=y
+CONFIG_VM_EVENT_COUNTERS=y
+CONFIG_COMPACT_UNEVICTABLE_DEFAULT=1
+# --- crypto/fs: F2FS encryption + compression + check ---
+CONFIG_F2FS_FS_ENCRYPTION=y
+CONFIG_F2FS_FS_COMPRESSION=y
+CONFIG_F2FS_CHECK_FS=y
+# --- net/filter extras modern apps expect ---
+CONFIG_BPF_JIT_ALWAYS_ON=y
+# --- debuggability: sysrq + lockup + hung-task ---
+CONFIG_MAGIC_SYSRQ=y
+CONFIG_DETECT_HUNG_TASK=y
+CONFIG_SCHED_DEBUG=y
+CONFIG_DEBUG_FS=y
+CONFIG_DEBUG_KERNEL=y
+# CONFIG_KEXEC is not set
+# CONFIG_LKDTM is not set
