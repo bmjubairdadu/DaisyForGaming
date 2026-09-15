@@ -28,7 +28,7 @@ PATCH_VBMETA_FLAG=auto;
 ui_print " ";
 ui_print "==============================================";
 ui_print "  D A I S Y F O R G A M I N G";
-ui_print "  v2.0 ULTIMATE | 4.9.337 -DaisyForGaming";
+ui_print "  v2.1 GAMING-FIX | 4.9.337 -DaisyForGaming";
 ui_print "  Developer : JUBAIR HOSEN";
 ui_print "  Mi A2 Lite (daisy) | 100% SAFE - No Root";
 ui_print "==============================================";

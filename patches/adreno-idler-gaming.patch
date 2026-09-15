@@ -1,0 +1,22 @@
+diff --git a/drivers/devfreq/adreno_idler.c b/drivers/devfreq/adreno_idler.c
+index 4f08d33d26f..704ea96f0b9 100644
+--- a/drivers/devfreq/adreno_idler.c
++++ b/drivers/devfreq/adreno_idler.c
+@@ -40,7 +40,7 @@
+    Any workload higher than this will be treated as a non-idle workload.
+    Adreno idler will more actively try to ramp down the frequency
+    if this is set to a higher value. */
+-static unsigned long idleworkload = 7000;
++static unsigned long idleworkload = 4000;
+ module_param_named(adreno_idler_idleworkload, idleworkload, ulong, 0664);
+ 
+ /* Number of events to wait before ramping down the frequency.
+@@ -49,7 +49,7 @@ module_param_named(adreno_idler_idleworkload, idleworkload, ulong, 0664);
+    This implementation is to prevent micro-lags on scrolling or playing games.
+    Adreno idler will more actively try to ramp down the frequency
+    if this is set to a lower value. */
+-static unsigned int idlewait = 15;
++static unsigned int idlewait = 25;
+ module_param_named(adreno_idler_idlewait, idlewait, uint, 0664);
+ 
+ /* Taken from ondemand */

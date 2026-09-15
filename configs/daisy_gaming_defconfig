@@ -23,8 +23,10 @@ CONFIG_CGROUP_SCHEDTUNE=y
 # === App-launch responsiveness (v1.1: fixes slow app opening on schedutil) ===
 # Root cause: stock schedutil hard-codes up_rate_limit_us=20000 (20ms delay
 # before every freq step-up) and this 4.9 tree exposes NO sysfs tunable for
-# it (sugov_attributes[] is empty). patches/schedutil-fastramp.patch lowers
-# it to 500us so CPU jumps to needed freq instantly on touch/app start.
+# it (sugov_attributes[] is empty). patches/schedutil-fastramp.patch sets
+# up=500us (instant jump on touch/app start) + down=10000us (v2.1 gaming:
+# holds freq 10ms so game frames don't dip between bursts; stock 500us
+# dropped freq instantly -> mid-game freeze/lag).
 # ondemand (up_threshold 98, io_is_busy-aware) stays as runtime fallback:
 # echo ondemand > /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
 # INPUT_BOOST durations tuned for app tap: 100ms touch / 500ms wake are the
@@ -50,6 +52,11 @@ CONFIG_IOSCHED_NOOP=y
 
 # === GPU: msm-adreno-tz already default, adreno_idler present ===
 # Proven: DEVFREQ_GOV_QCOM_ADRENO_TZ=y + ADRENO_IDLER=y + default
+# v2.1 gaming: patches/adreno-idler-gaming.patch relaxes idler so GPU does
+# NOT drop to lowest freq mid-game (idleworkload 7000->4000 = game frames
+# count as busy; idlewait 15->25 = longer hold). Stock values caused the
+# freeze-then-recover symptom. Runtime still tunable via
+# /sys/module/adreno_idler/parameters/adreno_idler_*.
 # "msm-adreno-tz" already in stock defconfig. No DTB OC (GPU 650MHz stock
 # table kept - DTB freq edit = hard-brick/bootloop risk on daisy panel).
 CONFIG_DEVFREQ_GOV_QCOM_ADRENO_TZ=y
