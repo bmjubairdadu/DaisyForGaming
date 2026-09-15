@@ -3,9 +3,10 @@
 # Merged over stock daisy_defconfig by build.sh.
 # Minimal-safe only: no choice/default overrides, no arch-incompatible symbols.
 
-# === CPU governors (v2.3: performance.c proven in tree + gaming backport) ===
-# Proven files: cpufreq_performance.c + cpufreq_powersave.c exist in tree.
-# v2.3 wires them via Kconfig/Makefile (powersave-template API, boot-safe).
+# === CPU governors (honest: only what exists in this 4.9 tree) ===
+# In-tree governors: schedutil / ondemand / conservative / powersave /
+# userspace (Kconfig verified). cpufreq_performance.c exists but has NO
+# Kconfig symbol, so it can never be selected (no "performance" governor).
 # INTERACTIVE does NOT exist in tree - excluded to avoid bootloop.
 CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y
 CONFIG_CPU_FREQ_GOV_ONDEMAND=y
@@ -71,17 +72,19 @@ CONFIG_FB_MSM_MDSS_KCAL_CTRL=y
 CONFIG_ZRAM=y
 CONFIG_ZSMALLOC=y
 
-# === Wakelock blocker (v2.3 minimal sysfs filter, default OFF = stock boot) ===
-# Patched in kernel/power/wakelock.c: module param "wakelock_block".
-# Empty by default -> pm_wake_lock path unchanged -> boot-safe.
-# User enables at runtime: echo "wlan_rx" > /sys/module/wakelock/parameters/wakelock_block
+# === WakeLocks: stock PM_WAKELOCKS (no blocker patch in this tree) ===
+# HONEST NOTE: there is NO wakelock_block param in kernel/power/wakelock.c,
+# so no filter sysfs exists. Stock wakelock accounting stays on (needed by
+# Android suspend). Battery drain from rogue wakelocks is handled in
+# userspace (BetterBatteryStats / Greenify), not in this kernel.
 CONFIG_PM_WAKELOCKS=y
 
-# === DT2W: Focaltech gesture sysfs already present (FTS_GESTURE_EN=1) ===
-# Proven: fts_gesture_mode sysfs node in focaltech_gesture.c.
-# Enable via: echo 1 > /sys/devices/soc/.../i2c.../fts_gesture_mode (Kernel Adiutor/EXKM).
-# No DTS edit (panel DTS touch node edit = bootloop risk).
-# Fsync sysfs (fsync_enabled @ /sys/module/sync/parameters) + powersuspend hooks already y.
+# === DT2W + dynamic fsync (both verified present in this tree) ===
+# DT2W: fts_gesture_mode DEVICE_ATTR in focaltech_gesture.c (per-device node
+# under the FocalTech i2c client, e.g. /sys/devices/soc/.../i2c-X/X-0038/
+# fts_gesture_mode). No DTS edit (panel DTS touch node edit = bootloop risk).
+# dyn_fsync nodes at /sys/kernel/dyn_fsync/Dyn_fsync_active (0664)
+# (DYN_FSYNC_ACTIVE_DEFAULT=false, powersuspend hooks already y).
 CONFIG_DEBUG_FS=y
 CONFIG_ANDROID_BINDER_IPC=y
 CONFIG_ION=y
@@ -277,3 +280,38 @@ CONFIG_DETECT_HUNG_TASK=y
 # VIDC codecs + ION + mdss proven present; GPU table untouched (no OC).
 CONFIG_VM_MAX_READAHEAD=256
 # CONFIG_ZRAM_WRITEBACK is not set
+
+# === FULL-UPGRADE v1.0: every extra in-tree feature that sticks (probed) ===
+# Verified 2026-09-15 via scripts/config --enable + olddefconfig probe on the
+# v2.2 .config: ALL symbols below STAY =y after olddefconfig. Dropped ones
+# (UPROBES needs STACKTRACE_SUPPORT=n arch block; DEADLINE default choice
+# constrained like TCP) are left out. Nothing here changes boot path.
+# --- file/event notify (antivirus/file-manager apps) ---
+CONFIG_FANOTIFY=y
+# --- scheduler observability + desktop fairness (no perf cost idle) ---
+CONFIG_SCHEDSTATS=y
+CONFIG_TASK_DELAY_ACCT=y
+CONFIG_SCHED_AUTOGROUP=y
+CONFIG_CFS_BANDWIDTH=y
+CONFIG_RT_GROUP_SCHED=y
+CONFIG_SCHED_WALT=y
+# --- I/O: deadline scheduler available at runtime (CFQ stays default) ---
+CONFIG_IOSCHED_DEADLINE=y
+# --- fs: F2FS status (debugfs) ---
+CONFIG_F2FS_STAT_FS=y
+# --- cpufreq stats detail ---
+CONFIG_CPU_FREQ_STAT_DETAILS=y
+# --- net: extra TCP congestions for region-specific carriers ---
+CONFIG_TCP_CONG_HYBLA=y
+CONFIG_TCP_CONG_VEGAS=y
+CONFIG_TCP_CONG_VENO=y
+CONFIG_TCP_CONG_ILLINOIS=y
+CONFIG_TCP_CONG_DCTCP=y
+# --- dynamic printk (debug without rebuild) ---
+CONFIG_DYNAMIC_DEBUG=y
+# --- squashfs (magisk-style modules/ROM zips) + sync display + zram codecs ---
+CONFIG_SQUASHFS=y
+CONFIG_SW_SYNC=y
+CONFIG_KSM_LEGACY=y
+CONFIG_ZRAM_MULTI_COMP=y
+CONFIG_CRYPTO_LZ4HC=y
