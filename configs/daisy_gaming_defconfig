@@ -32,8 +32,6 @@ CONFIG_CGROUP_SCHEDTUNE=y
 # echo ondemand > /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
 # INPUT_BOOST durations tuned for app tap: 100ms touch / 500ms wake are the
 # Kconfig defaults and kept (longer = wasted power, shorter = missed ramp).
-CONFIG_CPU_FREQ_GOV_ONDEMAND=y
-CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
 
 # === TCP congestion: BBR available for gaming, keep stock westwood default ===
 # Proven: TCP_CONG_BBR/CUBIC/WESTWOOD exist. Do NOT touch DEFAULT_* choice
