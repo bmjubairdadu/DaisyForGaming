@@ -90,11 +90,11 @@ setup_toolchain() {
 }
 
 is_valid_daisy_49337() {
-  [ -e "$KERNEL_SRC/.git" ] &&
+  [ -e "$KERNEL_SRC/Makefile" ] &&
     grep -qE '^VERSION[[:space:]]*=[[:space:]]*4$' "$KERNEL_SRC/Makefile" &&
     grep -qE '^PATCHLEVEL[[:space:]]*=[[:space:]]*9$' "$KERNEL_SRC/Makefile" &&
     grep -qE '^SUBLEVEL[[:space:]]*=[[:space:]]*337$' "$KERNEL_SRC/Makefile" &&
-    git -C "$KERNEL_SRC" remote -v 2>/dev/null | grep -q "TogoFire/kernel_xiaomi_panda"
+    [ -f "$KERNEL_SRC/arch/arm64/configs/daisy_defconfig" ]
 }
 
 apply_tree_patches() {

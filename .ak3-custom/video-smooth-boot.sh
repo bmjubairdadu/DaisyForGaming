@@ -27,4 +27,17 @@ done
 # COOL: GPU idler less aggressive ramp-down = fewer turbo re-spikes
 [ -w /sys/module/adreno_idler/parameters/adreno_idler_idlewait ] && echo 30 > /sys/module/adreno_idler/parameters/adreno_idler_idlewait 2>/dev/null
 
+# RAM PRESSURE (3GB daisy): keep memory reclaim healthy under high load.
+# swappiness 100 = swap anonymous pages to ZRAM early instead of dropping
+# file caches (video/game assets stay cached -> fewer reload stutters).
+# vfs_cache_pressure 50 = keep dentries/inodes longer (faster app open).
+# dirty ratios low = writeback in small chunks, no big I/O freeze.
+[ -w /proc/sys/vm/swappiness ] && echo 100 > /proc/sys/vm/swappiness 2>/dev/null
+[ -w /proc/sys/vm/vfs_cache_pressure ] && echo 50 > /proc/sys/vm/vfs_cache_pressure 2>/dev/null
+[ -w /proc/sys/vm/dirty_ratio ] && echo 15 > /proc/sys/vm/dirty_ratio 2>/dev/null
+[ -w /proc/sys/vm/dirty_background_ratio ] && echo 5 > /proc/sys/vm/dirty_background_ratio 2>/dev/null
+# KSM: dedup identical pages across apps (browser/game share libs).
+[ -w /sys/kernel/mm/ksm/run ] && echo 1 > /sys/kernel/mm/ksm/run 2>/dev/null
+[ -w /sys/kernel/mm/ksm/sleep_millisecs ] && echo 500 > /sys/kernel/mm/ksm/sleep_millisecs 2>/dev/null
+
 exit 0

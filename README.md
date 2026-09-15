@@ -49,15 +49,15 @@ WSL users: `bash scripts/wsl-build.sh` (builds on ext4, copies artifacts back to
 
 ```
 DaisyForGaming/
-├── build.sh                        # clone TogoFire 4.9.337 + compile + AnyKernel3 zip
+├── build.sh                        # fetch 4.9.337 source + compile + AnyKernel3 zip
 ├── configs/daisy_gaming_defconfig  # gaming + Treble fragment (4.9.337-safe only)
 ├── .ak3-custom/                    # anykernel.sh banner + version + thermal conf
-├── AnyKernel3/                     # fetched osm0sis engine (ignored by git)
-├── scripts/                        # apply-tree-patches + wsl-build + watch-progress + vintf-perblock
-├── patches/                        # banner, KALLSYMS x3, IKCONFIG fixes (FolkPatch-safe)
-├── toolchain/                      # Proton host tools (ignored, fetched by build.sh)
+├── scripts/                        # apply-tree-patches + wsl-build
+├── patches/                        # banner, KALLSYMS, IKCONFIG, schedutil, idler fixes
 └── .github/workflows/build.yml     # CI build
 ```
+(Kernel source, AnyKernel3 engine and toolchain are fetched at build time,
+not stored in this repo.)
 
 - Name: DaisyForGaming v1.0-Gaming-4.9.337
 - Developer: JUBAIR HOSEN (`JUBAIR` / `JUBAIR-HOSEN` / `-DaisyForGaming`)
