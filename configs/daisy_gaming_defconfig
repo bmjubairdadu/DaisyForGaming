@@ -289,14 +289,16 @@ CONFIG_VM_MAX_READAHEAD=256
 # --- file/event notify (antivirus/file-manager apps) ---
 CONFIG_FANOTIFY=y
 # --- scheduler observability + desktop fairness (no perf cost idle) ---
+# NOTE: SCHED_WALT dropped: this tree's sched.h references a WALT struct
+# member that doesn't exist -> compile break (verified 2026-09-15).
 CONFIG_SCHEDSTATS=y
 CONFIG_TASK_DELAY_ACCT=y
 CONFIG_SCHED_AUTOGROUP=y
 CONFIG_CFS_BANDWIDTH=y
 CONFIG_RT_GROUP_SCHED=y
-CONFIG_SCHED_WALT=y
 # --- I/O: deadline scheduler available at runtime (CFQ stays default) ---
-CONFIG_IOSCHED_DEADLINE=y
+# NOTE: IOSCHED_DEADLINE dropped: unused-function warnings become errors
+# under WERROR=y with GCC 11 (verified 2026-09-15).
 # --- fs: F2FS status (debugfs) ---
 CONFIG_F2FS_STAT_FS=y
 # --- cpufreq stats detail ---

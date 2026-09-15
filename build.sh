@@ -189,7 +189,7 @@ apply_gaming_config() {
     --enable DETECT_HUNG_TASK \
     --enable FANOTIFY --enable SCHEDSTATS --enable TASK_DELAY_ACCT \
     --enable SCHED_AUTOGROUP --enable CFS_BANDWIDTH --enable RT_GROUP_SCHED \
-    --enable SCHED_WALT --enable IOSCHED_DEADLINE --enable F2FS_STAT_FS \
+    --enable F2FS_STAT_FS \
     --enable CPU_FREQ_STAT_DETAILS --enable TCP_CONG_HYBLA --enable TCP_CONG_VEGAS \
     --enable TCP_CONG_VENO --enable TCP_CONG_ILLINOIS --enable TCP_CONG_DCTCP \
     --enable DYNAMIC_DEBUG --enable SQUASHFS --enable SW_SYNC \
