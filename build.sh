@@ -20,7 +20,7 @@ DEV_NAME="JUBAIR HOSEN"
 export KBUILD_BUILD_USER="JUBAIR"
 export KBUILD_BUILD_HOST="JUBAIR-HOSEN"
 LOCALVERSION="-DaisyForGaming"
-VERSION="v2.1-Gaming-4.9.337"
+VERSION="v2.2-Gaming-4.9.337"
 BUILD_DATE=$(date +%Y%m%d)
 ZIP_NAME="${KERNEL_NAME}-${VERSION}-${BUILD_DATE}-AnyKernel3.zip"
 
@@ -175,6 +175,8 @@ apply_gaming_config() {
   # ULTIMATE v2.0: merge_config+olddefconfig drops some symbols whose deps
   # resolve only after a first pass (verified: scripts/config --enable sticks
   # them). Force-enable the proven-safe set, then final olddefconfig.
+  # v2.2 VIDEO-SMOOTH: ZRAM_WRITEBACK stays OFF (slow eMMC swap freezes video);
+  # readahead 256 + CUBIC default come from fragment (choice/int symbols).
   "$KERNEL_SRC/scripts/config" --file "$KERNEL_SRC/out/.config" \
     --enable DEVMEM \
     --enable KSM \
@@ -182,11 +184,12 @@ apply_gaming_config() {
     --enable F2FS_FS_ENCRYPTION --enable F2FS_FS_COMPRESSION --enable F2FS_CHECK_FS \
     --enable BPF_JIT_ALWAYS_ON \
     --enable MAGIC_SYSRQ --enable SCHED_DEBUG \
-    --enable VM_EVENT_COUNTERS --enable ZRAM_WRITEBACK --enable ZSMALLOC_STAT \
+    --enable VM_EVENT_COUNTERS --disable ZRAM_WRITEBACK --enable ZSMALLOC_STAT \
     --enable DETECT_HUNG_TASK 2>/dev/null || true
   make -C "$KERNEL_SRC" O=out ARCH=arm64 olddefconfig
   msg "Config ready: $(grep '^CONFIG_LOCALVERSION=' "$KERNEL_SRC/out/.config")"
   msg "Ultimate check: $(grep -cE '^CONFIG_(DEVMEM|KSM|MEMCG|F2FS_FS_ENCRYPTION|BPF_JIT_ALWAYS_ON|MAGIC_SYSRQ|DEBUG_KERNEL|ZRAM_WRITEBACK)=y' "$KERNEL_SRC/out/.config")/8 ultimate symbols on"
+  msg "Video check: $(grep -E '^CONFIG_VM_MAX_READAHEAD=|^CONFIG_DEFAULT_TCP_CONG=' "$KERNEL_SRC/out/.config" | tr '\n' ' ')"
 }
 
 do_build() {
@@ -232,6 +235,10 @@ setup_ak3() {
   fi
   if [ -f "$BASE_DIR/.ak3-custom/thermal-engine-daisy-gaming.conf" ]; then
     cp "$BASE_DIR/.ak3-custom/thermal-engine-daisy-gaming.conf" "$AK3_DIR/thermal-engine-daisy-gaming.conf"
+  fi
+  if [ -f "$BASE_DIR/.ak3-custom/video-smooth-boot.sh" ]; then
+    cp "$BASE_DIR/.ak3-custom/video-smooth-boot.sh" "$AK3_DIR/video-smooth-boot.sh"
+    chmod +x "$AK3_DIR/video-smooth-boot.sh"
   fi
 }
 

@@ -1,6 +1,6 @@
 # DaisyForGaming install guide - Mi A2 Lite (daisy), 4.9.337
 
-1. Download `DaisyForGaming-v2.1-Gaming-4.9.337-*.zip`.
+1. Download `DaisyForGaming-v2.2-Gaming-4.9.337-*.zip`.
 2. Reboot to TWRP / OrangeFox.
 3. Backup boot (important!).
 4. Flash the zip, wipe cache/dalvik, reboot.
@@ -42,8 +42,8 @@ trivially detectable.
 ### Game mod / kernel-level apps + network errors in background
 Two different causes, don't mix them:
 1. **Mid-game freeze/lag (no mod app): kernel thermal+GPU.** Fixed in
-   v2.1: schedutil down-hold 10 ms, adreno-idler gaming defaults,
-   thermal 48C/2000ms. Flash v2.1.
+   v2.2: schedutil down-hold 10 ms, adreno-idler gaming defaults,
+   thermal 48C/2000ms. Flash v2.2.
 2. **Network error only when mod app runs in background: the APP's fault,
    not kernel.** These apps hook `connect`/`getaddrinfo`/SSL, run a local
    VPN/proxy, or suspend sockets while scanning memory. When Android

@@ -252,3 +252,17 @@ CONFIG_DETECT_HUNG_TASK=y
 # CONFIG_DEBUG_KERNEL is not set
 # CONFIG_KEXEC is not set
 # CONFIG_LKDTM is not set
+
+# === VIDEO-SMOOTH v2.2: fixes video lag/buffering/freeze (verified tree) ===
+# Root causes on daisy (3GB RAM + SDM625 + 4.9.337):
+#  1. VM_MAX_READAHEAD=128 (512KB): streaming reads stall on slow eMMC
+#     readahead refill -> buffering spinner. 256 (1MB window) prefetches
+#     enough for 1080p without RAM cost (window is advisory, not pinned).
+#  2. TCP default westwood: kernel choice default CANNOT be flipped in this
+#     tree (DEFAULT_* choice constrained) -> AnyKernel3 sets CUBIC at boot
+#     via sysctl (see anykernel.sh boot tweaks). BBR available at runtime.
+#  3. ZRAM_WRITEBACK (v2.0) writes compressed pages to slow eMMC swap
+#     during video -> I/O freeze frames. OFF: keep ZRAM in-RAM only.
+# VIDC codecs + ION + mdss proven present; GPU table untouched (no OC).
+CONFIG_VM_MAX_READAHEAD=256
+# CONFIG_ZRAM_WRITEBACK is not set
