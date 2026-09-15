@@ -52,7 +52,11 @@ CONFIG_IKCONFIG=y
 CONFIG_IKCONFIG_PROC=y
 CONFIG_PRINTK=y
 
-# --- Namespaces for patchers/containers ---
+# --- Namespaces for patchers/containers + Magisk mount isolation ---
+# IPC_NS needs POSIX_MQUEUE (SYSVIPC off in base); Magisk uses mount
+# namespaces for systemless modules, IPC_NS completes the set.
+CONFIG_POSIX_MQUEUE=y
+CONFIG_IPC_NS=y
 CONFIG_PID_NS=y
 CONFIG_CHECKPOINT_RESTORE=y
 CONFIG_CGROUP_DEVICE=y

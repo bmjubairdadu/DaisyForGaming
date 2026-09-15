@@ -177,6 +177,7 @@ apply_gaming_config() {
   # ZRAM_WRITEBACK stays OFF (slow eMMC swap freezes video).
   "$KERNEL_SRC/scripts/config" --file "$KERNEL_SRC/out/.config" \
     --enable KSM \
+    --enable POSIX_MQUEUE --enable IPC_NS \
     --enable MEMCG --enable MEMCG_SWAP --enable MEMCG_SWAP_ENABLED \
     --enable F2FS_FS_ENCRYPTION --enable F2FS_FS_COMPRESSION --enable F2FS_CHECK_FS \
     --enable BPF_JIT_ALWAYS_ON \
