@@ -1,4 +1,4 @@
-# DaisyForGaming v1.1 fragment - verified 4.9.337 daisy (TogoFire @ ff7b84e).
+# DaisyForGaming v1.0 fragment - verified 4.9.337 daisy (TogoFire @ ff7b84e).
 # Merged over stock daisy_defconfig by build.sh. No choice/default overrides.
 
 # --- CPU: schedutil/ondemand/conservative/powersave/userspace + input-boost ---
