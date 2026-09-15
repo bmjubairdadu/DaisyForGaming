@@ -181,7 +181,7 @@ apply_gaming_config() {
     --enable MEMCG --enable MEMCG_SWAP --enable MEMCG_SWAP_ENABLED \
     --enable F2FS_FS_ENCRYPTION --enable F2FS_FS_COMPRESSION --enable F2FS_CHECK_FS \
     --enable BPF_JIT_ALWAYS_ON \
-    --enable MAGIC_SYSRQ --enable SCHED_DEBUG --enable DEBUG_KERNEL \
+    --enable MAGIC_SYSRQ --enable SCHED_DEBUG \
     --enable VM_EVENT_COUNTERS --enable ZRAM_WRITEBACK --enable ZSMALLOC_STAT \
     --enable DETECT_HUNG_TASK 2>/dev/null || true
   make -C "$KERNEL_SRC" O=out ARCH=arm64 olddefconfig

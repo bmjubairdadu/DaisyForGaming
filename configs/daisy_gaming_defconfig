@@ -236,8 +236,12 @@ CONFIG_BPF_JIT_ALWAYS_ON=y
 # --- debuggability: sysrq + lockup + hung-task ---
 CONFIG_MAGIC_SYSRQ=y
 CONFIG_DETECT_HUNG_TASK=y
-CONFIG_SCHED_DEBUG=y
-CONFIG_DEBUG_FS=y
-CONFIG_DEBUG_KERNEL=y
+# NOTE: DEBUG_KERNEL stays OFF: this 4.9 tree's include/net/netfilter/nf_log.h
+# gates real declarations on "#ifdef CONFIG_DEBUG_KERNEL", but Kconfig bool
+# symbols are NOT passed as -D flags, so the stub branch stays active while
+# net/netfilter/nf_log.c still defines the real functions -> redefinition
+# build break (verified 2026-09-14, 561 errors). Debug needs are covered by
+# SCHED_DEBUG + DETECT_HUNG_TASK + PRINTK + MAGIC_SYSRQ below.
+# CONFIG_DEBUG_KERNEL is not set
 # CONFIG_KEXEC is not set
 # CONFIG_LKDTM is not set
