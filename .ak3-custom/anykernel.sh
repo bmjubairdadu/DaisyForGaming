@@ -28,7 +28,7 @@ PATCH_VBMETA_FLAG=auto;
 ui_print " ";
 ui_print "  ╔════════════════════════════════════╗";
 ui_print "  ║       D A I S Y  F O R G A M I N G ║";
-ui_print "  ║   v1.1  ·  4.9.337 -DaisyForGaming ║";
+ui_print "  ║   v1.0  ·  4.9.337 -DaisyForGaming ║";
 ui_print "  ╠════════════════════════════════════╣";
 ui_print "  ║  JUBAIR HOSEN  ·  Mi A2 Lite       ║";
 ui_print "  ║  100% SAFE — No Pre-Root           ║";

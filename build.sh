@@ -20,7 +20,7 @@ DEV_NAME="JUBAIR HOSEN"
 export KBUILD_BUILD_USER="JUBAIR"
 export KBUILD_BUILD_HOST="JUBAIR-HOSEN"
 LOCALVERSION="-DaisyForGaming"
-VERSION="v1.1-Gaming-4.9.337"
+VERSION="v1.0-Gaming-4.9.337"
 BUILD_DATE=$(date +%Y%m%d)
 ZIP_NAME="${KERNEL_NAME}-${VERSION}-${BUILD_DATE}-AnyKernel3.zip"
 
@@ -172,12 +172,9 @@ apply_gaming_config() {
     sed -i 's/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-DaisyForGaming"/' "$KERNEL_SRC/out/.config"
   grep -q '^CONFIG_LOCALVERSION=' "$KERNEL_SRC/out/.config" || \
     echo 'CONFIG_LOCALVERSION="-DaisyForGaming"' >> "$KERNEL_SRC/out/.config"
-  # ULTIMATE v2.0: merge_config+olddefconfig drops some symbols whose deps
-  # resolve only after a first pass (verified: scripts/config --enable sticks
-  # them). Force-enable the proven-safe set, then final olddefconfig.
-  # v2.2 VIDEO-SMOOTH: ZRAM_WRITEBACK stays OFF (slow eMMC swap freezes video);
-  # readahead 256 + CUBIC default come from fragment (choice/int symbols).
-  # FULL-UPGRADE v1.0: extra probed-safe symbols (fanotify/sched/TCP/iosched).
+  # Merge drops some symbols whose deps resolve only after a first pass.
+  # Force-enable the proven-safe set, then final olddefconfig.
+  # ZRAM_WRITEBACK stays OFF (slow eMMC swap freezes video).
   "$KERNEL_SRC/scripts/config" --file "$KERNEL_SRC/out/.config" \
     --enable KSM \
     --enable MEMCG --enable MEMCG_SWAP --enable MEMCG_SWAP_ENABLED \

@@ -12,10 +12,10 @@ Base: verified [TogoFire/kernel_xiaomi_panda](https://github.com/TogoFire/kernel
 
 | Area | What you get |
 |---|---|
-| CPU | `schedutil` fastramp (0.5 ms up / 10 ms hold) / `ondemand` / `conservative` / `powersave` / `userspace`, touch input-boost (1.4 GHz/40 ms), SchedTune, `msm_performance`, WALT load-tracking, autogroup + bandwidth control |
+| CPU | `schedutil` fastramp (0.5 ms up / 10 ms hold) / `ondemand` / `conservative` / `powersave` / `userspace`, touch input-boost (1.4 GHz/40 ms), SchedTune, `msm_performance`, autogroup + bandwidth control |
 | GPU | `msm-adreno-tz` + gaming `adreno_idler`, devfreq boost (stock 650 MHz table, no OC) |
 | Network | TCP CUBIC default (boot) + BBR/Hybla/Vegas/Veno/Illinois/DCTCP, `westwood` fallback |
-| Storage / IO | BFQ + CFQ (default) + deadline + NOOP, F2FS (+encryption/compression/check/stat), exFAT/NTFS, squashfs, ZRAM (`lz4`/`lz4hc` multi-comp, in-RAM), 1 MB readahead |
+| Storage / IO | BFQ + CFQ (default) + NOOP, F2FS (+encryption/compression/check/stat), exFAT/NTFS, squashfs, ZRAM (`lz4` in-RAM), 1 MB readahead |
 | Display | KCAL color control, DT2W gesture sysfs (`fts_gesture_mode`) |
 | Battery | Stock charging path; app-triggered bypass via `battery_charging_enabled` (no patch needed) |
 | Thermal | Gaming profile 48C/2s + battery-hot 45C charge mitigation |

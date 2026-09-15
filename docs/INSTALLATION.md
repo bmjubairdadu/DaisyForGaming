@@ -41,9 +41,9 @@ trivially detectable.
 
 ### Game mod / kernel-level apps + network errors in background
 Two different causes, don't mix them:
-1. **Mid-game freeze/lag (no mod app): kernel thermal+GPU.** Fixed in
-   v2.2: schedutil down-hold 10 ms, adreno-idler gaming defaults,
-   thermal 48C/2000ms. Flash v2.2.
+1. **Mid-game freeze/lag (no mod app): kernel thermal+GPU.** Fixed:
+   schedutil down-hold 10 ms, adreno-idler gaming defaults,
+   thermal 48C/2000ms. Flash the latest release.
 2. **Network error only when mod app runs in background: the APP's fault,
    not kernel.** These apps hook `connect`/`getaddrinfo`/SSL, run a local
    VPN/proxy, or suspend sockets while scanning memory. When Android
@@ -55,8 +55,8 @@ Two different causes, don't mix them:
    `mmi` WiFi path untouched by this kernel).
 
 ### APatch patched boot.img flashes but phone won't boot
-Your APatch log (e.g. v11224 on DaisyForGaming v1.1) shows `patch_rc=0`
-and `Repack completed` - the kernel patch itself SUCCEEDED. Every `[?]`
+Your APatch log (showing `patch_rc=0`
+and `Repack completed` - the kernel patch itself SUCCEEDED). Every `[?]`
 line in that log is benign: `kallsyms_markers elem_size 8 rejected` ->
 absolute-address fallback found the table; `can't find arm64 relocation
 table` -> stock daisy has no KASLR/RELOCATABLE so no table exists;
