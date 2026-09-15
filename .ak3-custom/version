@@ -1,4 +1,4 @@
-DaisyForGaming v1.0-Gaming-4.9.337 by JUBAIR HOSEN
+DaisyForGaming v1.1-Gaming-4.9.337 by JUBAIR HOSEN
 Device: Mi A2 Lite (daisy/msm8953)
 Base: TogoFire/kernel_xiaomi_panda Linux 4.9.337
 Localversion: -DaisyForGaming
@@ -6,5 +6,8 @@ SAFE: No Pre-Root (No KernelSU/APatch)
 Researched-safe: schedutil fastramp/input-boost/SchedTune/autogroup,
 msm-adreno-tz/gaming-idler, CUBIC boot + BBR/Hybla/Vegas, BFQ/CFQ,
 KCAL ctrl, DT2W gesture sysfs, dyn-fsync sysfs, ZRAM lz4, Treble/Binder/F2FS
+Universal (v1.1, probed 7/7): KPROBES + KALLSYMS_ALL absolute + PROC_KCORE +
+UNUSED_SYMBOLS + CPU_FREQ_STAT/TIMES + DYNAMIC_FSYNC + DEVFREQ_BOOST
 NOT included (unsupported in tree): interactive gov, CPU_BOOST (broken),
+KPROBE_EVENT/UPROBE_EVENT/FTRACE (need STACKTRACE_SUPPORT, forced n on arm64),
 GPU/CPU OC, FastCharge tunable, sound mod, HZ300

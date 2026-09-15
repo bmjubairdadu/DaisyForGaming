@@ -1,4 +1,4 @@
-# DaisyForGaming v1.0 fragment - verified 4.9.337 daisy (TogoFire @ ff7b84e).
+# DaisyForGaming v1.1 fragment - verified 4.9.337 daisy (TogoFire @ ff7b84e).
 # Merged over stock daisy_defconfig by build.sh. No choice/default overrides.
 
 # --- CPU: schedutil/ondemand/conservative/powersave/userspace + input-boost ---
@@ -84,7 +84,6 @@ CONFIG_MODULES=y
 CONFIG_MODULE_UNLOAD=y
 CONFIG_MODVERSIONS=y
 # CONFIG_MODULE_SIG is not set
-# CONFIG_UNUSED_SYMBOLS is not set
 CONFIG_BUG=y
 # CONFIG_KSU is not set
 # CONFIG_APATCH is not set
@@ -116,7 +115,22 @@ CONFIG_DETECT_HUNG_TASK=y
 CONFIG_VM_MAX_READAHEAD=256
 # CONFIG_ZRAM_WRITEBACK is not set
 
-# --- Extra features (probed; UPROBES/DEADLINE dropped) ---
+# --- Universal patcher hooks (APatch/FolkPatch/KernelPatch + Magisk/ZygiskNext) ---
+# PROBED 2026-09-15: KPROBES=y sticks (MODULES + HAVE_KPROBES on). PROC_KCORE,
+# UNUSED_SYMBOLS, CPU_FREQ_STAT/TIMES, DYNAMIC_FSYNC, DEVFREQ_BOOST all stick.
+# KPROBE_EVENT/UPROBE_EVENT/FTRACE can NOT stick in this tree: they live
+# inside "if FTRACE" (kernel/trace/Kconfig:173-771), FTRACE needs
+# TRACING_SUPPORT, which needs STACKTRACE_SUPPORT, but arch/arm64/Kconfig
+# forces "config STACKTRACE_SUPPORT def_bool n". No patcher needs them:
+# APatch/FolkPatch use KALLSYMS absolute table (above), Magisk/ZygiskNext
+# use ptrace/namespaces/OverlayFS (below) - all present.
+CONFIG_KPROBES=y
+CONFIG_PROC_KCORE=y
+CONFIG_UNUSED_SYMBOLS=y
+CONFIG_CPU_FREQ_STAT=y
+CONFIG_CPU_FREQ_TIMES=y
+
+# --- Extra features (probed; DEADLINE dropped) ---
 CONFIG_FANOTIFY=y
 CONFIG_SCHEDSTATS=y
 CONFIG_TASK_DELAY_ACCT=y
@@ -134,3 +148,7 @@ CONFIG_DYNAMIC_DEBUG=y
 CONFIG_SQUASHFS=y
 CONFIG_SW_SYNC=y
 CONFIG_KSM_LEGACY=y
+# Controller sysfs already in tree: DYNAMIC_FSYNC (dyn_fsync_active),
+# POWERSUSPEND + MSM_PERFORMANCE + STATE_NOTIFIER (base =y).
+CONFIG_DYNAMIC_FSYNC=y
+CONFIG_DEVFREQ_BOOST=y

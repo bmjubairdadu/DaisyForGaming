@@ -20,7 +20,7 @@ DEV_NAME="JUBAIR HOSEN"
 export KBUILD_BUILD_USER="JUBAIR"
 export KBUILD_BUILD_HOST="JUBAIR-HOSEN"
 LOCALVERSION="-DaisyForGaming"
-VERSION="v1.0-Gaming-4.9.337"
+VERSION="v1.1-Gaming-4.9.337"
 BUILD_DATE=$(date +%Y%m%d)
 ZIP_NAME="${KERNEL_NAME}-${VERSION}-${BUILD_DATE}-AnyKernel3.zip"
 
@@ -175,6 +175,10 @@ apply_gaming_config() {
   # Merge drops some symbols whose deps resolve only after a first pass.
   # Force-enable the proven-safe set, then final olddefconfig.
   # ZRAM_WRITEBACK stays OFF (slow eMMC swap freezes video).
+  # Universal hooks: KPROBES/PROC_KCORE/UNUSED_SYMBOLS + CPU_FREQ_STAT/TIMES
+  # must survive merge (deps: MODULES/HAVE_KPROBES/PROC_FS all on).
+  # KPROBE_EVENT/UPROBE_EVENT/FTRACE intentionally NOT forced: gated behind
+  # "if FTRACE" which needs STACKTRACE_SUPPORT, forced n on arm64 here.
   "$KERNEL_SRC/scripts/config" --file "$KERNEL_SRC/out/.config" \
     --enable KSM \
     --enable POSIX_MQUEUE --enable IPC_NS \
@@ -187,9 +191,13 @@ apply_gaming_config() {
     --enable FANOTIFY --enable SCHEDSTATS --enable TASK_DELAY_ACCT \
     --enable SCHED_AUTOGROUP --enable CFS_BANDWIDTH --enable RT_GROUP_SCHED \
     --enable F2FS_STAT_FS \
+    --enable CPU_FREQ_STAT --enable CPU_FREQ_TIMES \
     --enable CPU_FREQ_STAT_DETAILS --enable TCP_CONG_HYBLA --enable TCP_CONG_VEGAS \
     --enable TCP_CONG_VENO --enable TCP_CONG_ILLINOIS --enable TCP_CONG_DCTCP \
     --enable DYNAMIC_DEBUG --enable SQUASHFS --enable SW_SYNC \
+    --enable KPROBES \
+    --enable PROC_KCORE --enable UNUSED_SYMBOLS \
+    --enable DYNAMIC_FSYNC --enable DEVFREQ_BOOST \
     --enable KSM_LEGACY 2>/dev/null || true
   make -C "$KERNEL_SRC" O=out ARCH=arm64 olddefconfig
   msg "Config ready: $(grep '^CONFIG_LOCALVERSION=' "$KERNEL_SRC/out/.config")"

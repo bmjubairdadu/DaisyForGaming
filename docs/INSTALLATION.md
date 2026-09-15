@@ -1,6 +1,6 @@
 # DaisyForGaming install guide - Mi A2 Lite (daisy), 4.9.337
 
-1. Download `DaisyForGaming-v1.0-Gaming-4.9.337-*.zip`.
+1. Download `DaisyForGaming-v1.1-Gaming-4.9.337-*.zip`.
 2. Reboot to TWRP / OrangeFox.
 3. Backup boot (important!).
 4. Flash the zip, wipe cache/dalvik, reboot.
@@ -10,7 +10,7 @@ Requirements: Xiaomi Mi A2 Lite (daisy) only (NOT jasmine_sprout / Mi A2), unloc
 Works on Stock + LineageOS / PE / Evolution X / crDroid / Havoc / Arrow (Android 9-14)
 because AnyKernel3 keeps your ramdisk.
 
-Latest flashable zip: https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/DaisyForGaming-v1.0
+Latest flashable zip: https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/DaisyForGaming-v1.1
 
 ## Troubleshooting
 
@@ -95,3 +95,25 @@ config problem. Official flow (apatch.dev/install.html):
    (apatch.dev/rescue-bootloop.html). Or flash stock boot.img back.
 6. `fastboot getvar current-slot` + `fastboot getvar unlocked` to
    confirm slot and unlock state before flashing.
+
+### FolkPatch app freezes / phone reboots when opening the manager
+Kernel side is ready in v1.1 (probed 7/7 in WSL: `KPROBES=y`,
+`KALLSYMS_ALL=y` absolute, `PROC_KCORE=y`, `UNUSED_SYMBOLS=y`,
+`CPU_FREQ_STAT/TIMES=y`, `DYNAMIC_FSYNC=y`, `DEVFREQ_BOOST=y`).
+`KPROBE_EVENT`/`UPROBE_EVENT`/`FTRACE` are intentionally off — they are
+gated behind `FTRACE`, which needs `STACKTRACE_SUPPORT`, forced `n` on
+arm64 in this tree. No patcher needs them: KernelPatch-based patchers
+use the absolute KALLSYMS table, Magisk/Zygisk use ptrace + namespaces
++ OverlayFS (all present). So a freeze on manager open is NOT a missing
+kernel hook. Usual causes:
+1. Patching an already-custom kernel image instead of the STOCK
+   `boot.img` — always patch the stock image from your ROM zip.
+2. Two roots at once (Magisk + FolkPatch/APatch) — restore stock boot
+   first, use one root at a time.
+3. Old manager build — update the FolkPatch manager app, re-enter a
+   strong SuperKey (8-63 chars, letters+numbers), clear app data if it
+   still freezes on open.
+4. If it still reboots, capture proof before reflashing:
+   `adb logcat -d > folk-freeze-logcat.txt` and
+   `adb shell dmesg > folk-freeze-dmesg.txt`, then restore your boot
+   backup and report the manager version + ROM with those logs.

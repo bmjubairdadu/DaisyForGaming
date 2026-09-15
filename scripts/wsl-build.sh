@@ -44,6 +44,6 @@ cp -f "$LNX/out/build.log" "$WIN/out/build.log"
 ls -lh "$SRC/out/arch/arm64/boot/Image.gz-dtb"
 cp -f "$SRC/out/arch/arm64/boot/Image.gz-dtb" "$WIN/out/" 2>/dev/null || true
 echo "=== CONFIG PROOF ==="
-grep -E "CONFIG_KALLSYMS_BASE_RELATIVE|CONFIG_LD_BFD|CONFIG_LD_LLD|CONFIG_LD_DEAD_CODE|CONFIG_LOCALVERSION=|CONFIG_KALLSYMS_ALL" "$SRC/out/.config"
+grep -E "CONFIG_KPROBES=|CONFIG_PROC_KCORE=|CONFIG_UNUSED_SYMBOLS=|CONFIG_DYNAMIC_FSYNC=|CONFIG_DEVFREQ_BOOST=|CONFIG_KALLSYMS_ALL=|CONFIG_MODULES=|CONFIG_LOCALVERSION=" "$SRC/out/.config"
 echo "=== WIN OUT ==="
 ls -lh "$WIN/out/"
