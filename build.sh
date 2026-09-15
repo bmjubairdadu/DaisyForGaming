@@ -193,7 +193,7 @@ apply_gaming_config() {
     --enable CPU_FREQ_STAT_DETAILS --enable TCP_CONG_HYBLA --enable TCP_CONG_VEGAS \
     --enable TCP_CONG_VENO --enable TCP_CONG_ILLINOIS --enable TCP_CONG_DCTCP \
     --enable DYNAMIC_DEBUG --enable SQUASHFS --enable SW_SYNC \
-    --enable KSM_LEGACY --enable ZRAM_MULTI_COMP --enable CRYPTO_LZ4HC 2>/dev/null || true
+    --enable KSM_LEGACY 2>/dev/null || true
   make -C "$KERNEL_SRC" O=out ARCH=arm64 olddefconfig
   msg "Config ready: $(grep '^CONFIG_LOCALVERSION=' "$KERNEL_SRC/out/.config")"
   msg "Ultimate check: $(grep -cE '^CONFIG_(DEVMEM|KSM|MEMCG|F2FS_FS_ENCRYPTION|BPF_JIT_ALWAYS_ON|MAGIC_SYSRQ|DEBUG_KERNEL|ZRAM_WRITEBACK)=y' "$KERNEL_SRC/out/.config")/8 ultimate symbols on"
