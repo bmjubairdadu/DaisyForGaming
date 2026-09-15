@@ -26,41 +26,20 @@ PATCH_VBMETA_FLAG=auto;
 . tools/ak3-core.sh;
 
 ui_print " ";
-ui_print "==============================================";
-ui_print "  D A I S Y F O R G A M I N G";
-ui_print "  v1.0 FRESH | 4.9.337 -DaisyForGaming";
-ui_print "  Developer : JUBAIR HOSEN";
-ui_print "  Mi A2 Lite (daisy) | 100% SAFE - No Root";
-ui_print "==============================================";
+ui_print "  ╔════════════════════════════════════╗";
+ui_print "  ║       D A I S Y  F O R G A M I N G ║";
+ui_print "  ║   v1.1  ·  4.9.337 -DaisyForGaming ║";
+ui_print "  ╠════════════════════════════════════╣";
+ui_print "  ║  JUBAIR HOSEN  ·  Mi A2 Lite       ║";
+ui_print "  ║  100% SAFE — No Pre-Root           ║";
+ui_print "  ╚════════════════════════════════════╝";
 ui_print " ";
-ui_print "[##------------------] 10% Starting...";
-# Kernel-only flash: split_boot + flash_boot skips ramdisk unpack AND repack,
-# so the stock ramdisk stays bit-identical. write_boot would repack (and with
-# no unpacked ramdisk it packed the whole tmp dir -> 85MB image -> the
-# "New image larger than target partition" abort + internal-problem dialog).
-# APatch note: this zip replaces ONLY the kernel (Image.gz-dtb). Patch the
-# STOCK boot.img with APatch manager, flash DaisyForGaming zip first, then
-# flash the APatch-patched image to BOTH slots (daisy is A/B). Patching an
-# already-custom kernel boot.img can stall boot; always keep a boot backup.
+# Kernel-only flash: split_boot + flash_boot keeps the stock ramdisk
+# bit-identical (APatch note: patch the STOCK boot.img, flash this zip
+# first, then flash the APatch image to BOTH slots; keep a boot backup).
 split_boot;
-ui_print "[######--------------] 30% Boot image split (ramdisk untouched)";
-ui_print "[##########----------] 50% Kernel patched";
-ui_print " ";
-ui_print " Installing features step by step:";
-ui_print " [1/6] CPU : schedutil fastramp + ondemand + input-boost";
-ui_print "[############--------] 60% CPU done";
-ui_print " [2/6] GPU : msm-adreno-tz + adreno-idler";
-ui_print "[##############------] 68% GPU done";
-ui_print " [3/6] NET : TCP CUBIC default + BBR avail (video-smooth)";
-ui_print "[###############-----] 76% NET done";
-ui_print " [4/6] IO  : BFQ avail + CFQ + ZRAM";
-ui_print "[################----] 84% IO done";
-ui_print " [5/6] UI  : KCAL ctrl + DT2W gesture sysfs + Thermal";
-ui_print "[##################--] 90% UI done";
-ui_print " [6/6] SYS : Treble + Binder + F2FS + wakelock filter (off)";
-ui_print "[###################-] 95% SYS done";
-ui_print " ";
 flash_boot;
-ui_print "[####################] 100% Flash complete";
-ui_print "  Flash Complete! - JUBAIR HOSEN";
+ui_print " ";
+ui_print "  ✦ Kernel flashed — enjoy! ✦";
+ui_print "  — JUBAIR HOSEN";
 ui_print " ";

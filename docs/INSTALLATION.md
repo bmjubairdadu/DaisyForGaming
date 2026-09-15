@@ -64,13 +64,19 @@ table` -> stock daisy has no KASLR/RELOCATABLE so no table exists;
 handler` -> no CFI in this kernel, nothing needed. Kernel side needs:
 `KALLSYMS=y + KALLSYMS_ALL=y` (absolute), OverlayFS + tmpfs xattr/acl -
 all present in this kernel. So a no-boot after flash is NOT a kernel
-config problem. Checklist:
-1. **Patch the STOCK boot.img**, not an already-custom-kernel one.
-2. **Flash to BOTH slots** (daisy is A/B): `fastboot flash boot_a` +
-   `fastboot flash boot_b`, or flash the current slot then
-   `fastboot --set-active=other` and flash again.
-3. **Keep a boot backup** (TWRP Backup -> Boot) before patching.
-4. If black screen: check vibration/charging LED - panel-DTBO mismatch
-   shows black while the phone is actually on; restore backup boot.
-5. `fastboot getvar current-slot` + `fastboot getvar unlocked` to
+config problem. Official flow (apatch.dev/install.html):
+1. Extract the **STOCK boot.img** from your ROM zip (never patch an
+   already-patched or custom-kernel image).
+2. APatch Manager -> patch button -> select stock boot.img -> set a
+   strong SuperKey (8-63 chars, letters+numbers, e.g. NOT `12345678`).
+3. Flash via **fastboot** (recommended): `adb reboot bootloader`, then
+   `fastboot flash boot <patched.img>` - flash to BOTH slots on daisy
+   (A/B): `fastboot flash boot_a` + `fastboot flash boot_b`.
+   Tip: test first with `fastboot boot <patched.img>` - if it fails,
+   just reboot and the phone boots normally.
+4. Keep a boot backup (TWRP Backup -> Boot) before patching.
+5. Bootloop rescue: hold power till screen on, then tap-release Volume
+   Down until first screen -> APatch Safe Mode disables all modules
+   (apatch.dev/rescue-bootloop.html). Or flash stock boot.img back.
+6. `fastboot getvar current-slot` + `fastboot getvar unlocked` to
    confirm slot and unlock state before flashing.
