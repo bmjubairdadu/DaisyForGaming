@@ -21,7 +21,7 @@ Base: verified [TogoFire/kernel_xiaomi_panda](https://github.com/TogoFire/kernel
 | Thermal | Gaming profile 48C/2s + battery-hot 45C charge mitigation |
 | Memory | KSM (+legacy) page-merging, memcg + swap controller, compaction, reclaim stats |
 | System | Treble, Binder IPC, ION, OverlayFS, dm-verity + dm-crypt + FDE, dynamic fsync (`/sys/kernel/dyn_fsync/Dyn_fsync_active`), powersuspend hooks |
-| Debug / mod apps | `/dev/mem`, Magic SysRq, hung-task + sched debug + stats, task-delay acct, fanotify, dynamic printk, `IKCONFIG_PROC`, `PRINTK=y` |
+| Debug / mod apps | Magic SysRq, hung-task + sched debug + stats, task-delay acct, fanotify, dynamic printk, `IKCONFIG_PROC`, `PRINTK=y` |
 |Root policy | **100% SAFE — no KernelSU / APatch / FolkPatch inside.** Root later with FolkPatch/Magisk if you want (KALLSYMS_ALL=y ready) |
 
 ## Download

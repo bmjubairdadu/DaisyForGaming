@@ -235,7 +235,11 @@ CONFIG_BUG=y
 #  interactive gov, CPU/GPU OC tables, DEBUG_RODATA off (arm64 def_bool y),
 #  LTO/CFI (needs clang runtime this 4.9 lacks), KEXEC/LKDTM (reboot risk).
 # --- kernel-level mod apps (mem/debug that CAN work) ---
-CONFIG_DEVMEM=y
+# NOTE (2026-09-15 regression fix): CONFIG_DEVMEM=y was the ONLY mismatch
+# vs the VINTF 4.9.84 main block (matrix wants n) and brought back the
+# "internal problem" dialog that older zips didn't show. Kept OFF; live
+# device proof shows 0 mismatches without it.
+# CONFIG_DEVMEM is not set
 # CONFIG_DEVKMEM is not set
 # --- memory mgmt: KSM + memcg + zram writeback + reclaim stats ---
 CONFIG_KSM=y

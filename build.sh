@@ -179,7 +179,6 @@ apply_gaming_config() {
   # readahead 256 + CUBIC default come from fragment (choice/int symbols).
   # FULL-UPGRADE v1.0: extra probed-safe symbols (fanotify/sched/TCP/iosched).
   "$KERNEL_SRC/scripts/config" --file "$KERNEL_SRC/out/.config" \
-    --enable DEVMEM \
     --enable KSM \
     --enable MEMCG --enable MEMCG_SWAP --enable MEMCG_SWAP_ENABLED \
     --enable F2FS_FS_ENCRYPTION --enable F2FS_FS_COMPRESSION --enable F2FS_CHECK_FS \
@@ -196,7 +195,7 @@ apply_gaming_config() {
     --enable KSM_LEGACY 2>/dev/null || true
   make -C "$KERNEL_SRC" O=out ARCH=arm64 olddefconfig
   msg "Config ready: $(grep '^CONFIG_LOCALVERSION=' "$KERNEL_SRC/out/.config")"
-  msg "Ultimate check: $(grep -cE '^CONFIG_(DEVMEM|KSM|MEMCG|F2FS_FS_ENCRYPTION|BPF_JIT_ALWAYS_ON|MAGIC_SYSRQ|DEBUG_KERNEL|ZRAM_WRITEBACK)=y' "$KERNEL_SRC/out/.config")/8 ultimate symbols on"
+  msg "Ultimate check: $(grep -cE '^CONFIG_(KSM|MEMCG|F2FS_FS_ENCRYPTION|BPF_JIT_ALWAYS_ON|MAGIC_SYSRQ)=y' "$KERNEL_SRC/out/.config")/5 ultimate symbols on (DEVMEM/DEBUG_KERNEL/ZRAM_WRITEBACK intentionally off)"
   msg "Video check: $(grep -E '^CONFIG_VM_MAX_READAHEAD=|^CONFIG_DEFAULT_TCP_CONG=' "$KERNEL_SRC/out/.config" | tr '\n' ' ')"
 }
 
