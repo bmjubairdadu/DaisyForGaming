@@ -38,6 +38,10 @@ ui_print "[##------------------] 10% Starting...";
 # so the stock ramdisk stays bit-identical. write_boot would repack (and with
 # no unpacked ramdisk it packed the whole tmp dir -> 85MB image -> the
 # "New image larger than target partition" abort + internal-problem dialog).
+# APatch note: this zip replaces ONLY the kernel (Image.gz-dtb). Patch the
+# STOCK boot.img with APatch manager, flash DaisyForGaming zip first, then
+# flash the APatch-patched image to BOTH slots (daisy is A/B). Patching an
+# already-custom kernel boot.img can stall boot; always keep a boot backup.
 split_boot;
 ui_print "[######--------------] 30% Boot image split (ramdisk untouched)";
 ui_print "[##########----------] 50% Kernel patched";

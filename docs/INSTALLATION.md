@@ -53,3 +53,24 @@ Two different causes, don't mix them:
    instead of background-APK version. Verify: stop mod app -> network
    error gone = 100% app fault, kernel innocent (`westwood` + BBR,
    `mmi` WiFi path untouched by this kernel).
+
+### APatch patched boot.img flashes but phone won't boot
+Your APatch log (e.g. v11224 on DaisyForGaming v1.1) shows `patch_rc=0`
+and `Repack completed` - the kernel patch itself SUCCEEDED. Every `[?]`
+line in that log is benign: `kallsyms_markers elem_size 8 rejected` ->
+absolute-address fallback found the table; `can't find arm64 relocation
+table` -> stock daisy has no KASLR/RELOCATABLE so no table exists;
+`no symbol: memblock_phys_alloc_try_nid` -> fallback found; `no CFI
+handler` -> no CFI in this kernel, nothing needed. Kernel side needs:
+`KALLSYMS=y + KALLSYMS_ALL=y` (absolute), OverlayFS + tmpfs xattr/acl -
+all present in this kernel. So a no-boot after flash is NOT a kernel
+config problem. Checklist:
+1. **Patch the STOCK boot.img**, not an already-custom-kernel one.
+2. **Flash to BOTH slots** (daisy is A/B): `fastboot flash boot_a` +
+   `fastboot flash boot_b`, or flash the current slot then
+   `fastboot --set-active=other` and flash again.
+3. **Keep a boot backup** (TWRP Backup -> Boot) before patching.
+4. If black screen: check vibration/charging LED - panel-DTBO mismatch
+   shows black while the phone is actually on; restore backup boot.
+5. `fastboot getvar current-slot` + `fastboot getvar unlocked` to
+   confirm slot and unlock state before flashing.

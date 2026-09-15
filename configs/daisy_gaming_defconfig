@@ -125,10 +125,21 @@ CONFIG_CGROUP_PIDS=y
 # USER_NS default n in tree (init/Kconfig:1066). Safe to enable, needed by
 # future container/sandbox features. Does not change stock boot path.
 CONFIG_USER_NS=y
-# --- Keep patcher-friendly protections OFF (do NOT turn these ON) ---
-# DEBUG_RODATA / STRICT_DEVMEM / CFI / LTO would make kernel text
-# read-only or break inline-hook. Base already has them off - pin it here
-# so future merges never flip them on.
+# --- Patcher-friendly: what actually matters for APatch/KernelPatch ---
+# HONEST NOTE (verified 2026-09-14, APatch 11224 log on DaisyForGaming v1.1):
+# arch/arm64 forces CONFIG_DEBUG_RODATA=y (def_bool y, no prompt), so kernel
+# text IS read-only at runtime. This does NOT block APatch: KernelPatch
+# remaps text RW itself, and the APatch log proves it (every hook resolved,
+# patch_rc=0). The fragment line below is informational only.
+# Likewise "can't find arm64 relocation table" in the APatch log is BENIGN:
+# stock daisy has RELOCATABLE off (no KASLR), so no table exists; kptools
+# falls back to absolute kallsyms_addresses scan (range + num_syms found,
+# patch_rc=0). Do NOT enable RELOCATABLE/RANDOMIZE_BASE to chase that line
+# (changes boot layout on LK bootloader for zero benefit).
+# What DOES matter and is set: KALLSYMS=y + KALLSYMS_ALL=y (absolute table,
+# BASE_RELATIVE=n via patches/kallsyms-all-legacy.patch), GNU BFD linker,
+# gc-sections OFF (stable .text layout for hook anchors, 2 symbols KEEP()ed
+# by patches/keep-kallsyms-lds.patch + keep-kallsyms-lookup.patch).
 # KALLSYMS_BASE_RELATIVE off = absolute table. This fixes the KP log
 # "kallsyms_markers elem_size 8 rejected" fallback on 4.9 and stops the
 # app-open freeze/poweroff caused by hooks landing on wrong addresses.
