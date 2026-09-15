@@ -20,9 +20,9 @@ Base: verified [TogoFire/kernel_xiaomi_panda](https://github.com/TogoFire/kernel
 | Battery | Stock charging path; app-triggered bypass via `battery_charging_enabled` (no patch needed) |
 | Thermal | Gaming profile 48C/2s + battery-hot 45C charge mitigation |
 | Memory | KSM (+legacy) page-merging, memcg + swap controller, compaction, reclaim stats |
-| System | Treble, Binder IPC, ION, OverlayFS, dm-verity + dm-crypt + FDE, dynamic fsync (`/sys/kernel/dyn_fsync/Dyn_fsync_active`), powersuspend hooks |
+| System | Treble, Binder IPC, ION, OverlayFS, dm-verity + dm-crypt + FDE, dynamic fsync (`/sys/kernel/dyn_fsync/Dyn_fsync_active`), full namespaces + loop/squashfs (Magisk-ready), powersuspend hooks |
 | Debug / mod apps | Magic SysRq, hung-task + sched debug + stats, task-delay acct, fanotify, dynamic printk, `IKCONFIG_PROC`, `PRINTK=y` |
-|Root policy | **100% SAFE — no KernelSU / APatch / FolkPatch inside.** Root later with FolkPatch/Magisk if you want (KALLSYMS_ALL=y ready) |
+|Root policy | **100% SAFE — no KernelSU / APatch / FolkPatch inside.** Root with Magisk (recommended, Zygisk-ready) or FolkPatch/APatch (`KALLSYMS_ALL=y` ready) |
 
 ## Download
 

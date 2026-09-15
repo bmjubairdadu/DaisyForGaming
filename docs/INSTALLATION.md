@@ -39,6 +39,21 @@ TrickyStore module (userspace keybox/FP spoof). Never put
 `ro.build.fingerprint` overrides in `anykernel.sh` - boot-img props are
 trivially detectable.
 
+### Root with Magisk (recommended for this kernel)
+Kernel side is complete: OverlayFS + tmpfs xattr/acl, full namespace set
+(UTS/IPC/USER/PID/NET), loop + squashfs, dm-verity, audit, seccomp-bpf,
+KALLSYMS. Official flow (topjohnwu.github.io/Magisk/install.html):
+1. If APatch/FolkPatch is installed, restore stock boot first (one root
+   at a time).
+2. Magisk app -> Install -> Select and Patch a File -> stock `boot.img`.
+3. `adb pull /sdcard/Download/magisk_patched_*.img`, then
+   `fastboot flash boot_a` + `fastboot flash boot_b` (daisy is A/B).
+   Tip: `fastboot boot <patched.img>` first to test safely.
+4. Flash the DaisyForGaming zip (ramdisk untouched, Magisk survives).
+5. Magisk settings -> Zygisk ON -> reboot. libsu/Zygisk apps
+   (e.g. game tools using `com.topjohnwu.superuser`) need the Magisk
+   daemon - APatch/FolkPatch alone cannot serve them.
+
 ### Game mod / kernel-level apps + network errors in background
 Two different causes, don't mix them:
 1. **Mid-game freeze/lag (no mod app): kernel thermal+GPU.** Fixed:
