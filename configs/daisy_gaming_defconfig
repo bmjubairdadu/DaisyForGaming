@@ -1,9 +1,9 @@
-# DaisyForGaming v1.1 fragment - verified 4.9.337 daisy (TogoFire @ ff7b84e).
+# DaisyForGaming v1.2 fragment - verified 4.9.337 daisy (TogoFire @ ff7b84e).
 # Merged over stock daisy_defconfig by build.sh. No choice/default overrides.
 
 # --- CPU: schedutil/ondemand/conservative/powersave/userspace + input-boost ---
 # No performance/gaming/interactive governor in tree. App-launch fix via
-# patches/schedutil-fastramp.patch (up 500us + down hold 10ms; no sysfs tunable).
+# patches/schedutil-fastramp.patch (up 2ms + down hold 10ms; v1.2 stable).
 CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y
 CONFIG_CPU_FREQ_GOV_ONDEMAND=y
 CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y

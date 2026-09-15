@@ -8,7 +8,7 @@ index 8c98d76d0f5..6e1205ebdc6 100644
  	/* Hard-code some sane rate-limit values */
 -	tunables->up_rate_limit_us = 20000;
 -	tunables->down_rate_limit_us = 500;
-+	tunables->up_rate_limit_us = 500;
++	tunables->up_rate_limit_us = 2000;
 +	tunables->down_rate_limit_us = 10000;
  
  	policy->governor_data = sg_policy;
