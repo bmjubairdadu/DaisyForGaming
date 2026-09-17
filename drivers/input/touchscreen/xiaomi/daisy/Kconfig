@@ -1,0 +1,6 @@
+if MACH_XIAOMI_DAISY
+
+source "drivers/input/touchscreen/xiaomi/daisy/ft5446/Kconfig"
+source "drivers/input/touchscreen/xiaomi/daisy/gt917d/Kconfig"
+
+endif
