@@ -56,6 +56,8 @@ struct wcd_gpio_priv {
 	struct regmap *map;
 	struct pinctrl_dev *ctrl;
 	struct gpio_chip chip;
+	struct pinctrl_pin_desc *pindesc;
+	unsigned int npins;
 };
 
 static int wcd_gpio_read(struct wcd_gpio_priv *priv_data,
@@ -90,19 +92,25 @@ static int wcd_gpio_write(struct wcd_gpio_priv *priv_data,
 
 static int wcd_get_groups_count(struct pinctrl_dev *pctldev)
 {
-	return pctldev->desc->npins;
+	struct wcd_gpio_priv *priv_data = pinctrl_dev_get_drvdata(pctldev);
+
+	return priv_data->npins;
 }
 
 static const char *wcd_get_group_name(struct pinctrl_dev *pctldev,
 		unsigned int pin)
 {
-	return pctldev->desc->pins[pin].name;
+	struct wcd_gpio_priv *priv_data = pinctrl_dev_get_drvdata(pctldev);
+
+	return priv_data->pindesc[pin].name;
 }
 
 static int wcd_get_group_pins(struct pinctrl_dev *pctldev, unsigned int pin,
 		const unsigned int **pins, unsigned int *num_pins)
 {
-	*pins = &pctldev->desc->pins[pin].number;
+	struct wcd_gpio_priv *priv_data = pinctrl_dev_get_drvdata(pctldev);
+
+	*pins = &priv_data->pindesc[pin].number;
 	*num_pins = 1;
 	return 0;
 }
@@ -119,10 +127,11 @@ static int wcd_config_get(struct pinctrl_dev *pctldev,
 				unsigned int pin, unsigned long *config)
 {
 	unsigned int param = pinconf_to_config_param(*config);
+	struct wcd_gpio_priv *priv_data = pinctrl_dev_get_drvdata(pctldev);
 	struct wcd_gpio_pad *pad;
 	unsigned int arg;
 
-	pad = pctldev->desc->pins[pin].drv_data;
+	pad = priv_data->pindesc[pin].drv_data;
 
 	switch (param) {
 	case PIN_CONFIG_BIAS_PULL_DOWN:
@@ -159,7 +168,7 @@ static int wcd_config_set(struct pinctrl_dev *pctldev, unsigned int pin,
 	unsigned int param, arg;
 	int i, ret;
 
-	pad = pctldev->desc->pins[pin].drv_data;
+	pad = priv_data->pindesc[pin].drv_data;
 
 	for (i = 0; i < nconfs; i++) {
 		param = pinconf_to_config_param(configs[i]);
@@ -244,7 +253,7 @@ static int wcd_gpio_get(struct gpio_chip *chip, unsigned int pin)
 	struct wcd_gpio_pad *pad;
 	int value;
 
-	pad = priv_data->ctrl->desc->pins[pin].drv_data;
+	pad = priv_data->pindesc[pin].drv_data;
 
 	if (!pad->is_valid)
 		return -EINVAL;
@@ -332,6 +341,8 @@ static int wcd_pinctrl_probe(struct platform_device *pdev)
 	pctrldesc->name = dev_name(dev);
 	pctrldesc->pins = pindesc;
 	pctrldesc->npins = npins;
+	priv_data->pindesc = pindesc;
+	priv_data->npins = npins;
 
 	name = devm_kcalloc(dev, npins, sizeof(char *), GFP_KERNEL);
 	if (!name) {

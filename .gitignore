@@ -121,7 +121,12 @@ all.config
 kernel/configs/android-*.cfg
 
 # Ignore stuff
-AnyKernel3/
+/AnyKernel3/*.zip
+/*.zip
+/AnyKernel3/Image.gz-dtb
+/AnyKernel3/tools/busybox
+/AnyKernel3/tools/ak3-core.sh
+/AnyKernel3/META-INF/com/google/android/update-binary
 changelog/
 clang-azure/
 clang-cosmic/

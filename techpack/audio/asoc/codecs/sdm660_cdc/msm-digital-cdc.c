@@ -111,6 +111,10 @@ int msm_digcdc_mclk_enable(struct snd_soc_codec *codec,
 }
 EXPORT_SYMBOL(msm_digcdc_mclk_enable);
 
+/* Tracks regmap cache-only state. struct regmap is opaque to codec
+ * drivers, so map->cache_only cannot be accessed directly. */
+static bool msm_digcdc_cache_only;
+
 static int msm_digcdc_clock_control(bool flag)
 {
 	int ret = -EINVAL;
@@ -123,7 +127,7 @@ static int msm_digcdc_clock_control(bool flag)
 	if (flag) {
 		mutex_lock(&pdata->cdc_int_mclk0_mutex);
 		if (atomic_read(&pdata->int_mclk0_enabled) == false) {
-			if (msm_dig_cdc->regmap->cache_only == true)
+			if (msm_digcdc_cache_only)
 				return ret;
 			if (pdata->native_clk_set)
 				pdata->digital_cdc_core_clk.clk_freq_in_hz =
@@ -142,7 +146,8 @@ static int msm_digcdc_clock_control(bool flag)
 				 * Avoid access to lpass register
 				 * as clock enable failed during SSR/PDR.
 				 */
-				msm_dig_cdc->regmap->cache_only = true;
+				msm_digcdc_cache_only = true;
+				regcache_cache_only(msm_dig_cdc->regmap, true);
 				return ret;
 			}
 			pr_debug("enabled digital codec core clk\n");

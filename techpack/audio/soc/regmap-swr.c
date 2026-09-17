@@ -38,7 +38,7 @@ static int regmap_swr_gather_write(void *context,
 		dev_err(dev, "%s: regmap is NULL\n", __func__);
 		return -EINVAL;
 	}
-	addr_bytes = map->format.reg_bytes;
+	addr_bytes = regmap_get_reg_bytes(map);
 	if (swr == NULL) {
 		dev_err(dev, "%s: swr device is NULL\n", __func__);
 		return -EINVAL;
@@ -49,7 +49,7 @@ static int regmap_swr_gather_write(void *context,
 		return -EINVAL;
 	}
 	reg_addr = *(u16 *)reg;
-	val_bytes = map->format.val_bytes;
+	val_bytes = regmap_get_val_bytes(map);
 	/* val_len = val_bytes * val_count */
 	for (i = 0; i < (val_len / val_bytes); i++) {
 		value = (u8 *)val + (val_bytes * i);
@@ -89,9 +89,9 @@ static int regmap_swr_raw_multi_reg_write(void *context, const void *data,
 		return -EINVAL;
 	}
 
-	addr_bytes = map->format.reg_bytes;
-	val_bytes = map->format.val_bytes;
-	pad_bytes = map->format.pad_bytes;
+	addr_bytes = regmap_get_reg_bytes(map);
+	val_bytes = regmap_get_val_bytes(map);
+	pad_bytes = regmap_get_pad_bytes(map);
 
 	if (addr_bytes + val_bytes + pad_bytes == 0) {
 		dev_err(dev, "%s: sum of addr, value and pad is 0\n", __func__);
@@ -112,9 +112,9 @@ static int regmap_swr_raw_multi_reg_write(void *context, const void *data,
 	buf = (u8 *)data;
 	for (i = 0; i < num_regs; i++) {
 		reg[i] = *(u16 *)buf;
-		buf += (map->format.reg_bytes + map->format.pad_bytes);
+		buf += (regmap_get_reg_bytes(map) + regmap_get_pad_bytes(map));
 		val[i] = *buf;
-		buf += map->format.val_bytes;
+		buf += regmap_get_val_bytes(map);
 	}
 	ret = swr_bulk_write(swr, swr->dev_num, reg, val, num_regs);
 	if (ret)
@@ -138,9 +138,9 @@ static int regmap_swr_write(void *context, const void *data, size_t count)
 		dev_err(dev, "%s: regmap is NULL\n", __func__);
 		return -EINVAL;
 	}
-	addr_bytes = map->format.reg_bytes;
-	val_bytes = map->format.val_bytes;
-	pad_bytes = map->format.pad_bytes;
+	addr_bytes = regmap_get_reg_bytes(map);
+	val_bytes = regmap_get_val_bytes(map);
+	pad_bytes = regmap_get_pad_bytes(map);
 
 	WARN_ON(count < addr_bytes);
 
@@ -167,7 +167,7 @@ static int regmap_swr_read(void *context,
 		dev_err(dev, "%s: regmap is NULL\n", __func__);
 		return -EINVAL;
 	}
-	addr_bytes = map->format.reg_bytes;
+	addr_bytes = regmap_get_reg_bytes(map);
 	if (swr == NULL) {
 		dev_err(dev, "%s: swr is NULL\n", __func__);
 		return -EINVAL;

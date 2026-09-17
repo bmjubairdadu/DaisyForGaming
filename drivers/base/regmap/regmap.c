@@ -2873,6 +2873,37 @@ int regmap_get_val_bytes(struct regmap *map)
 EXPORT_SYMBOL_GPL(regmap_get_val_bytes);
 
 /**
+ * regmap_get_reg_bytes(): Report the size of a register address
+ *
+ * Report the size of a register address in bytes, mainly intended
+ * for use by generic infrastructure built on top of regmap.
+ */
+int regmap_get_reg_bytes(struct regmap *map)
+{
+	if (map->format.format_write)
+		return -EINVAL;
+
+	return map->format.reg_bytes;
+}
+EXPORT_SYMBOL_GPL(regmap_get_reg_bytes);
+
+/**
+ * regmap_get_pad_bytes(): Report the number of pad bytes
+ *
+ * Report the number of pad bytes between register and value,
+ * mainly intended for use by generic infrastructure built on
+ * top of regmap.
+ */
+int regmap_get_pad_bytes(struct regmap *map)
+{
+	if (map->format.format_write)
+		return -EINVAL;
+
+	return map->format.pad_bytes;
+}
+EXPORT_SYMBOL_GPL(regmap_get_pad_bytes);
+
+/**
  * regmap_get_max_register(): Report the max register value
  *
  * Report the max register value, mainly intended to for use by
