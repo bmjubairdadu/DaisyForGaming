@@ -9,7 +9,7 @@
 ### AnyKernel setup
 # begin properties
 properties() { '
-kernel.string=DaisyForGaming v1.0 by JUBAIR HOSEN
+kernel.string=DaisyForGaming v2.2 by JUBAIR HOSEN
 do.devicecheck=1
 do.modules=0
 do.systemless=1
@@ -22,26 +22,22 @@ supported.patchlevels=
 supported.vendor.patchlevels=
 '; } # end properties
 
-# shell variables
-# block is resolved below (after ak3-core import) - daisy is A-only
-block=auto;
-is_slot_device=0;
-ramdisk_compression=auto;
-patch_vbmeta_flag=auto;
+# boot shell variables - MUST be UPPERCASE (ak3-core.sh reads $BLOCK etc.)
+# daisy is A-only eMMC: explicit path because auto-detect fails on OrangeFox
+if [ -e /dev/block/bootdevice/by-name/boot ]; then
+  BLOCK=/dev/block/bootdevice/by-name/boot;
+elif [ -e /dev/block/platform/soc/7824900.sdhci/by-name/boot ]; then
+  BLOCK=/dev/block/platform/soc/7824900.sdhci/by-name/boot;
+else
+  BLOCK=auto;
+fi;
+IS_SLOT_DEVICE=0;
+RAMDISK_COMPRESSION=auto;
+PATCH_VBMETA_FLAG=auto;
 
 ### AnyKernel methods (do not change)
 # import patching functions
 . tools/ak3-core.sh;
-
-# Daisy boot partition: explicit paths because auto-detection fails
-# on some recoveries ("unable to determine partition" error)
-if [ -e /dev/block/bootdevice/by-name/boot ]; then
-  block=/dev/block/bootdevice/by-name/boot;
-elif [ -e /dev/block/platform/soc/7824900.sdhci/by-name/boot ]; then
-  block=/dev/block/platform/soc/7824900.sdhci/by-name/boot;
-else
-  abort "Boot partition not found! Note your recovery name/version and tell JUBAIR HOSEN.";
-fi;
 
 ### DaisyForGaming stylish flashing screen
 ui_print " ";
