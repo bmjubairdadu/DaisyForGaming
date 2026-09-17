@@ -127,6 +127,10 @@ kernel/configs/android-*.cfg
 /AnyKernel3/tools/busybox
 /AnyKernel3/tools/ak3-core.sh
 /AnyKernel3/META-INF/com/google/android/update-binary
+# local debug/test artifacts (never commit)
+/ramdisk-*.cpio
+/recovery.log
+/test-boot-*.img
 changelog/
 clang-azure/
 clang-cosmic/
