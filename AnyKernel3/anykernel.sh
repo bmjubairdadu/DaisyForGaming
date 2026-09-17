@@ -9,7 +9,7 @@
 ### AnyKernel setup
 # begin properties
 properties() { '
-kernel.string=DaisyForGaming v2.3 by JUBAIR HOSEN
+kernel.string=DaisyForGaming v2.4 by JUBAIR HOSEN (GCC build)
 do.devicecheck=1
 do.modules=0
 do.systemless=1

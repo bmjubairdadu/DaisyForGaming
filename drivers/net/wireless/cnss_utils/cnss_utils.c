@@ -460,7 +460,11 @@ out:
 
 static void cnss_utils_debugfs_destroy(struct cnss_utils_priv *priv)
 {
+#ifdef CONFIG_DEBUG_FS
 	debugfs_remove_recursive(priv->root_dentry);
+#else
+	(void)priv;
+#endif
 }
 
 static int __init cnss_utils_init(void)
