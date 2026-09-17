@@ -23,6 +23,7 @@ supported.vendor.patchlevels=
 '; } # end properties
 
 # shell variables
+# block is resolved below (after ak3-core import) - daisy is A-only
 block=auto;
 is_slot_device=0;
 ramdisk_compression=auto;
@@ -31,6 +32,16 @@ patch_vbmeta_flag=auto;
 ### AnyKernel methods (do not change)
 # import patching functions
 . tools/ak3-core.sh;
+
+# Daisy boot partition: explicit paths because auto-detection fails
+# on some recoveries ("unable to determine partition" error)
+if [ -e /dev/block/bootdevice/by-name/boot ]; then
+  block=/dev/block/bootdevice/by-name/boot;
+elif [ -e /dev/block/platform/soc/7824900.sdhci/by-name/boot ]; then
+  block=/dev/block/platform/soc/7824900.sdhci/by-name/boot;
+else
+  abort "Boot partition not found! Note your recovery name/version and tell JUBAIR HOSEN.";
+fi;
 
 ### DaisyForGaming stylish flashing screen
 ui_print " ";
