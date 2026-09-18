@@ -54,7 +54,7 @@ Pack a flashable ZIP with `AnyKernel3/pack_anykernel.ps1` (Windows) after buildi
 ## Credits
 
 - Developer: **JUBAIR HOSEN**
-- Base: TogoFire Panda kernel (Linux 4.9, msm8953) + CAF + LineageOS
+- Base: Linux 4.9 CAF (msm8953) + LineageOS
 - Installer: [AnyKernel3 by osm0sis](https://github.com/osm0sis/AnyKernel3)
 - Root: [APatch](https://github.com/bmax121/APatch) /
   [FolkPatch](https://github.com/LyraVoid/FolkPatch) /

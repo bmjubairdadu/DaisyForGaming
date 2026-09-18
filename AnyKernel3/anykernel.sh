@@ -1,5 +1,5 @@
 # AnyKernel3 Ramdisk Mod Script
-## DaisyForGaming v5.2 by JUBAIR HOSEN (Panda 4.9.337, AK3 repack style)
+## DaisyForGaming v5.2 by JUBAIR HOSEN (4.9.337, AK3 repack style)
 
 ### AnyKernel setup
 # begin properties

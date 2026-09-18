@@ -257,70 +257,16 @@ fi
 
 ##------------------------------------------------------##
 
-# Clone AnyKernel3
+# Clone AnyKernel3 (official release by osm0sis)
 ANYKERNEL3_VERSION="AnyKernel3"
 msg $green "|| Cloning AnyKernel3 ||" $white
 
 # Check if AnyKernel directory exists
 if [[ ! -d "$ANYKERNEL3_VERSION" ]]; then
     echo -e "$yellow $ANYKERNEL3_VERSION not found, downloading... $white"
-    
-# Display options and accept choice from user
-echo -e "${magenta}\n👉 Choose AnyKernel version: ${white}"
-echo -e "${blue}1. Panda"
-echo "2. NetHunter"
-echo "3. NetErnels"
-echo "4. KernelSU"
-echo "5. GCC"
-echo "6. McQuaid"
-echo "7. Onion"
-echo "8. Thor"
-echo "9. Biogenesis"
-echo -e "10. Mystique\n${white}"
-read -t 5 -p "Enter your choice [1-10]: " choice || {
-    echo -e "$cyan Timeout of 5 seconds reached. No input received. $white"
-    echo -e "$lgreen Ak3 choice to 1. $white"
-    choice=1
-    }
-
-    case $choice in
-        1)
-            git clone --depth=1 https://github.com/${GH_USER}/AnyKernel3 -b Panda "${ANYKERNEL3_VERSION}"
-            ;;
-        2)
-            git clone --depth=1 https://github.com/${GH_USER}/AnyKernel3 -b Panda-Nethunter "${ANYKERNEL3_VERSION}"
-            ;;
-        3)
-            git clone --depth=1 https://github.com/${GH_USER}/AnyKernel3 -b NetErnels "${ANYKERNEL3_VERSION}"
-            ;;
-        4)
-            git clone --depth=1 https://github.com/${GH_USER}/AnyKernel3 -b Panda-KSU "${ANYKERNEL3_VERSION}"            
-            ;;
-        5)
-            git clone --depth=1 https://github.com/${GH_USER}/AnyKernel3 -b Panda-GCC "${ANYKERNEL3_VERSION}"
-            ;;
-        6)
-            git clone --depth=1 https://github.com/${GH_USER}/AnyKernel3 -b McQuaid "${ANYKERNEL3_VERSION}"
-            ;;
-        7)
-            git clone --depth=1 https://github.com/${GH_USER}/AnyKernel3 -b Onion "${ANYKERNEL3_VERSION}"
-            ;;
-        8)
-            git clone --depth=1 https://github.com/${GH_USER}/AnyKernel3 -b Thor "${ANYKERNEL3_VERSION}"
-            ;;
-        9)
-            git clone --depth=1 https://github.com/${GH_USER}/AnyKernel3 -b Biogenesis "${ANYKERNEL3_VERSION}"
-            ;;
-        10)
-            git clone --depth=1 https://github.com/${GH_USER}/AnyKernel3 -b Mystique "${ANYKERNEL3_VERSION}"
-            ;;
-        *)
-            echo "Invalid choice, please try again."
-            ;;
-    esac
-    
+    git clone --depth=1 https://github.com/osm0sis/AnyKernel3 -b master "${ANYKERNEL3_VERSION}"
 else
-    echo -e "$yellow $ANYKERNEL3_VERSION found, skipping step $white"   
+    echo -e "$yellow $ANYKERNEL3_VERSION found, skipping step $white"
 fi
 
     # Check which AnyKernel version is currently being used
@@ -446,6 +392,8 @@ make -j$(nproc) ARCH=arm64 SUBARCH=arm64 O=out \
     LLVM_IAS=1 \
     CROSS_COMPILE="${CLANG_ROOTDIR}/bin/aarch64-linux-gnu-" \
     CROSS_COMPILE_ARM32="${CLANG_ROOTDIR}/bin/arm-linux-gnueabi-" \
+    KBUILD_BUILD_USER="JUBAIR" \
+    KBUILD_BUILD_HOST="DaisyForGaming" \
     2>&1 | tee error.log
 fi
 
@@ -476,6 +424,8 @@ make -j$(nproc) ARCH=arm64 SUBARCH=arm64 O=out \
     OBCOPY=llvm-objcopy \
     OBJDUMP=aarch64-elf-objdump \
     STRIP=aarch64-elf-strip \
+    KBUILD_BUILD_USER="JUBAIR" \
+    KBUILD_BUILD_HOST="DaisyForGaming" \
     2>&1 | tee error.log \
     2>&1 | tee out/error.log
 fi
