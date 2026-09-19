@@ -104,9 +104,7 @@ write_boot;
 
 # 7. Flash complete text
 ui_print " ";
-ui_print "  ############################################";
-ui_print "  #              Flashing done!              #";
-ui_print "  #           Enjoy smooth gaming.           #";
-ui_print "  #         Developer : JUBAIR HOSEN         #";
-ui_print "  ############################################";
+ui_print "  Flashing done!";
+ui_print "  Enjoy smooth gaming.";
+ui_print "  Developer : JUBAIR HOSEN";
 ui_print " ";
