@@ -35,6 +35,9 @@ DaisyForGaming is a performance-focused custom Android kernel for the **Xiaomi M
 
 ## Building
 
+> Tip: full history is large — slim clone with
+> `git clone --depth 1 https://github.com/bmjubairdadu/DaisyForGaming.git`
+
 Linux (or WSL) with GCC cross toolchain:
 
 ```bash
