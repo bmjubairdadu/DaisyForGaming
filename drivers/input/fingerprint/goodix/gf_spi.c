@@ -77,10 +77,6 @@ static struct gf_key_map maps[] = {
 	{ EV_KEY, GF_NAV_INPUT_RIGHT },
 	{ EV_KEY, GF_NAV_INPUT_LEFT },
 	{ EV_KEY, GF_KEY_INPUT_CAMERA },
-	{ EV_KEY, GF_NAV_INPUT_CLICK },
-	{ EV_KEY, GF_NAV_INPUT_DOUBLE_CLICK },
-	{ EV_KEY, GF_NAV_INPUT_LONG_PRESS },
-	{ EV_KEY, GF_NAV_INPUT_HEAVY },
 #endif
 };
 
@@ -263,23 +259,12 @@ static inline void nav_event_input(struct gf_dev *gf_dev, gf_nav_event_t nav_eve
 	case GF_NAV_RIGHT:
 		nav_input = GF_NAV_INPUT_RIGHT;
 		break;
-	case GF_NAV_CLICK:
-		nav_input = GF_NAV_INPUT_CLICK;
-		break;
-	case GF_NAV_HEAVY:
-		nav_input = GF_NAV_INPUT_HEAVY;
-		break;
-	case GF_NAV_LONG_PRESS:
-		nav_input = GF_NAV_INPUT_LONG_PRESS;
-		break;
-	case GF_NAV_DOUBLE_CLICK:
-		nav_input = GF_NAV_INPUT_DOUBLE_CLICK;
-		break;
 	default:
 		break;
 	}
 
-	if ((nav_event != GF_NAV_FINGER_DOWN) &&
+	if (nav_input &&
+	    (nav_event != GF_NAV_FINGER_DOWN) &&
 	    (nav_event != GF_NAV_FINGER_UP)) {
 		input_report_key(gf_dev->input, nav_input, 1);
 		input_sync(gf_dev->input);

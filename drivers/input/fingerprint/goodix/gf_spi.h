@@ -20,15 +20,12 @@ enum FP_MODE {
 #define SUPPORT_NAV_EVENT
 
 #ifdef SUPPORT_NAV_EVENT
+/* Swipe-only, Sleepy-compatible: no CLICK/DOUBLE_CLICK/LONG_PRESS/HEAVY
+ * to avoid extra VOLUMEDOWN/VOLUMEUP/SEARCH/CHAT events triggering QS */
 #define GF_NAV_INPUT_UP			KEY_UP
 #define GF_NAV_INPUT_DOWN		KEY_DOWN
 #define GF_NAV_INPUT_LEFT		KEY_LEFT
 #define GF_NAV_INPUT_RIGHT		KEY_RIGHT
-
-#define GF_NAV_INPUT_CLICK		KEY_VOLUMEDOWN
-#define GF_NAV_INPUT_DOUBLE_CLICK	KEY_VOLUMEUP
-#define GF_NAV_INPUT_LONG_PRESS		KEY_SEARCH
-#define GF_NAV_INPUT_HEAVY		KEY_CHAT
 #endif
 
 #define GF_KEY_INPUT_HOME		KEY_HOME
@@ -46,10 +43,6 @@ typedef enum gf_nav_event {
 	GF_NAV_DOWN,
 	GF_NAV_LEFT,
 	GF_NAV_RIGHT,
-	GF_NAV_CLICK,
-	GF_NAV_HEAVY,
-	GF_NAV_LONG_PRESS,
-	GF_NAV_DOUBLE_CLICK,
 } gf_nav_event_t;
 #endif
 
