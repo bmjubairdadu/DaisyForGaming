@@ -4,7 +4,7 @@
 ### AnyKernel setup
 # begin properties
 properties() { '
-kernel.string=DaisyForGaming v1.0 by JUBAIR HOSEN
+kernel.string=DaisyForGaming v1.1 by JUBAIR HOSEN
 do.devicecheck=1
 do.modules=0
 do.systemless=1
@@ -28,13 +28,13 @@ PATCH_VBMETA_FLAG=auto;
 . tools/ak3-core.sh;
 
 ui_print " ";
-ui_print "  ############################################";
-ui_print "  #      D A I S Y  F O R  G A M I N G       #";
-ui_print "  #             by JUBAIR HOSEN              #";
-ui_print "  #                                          #";
-ui_print "  #       Device  : Mi A2 Lite (daisy)       #";
-ui_print "  #         Kernel  : 4.9.337 Gaming         #";
-ui_print "  ############################################";
+ui_print "  ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★";
+ui_print "  ★      D A I S Y  F O R  G A M I N G       ★";
+ui_print "  ★             by JUBAIR HOSEN              ★";
+ui_print "  ★                                          ★";
+ui_print "  ★ ► Device  : Mi A2 Lite (daisy)           ★";
+ui_print "  ★ ► Kernel  : 4.9.337 Gaming               ★";
+ui_print "  ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★";
 ui_print " ";
 
 ui_print "  Checking installed ROM version...";
@@ -67,9 +67,9 @@ write_boot;
 ## end install
 
 ui_print " ";
-ui_print "  ############################################";
-ui_print "  #              Flashing done!              #";
-ui_print "  #           Enjoy smooth gaming.           #";
-ui_print "  #         Developer : JUBAIR HOSEN         #";
-ui_print "  ############################################";
+ui_print "  ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★";
+ui_print "  ★ ► Flashing done!                         ★";
+ui_print "  ★ ► Enjoy smooth gaming.                   ★";
+ui_print "  ★ ► Developer : JUBAIR HOSEN               ★";
+ui_print "  ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★";
 ui_print " ";
