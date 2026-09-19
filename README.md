@@ -1,8 +1,10 @@
 # DaisyForGaming
 
-**Best custom gaming kernel for Xiaomi Mi A2 Lite (daisy) — Snapdragon 625 (msm8953) — Linux 4.9.337**
+[![Latest Release](https://img.shields.io/github/v/release/bmjubairdadu/DaisyForGaming)](https://github.com/bmjubairdadu/DaisyForGaming/releases) [![License: GPL-2.0](https://img.shields.io/badge/License-GPL--2.0-blue.svg)](COPYING)
 
-DaisyForGaming is a performance-focused custom Android kernel for the **Xiaomi Mi A2 Lite (codename: daisy)**. Built for smooth gaming (Free Fire, PUBG Mobile, eFootball), low latency networking, and all popular kernel driver-loaders, with support for APatch, FolkPatch and KernelSU root solutions.
+**Custom gaming kernel for Xiaomi Mi A2 Lite (daisy) — Snapdragon 625 (msm8953) — Linux 4.9.337**
+
+DaisyForGaming is a performance-focused custom Android kernel for the **Xiaomi Mi A2 Lite (codename: daisy)**. Built for smooth gaming (Free Fire, PUBG Mobile, eFootball), low latency networking, loadable kernel modules (`.ko` driver support for root tools and driver loaders), with support for Magisk, APatch, FolkPatch and KernelSU root solutions.
 
 ## Highlights
 
@@ -33,23 +35,32 @@ DaisyForGaming is a performance-focused custom Android kernel for the **Xiaomi M
 
 ## Building
 
-Linux (or WSL) with clang toolchain:
+Linux (or WSL) with GCC cross toolchain:
 
 ```bash
 make O=out ARCH=arm64 daisy_defconfig
 make O=out ARCH=arm64 SUBARCH=arm64 \
-  CC=<clang>/bin/clang LD=<clang>/bin/ld.lld \
-  AR=<clang>/bin/llvm-ar AS=<clang>/bin/llvm-as \
-  NM=<clang>/bin/llvm-nm OBJCOPY=<clang>/bin/llvm-objcopy \
-  OBJDUMP=<clang>/bin/llvm-objdump STRIP=<clang>/bin/llvm-strip \
-  LLVM=1 LLVM_IAS=1 \
-  CROSS_COMPILE=<clang>/bin/aarch64-linux-gnu- \
-  CROSS_COMPILE_ARM32=<clang>/bin/arm-linux-gnueabi- \
+  CROSS_COMPILE=aarch64-linux-gnu- \
+  CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+  LD=aarch64-linux-gnu-ld \
+  KBUILD_BUILD_USER="JUBAIR" KBUILD_BUILD_HOST="DaisyForGaming" \
   -j$(nproc)
 ```
 
 Pack a flashable ZIP with `AnyKernel3/pack_anykernel.ps1` (Windows) after building
 `out/arch/arm64/boot/Image.gz-dtb`.
+
+## FAQ
+
+- **Which ROMs work?** Any Android 9–12 based 4.9 ROM for daisy (e.g. crDroid 7).
+  Check Settings → About phone → Kernel version after flashing.
+- **Bootloop after flashing?** Restore your `boot.img` backup from recovery,
+  then report the issue with your ROM name and version.
+- **Magisk / root?** Flash Magisk or patch boot with APatch/FolkPatch after
+  the kernel — root apps, driver loaders (`.ko` via `insmod`) and modules
+  are supported (`CONFIG_MODULES`, forced-load friendly).
+- **Lag or heat?** The kernel ships balanced thermal + boost settings; check
+  background apps and give the first boot 10 minutes to settle.
 
 ## Credits
 
