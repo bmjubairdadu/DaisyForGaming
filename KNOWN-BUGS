@@ -18,3 +18,13 @@ I'll try to add notes here:
 4.14.308:
 
 71da2a151ed1a | rbd: avoid use-after-free in do_rbd_add() when rbd_dev_create() fails
+
+Fixed in DaisyForGaming v1.1 (2026-09-28):
+
+35529d6b827ee | nfc: pn533: Wait for out_urb's completion in pn533_usb_send_frame()
+71da2a151ed1a | rbd: avoid use-after-free in do_rbd_add() when rbd_dev_create() fails
+
+Both backported to this 4.9 tree. The pn533 fix was adapted to the
+pre-4.10 driver shape (no dedicated ack_urb): send_frame temporarily
+swaps the out_urb completion to an arg-based callback and waits for it,
+while send_ack / ACR122U poweron keep the original pn533_send_complete.
