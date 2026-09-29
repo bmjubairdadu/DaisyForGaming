@@ -16,3 +16,4 @@ else
 endif
 
 obj-$(CONFIG_DEBUG_BUS_VOTER) += msm_bus_dbg_voter.o
+obj-y				+= msm_bus_trace.o

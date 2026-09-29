@@ -4922,3 +4922,24 @@ CONFIG_ZRAM_WRITEBACK=y
 CONFIG_KPROBES=y
 CONFIG_OVERLAY_FS=y
 # CONFIG_COMPAT_VDSO is not set
+
+# ==== DaisyForGaming v1.2.1 modder-friendly overlay (by DaisyForGaming) ====
+# Module support for third-party / custom kernel modules
+CONFIG_MODULE_UNLOAD=y
+CONFIG_MODULE_FORCE_UNLOAD=y
+CONFIG_MODVERSIONS=y
+CONFIG_MODULE_FORCE_LOAD=y
+# Kallsyms: full symbol table (module dev, KernelSU, debugging)
+CONFIG_DEBUG_KERNEL=y
+CONFIG_KALLSYMS_ALL=y
+# Debugging / tracing power-tools
+CONFIG_FTRACE=y
+CONFIG_DYNAMIC_DEBUG=y
+CONFIG_DEBUG_FS=y
+# KernelSU / root tooling helpers
+CONFIG_USER_NS=y
+# Low-level access for advanced users
+CONFIG_DEVMEM=y
+CONFIG_STRICT_DEVMEM=y
+# IPS/VPN tooling
+CONFIG_IP6_NF_SECURITY=y
