@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
-# Builds DaisyForGaming v1.17 FINAL zips (AnyKernel3, sideload-flashable).
-# Usage: dfg_zip117.sh ksu   -> DaisyForGaming-v1.17-KSU.zip              (out/   tree)
-#        dfg_zip117.sh fp    -> DaisyForGaming-v1.17-FolkPatch-Magisk.zip (out-fp/ tree)
-# Kernel binaries are the ones verified on device (identical to v1.16);
-# v1.17 = final polish of the boot-time tuning script (zram retry etc).
+# Builds DaisyForGaming flashable zips (AnyKernel3, sideload-flashable).
+# Usage: dfg_zip.sh ksu   -> DaisyForGaming-v1.0-Gaming-KSU-<DD-MM-YYYY>.zip      (out/   tree)
+#        dfg_zip.sh fp    -> DaisyForGaming-v1.0-Gaming-Vannila-<DD-MM-YYYY>.zip  (out-fp/ tree)
 set -e
-VARIANT="${1:?usage: dfg_zip117.sh ksu|fp}"
+VARIANT="${1:?usage: dfg_zip.sh ksu|fp}"
+VER="1.0"
+DATESTAMP="$(date +%m-%d-%Y)"
 SRC=/mnt/d/DaisyForGaming
 cd "$SRC"
 
 if [ "$VARIANT" = "ksu" ]; then
     IMAGE=out/arch/arm64/boot/Image.gz-dtb
-    OUT="$SRC/DaisyForGaming-v1.17-KSU.zip"
+    LABEL="KSU"
 else
     IMAGE=out-fp/arch/arm64/boot/Image.gz-dtb
-    OUT="$SRC/DaisyForGaming-v1.17-FolkPatch-Magisk.zip"
+    LABEL="Vannila"
 fi
+ZIP="DaisyForGaming-v${VER}-Gaming-${LABEL}-${DATESTAMP}.zip"
+OUT="$SRC/$ZIP"
 [ -f "$IMAGE" ] || { echo "NO IMAGE: $IMAGE"; exit 1; }
 
 WORK="$SRC/_zipwork/$VARIANT"
@@ -30,10 +32,10 @@ echo "[$VARIANT] image staged: $(stat -c %s Image.gz-dtb) bytes"
 {
 cat <<'AKEOF1'
 # AnyKernel3 Ramdisk Mod Script
-## DaisyForGaming v1.17 by JUBAIR HOSEN (Linux 4.9.337)
+## DaisyForGaming by JUBAIR HOSEN (Linux 4.9.337)
 
 properties() { '
-kernel.string=DaisyForGaming v1.17
+kernel.string=DaisyForGaming v1.0
 do.devicecheck=1
 do.modules=0
 do.systemless=1
@@ -86,7 +88,7 @@ dump_boot;
 
 ui_print " ";
 ui_print "  Kernel features:";
-ui_print "    - Linux 4.9.337  (DaisyForGaming v1.17)";
+ui_print "    - Linux 4.9.337  (DaisyForGaming v1.0)";
 ui_print "    - CPU touch boost ON: 1401MHz little /";
 ui_print "      1689MHz big, 300ms + WALT sched boost";
 ui_print "    - schedutil governor, Adreno msm-adreno-tz";
@@ -136,12 +138,12 @@ AKEOF2
 
 if [ "$VARIANT" = "ksu" ]; then
     cat <<'TAIL_KSU'
-ui_print "  Done! DaisyForGaming v1.17 (KSU) installed.";
+ui_print "  Done! DaisyForGaming v1.0 (KSU) installed.";
 ui_print "  Root: KernelSU Manager or Magisk.";
 TAIL_KSU
 else
     cat <<'TAIL_FP'
-ui_print "  Done! DaisyForGaming v1.17 (FolkPatch/Magisk) installed.";
+ui_print "  Done! DaisyForGaming v1.0 (FolkPatch/Magisk) installed.";
 TAIL_FP
 fi
 
@@ -158,13 +160,13 @@ grep -q 'VARIANT' anykernel.sh && { echo "FATAL: VARIANT leaked into anykernel.s
 # ---- tuning script: single source from repo ----
 cp "$SRC/dfg_tune.sh" dfg_tune.sh
 chmod 755 dfg_tune.sh
-grep -q 'v1.17 tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"; exit 1; }
+grep -q 'v1.0 tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"; exit 1; }
 
 # ---- banner ----
 {
 cat <<'BAN1'
 **************************************************
-*        DaisyForGaming v1.17 FINAL             *
+*        DaisyForGaming v1.0                    *
 **************************************************
 *  Device : Xiaomi Mi A2 Lite (daisy)           *
 *  Kernel : 4.9.337-DaisyForGaming              *
@@ -186,7 +188,7 @@ BAN2
 
 rm -f "$OUT"
 zip -q -r -9 "$OUT" .
-echo "[$VARIANT] zip: $(stat -c %s "$OUT") bytes -> $(basename "$OUT")"
+echo "[$VARIANT] zip: $(stat -c %s "$OUT") bytes -> $ZIP"
 
 # ---- verification ----
 echo "[$VARIANT] files in zip: $(unzip -l "$OUT" | tail -1 | awk '{print $2}')"
@@ -197,4 +199,4 @@ echo "[$VARIANT] input boost:   $(grep -c 'input boost on by default' raw.txt)  
 echo "[$VARIANT] kernel.string: $(grep kernel.string anykernel.sh)"
 echo "[$VARIANT] tune retry:    $(grep -c 'zram swap ON' dfg_tune.sh) (expect 1)"
 rm -f raw.txt
-echo "ZIP117_${VARIANT}_DONE"
+echo "ZIP_${VARIANT}_DONE"

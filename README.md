@@ -1,6 +1,5 @@
 # DaisyForGaming 🎮
 
-![Version](https://img.shields.io/badge/version-v1.17_Final-blue)
 ![Kernel](https://img.shields.io/badge/Linux-4.9.337-orange)
 ![Platform](https://img.shields.io/badge/SoC-Snapdragon_625_(MSM8953)-green)
 ![Root](https://img.shields.io/badge/root-KernelSU_/_FolkPatch_/_Magisk-purple)
@@ -20,12 +19,12 @@
 | Base tree | TogoFire r54 (Linux 4.9.337) |
 | ROM | Android 11 (tested on Lineage-based ROM) |
 
-## ⬇️ Downloads (v1.17 Final)
+## ⬇️ Downloads (v1.0)
 
 | Flashable zip | Root stack | Kernel build |
 |---|---|---|
-| **[DaisyForGaming-v1.17-KSU.zip](https://github.com/bmjubairdadu/DaisyForGaming/releases/download/v1.17/DaisyForGaming-v1.17-KSU.zip)** | KernelSU (built-in) **or** Magisk | `CONFIG_KSU=y` + SusFS v1.5.5 |
-| **[DaisyForGaming-v1.17-FolkPatch-Magisk.zip](https://github.com/bmjubairdadu/DaisyForGaming/releases/download/v1.17/DaisyForGaming-v1.17-FolkPatch-Magisk.zip)** | FolkPatch (patch boot) **or** Magisk | vanilla — no in-kernel root |
+| **[DaisyForGaming-v1.0-Gaming-KSU-10-05-2026.zip](https://github.com/bmjubairdadu/DaisyForGaming/releases/download/v1.0/DaisyForGaming-v1.0-Gaming-KSU-10-05-2026.zip)** | KernelSU (built-in) **or** Magisk | `CONFIG_KSU=y` + SusFS v1.5.5 |
+| **[DaisyForGaming-v1.0-Gaming-Vannila-10-05-2026.zip](https://github.com/bmjubairdadu/DaisyForGaming/releases/download/v1.0/DaisyForGaming-v1.0-Gaming-Vannila-10-05-2026.zip)** | FolkPatch (patch boot) **or** Magisk | vanilla — no in-kernel root |
 
 > **Pick ONE root stack per kernel.** Never patch the KSU build's boot with FolkPatch/KernelPatch — KernelPatch installs its own execve hooks and conflicts with in-kernel KernelSU (instant bootloop). The FolkPatch build has no in-kernel root, so KernelPatch can patch it cleanly.
 
@@ -53,7 +52,7 @@
 
 ### Recovery (recommended)
 1. Reboot to TWRP / OrangeFox (or `adb reboot recovery`).
-2. Install the zip — or **Advanced → ADB Sideload** then `adb sideload DaisyForGaming-v1.17-*.zip`.
+2. Install the zip — or **Advanced → ADB Sideload** then `adb sideload DaisyForGaming-v1.0-Gaming-*.zip`.
 3. Reboot. The zip auto-detects `daisy`, gates on Android 11, and stages the boot-time tuning script (`99-dfg-tune.sh`) into Magisk `service.d`.
 
 ### Root setup
@@ -89,8 +88,8 @@ bash dfg_fp_build.sh
 wsl make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 daisy_defconfig -j8
 
 # Package a flashable zip
-bash dfg_zip117.sh ksu   # -> DaisyForGaming-v1.17-KSU.zip
-bash dfg_zip117.sh fp    # -> DaisyForGaming-v1.17-FolkPatch-Magisk.zip
+bash dfg_zip.sh ksu    # -> DaisyForGaming-v1.0-Gaming-KSU-<date>.zip
+bash dfg_zip.sh fp     # -> DaisyForGaming-v1.0-Gaming-Vannila-<date>.zip
 ```
 
 `dfg_boot_rebuild.py` swaps a boot image's kernel blob while keeping the header + ramdisk byte-identical (handy for kpatch testing).
@@ -101,9 +100,9 @@ bash dfg_zip117.sh fp    # -> DaisyForGaming-v1.17-FolkPatch-Magisk.zip
 |---|---|
 | KernelPatch-patched boot hangs at logo | kpimg < 0.13.8 — use FolkPatch V6 Sol (KP 0.13.9) or newer |
 | KernelPatch + KSU kernel bootloops | wrong zip — use the FolkPatch build for KP patching |
-| `vm.swappiness` permission denied | fixed since v1.14 (sysctl mode 0644) |
-| Boot warning dialog on Android 11 | keep `MODVERSIONS` on (it is, since v1.11) |
-| "zram swapon FAILED" in tune log | harmless ROM race since v1.17 — script retries and confirms swap state |
+| `vm.swappiness` permission denied | fixed (sysctl mode 0644) |
+| Boot warning dialog on Android 11 | keep `MODVERSIONS` on (it is enabled by default) |
+| "zram swapon FAILED" in tune log | harmless ROM race (script retries and confirms swap state) |
 
 ## 🙏 Credits
 

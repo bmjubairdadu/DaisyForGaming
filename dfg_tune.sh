@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# DaisyForGaming v1.17 - runtime tuning (runs from Magisk service.d each boot).
+# DaisyForGaming v1.0 - runtime tuning (runs from Magisk service.d each boot).
 # Re-asserts the input-boost values the kernel already boots with, lifts the
 # top-app schedtune group, enables zram lz4 swap (with retry: the ROM's init
 # configures zram concurrently around 40-50s, so one early swapon can race
@@ -14,7 +14,7 @@ while [ $i -lt 120 ]; do
   [ "$(getprop sys.boot_completed)" = "1" ] && break
   i=$((i+1)); sleep 1
 done
-say "v1.17 tuning start"
+say "v1.0 tuning start"
 
 # ---- CPU input boost (re-assert kernel defaults) ----
 if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
@@ -75,4 +75,4 @@ say "gov: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/nul
 say "cpu7 max: $(cat /sys/devices/system/cpu/cpu7/cpufreq/scaling_max_freq 2>/dev/null)"
 say "swappiness now = $(cat /proc/sys/vm/swappiness 2>/dev/null)"
 say "fsync_enabled = $(cat /sys/module/sync/parameters/fsync_enabled 2>/dev/null)"
-say "v1.17 tuning done"
+say "v1.0 tuning done"
