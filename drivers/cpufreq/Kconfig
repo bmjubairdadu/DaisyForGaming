@@ -61,6 +61,14 @@ choice
 	  This option sets which CPUFreq governor shall be loaded at
 	  startup. If in doubt, select 'performance'.
 
+config CPU_FREQ_DEFAULT_GOV_PERFORMANCE
+	bool "performance"
+	select CPU_FREQ_GOV_PERFORMANCE
+	help
+		Use the CPUFreq governor 'performance' as default. This sets
+		the frequency statically to the highest frequency supported by
+		the CPU.
+
 config CPU_FREQ_DEFAULT_GOV_POWERSAVE
 	bool "powersave"
 	select CPU_FREQ_GOV_POWERSAVE
@@ -108,7 +116,24 @@ config CPU_FREQ_DEFAULT_GOV_SCHEDUTIL
 	  Use the 'schedutil' CPUFreq governor by default. If unsure,
 		have a look at the help section of that governor.
 
+config CPU_FREQ_DEFAULT_GOV_INTERACTIVE
+	bool "interactive"
+	select CPU_FREQ_GOV_INTERACTIVE
+	help
+		Use the CPUFreq governor 'interactive' as default.
+
 endchoice
+
+config CPU_FREQ_GOV_PERFORMANCE
+	tristate "'performance' governor"
+	help
+		This cpufreq governor sets the frequency statically to the
+		highest available CPU frequency.
+
+		To compile this driver as a module, choose M here: the
+		module will be called cpufreq_performance.
+
+		If in doubt, say Y.
 
 config CPU_FREQ_GOV_POWERSAVE
 	tristate "'powersave' governor"
@@ -239,9 +264,29 @@ config BASE_BOOST_FREQ
 
 config INPUT_BOOST_FREQ
 	int "CPU input boost freq"
-	default "0"
+	default "1401600"
 	help
-	  Input boost frequency for the CPU.
+	  Input boost frequency in kHz for the little cluster (cpu0-3)
+	  applied on touch input. Written into the per-CPU input boost
+	  table at boot by the cpu-boost driver.
+
+config INPUT_BOOST_FREQ_BIG
+	int "CPU input boost freq for the big cluster (cpu4-7)"
+	default "1689600"
+	help
+	  Input boost frequency in kHz for CPUs 4-7 applied on touch
+	  input. Written into the per-CPU input boost table at boot by
+	  the cpu-boost driver.
+
+config INPUT_BOOST_SCHED
+	int "WALT scheduler boost on input"
+	range 0 1
+	default "1"
+	help
+	  When 1, every input event also raises a full-throttle WALT
+	  scheduler boost (sched_set_boost) for the input boost duration,
+	  so foreground tasks migrate to the big cluster instantly.
+	  0 keeps the scheduler boost off.
 
 config MAX_BOOST_FREQ
 	int "CPU max-boost freq"
@@ -249,6 +294,18 @@ config MAX_BOOST_FREQ
 	help
 	  Max-boost frequency for the CPU.
 
+config CPU_FREQ_GOV_INTERACTIVE
+	tristate "'interactive' governor"
+	depends on CPU_FREQ
+	select CPU_FREQ_GOV_COMMON
+	help
+		'interactive' - dynamic policy governor using a target load
+		threshold for lower wake-up latency than ondemand.
+
+		To compile this driver as a module, choose M here: the
+		module will be called cpufreq_interactive.
+
+		If in doubt, say N.
 endif
 
 comment "CPU frequency scaling drivers"

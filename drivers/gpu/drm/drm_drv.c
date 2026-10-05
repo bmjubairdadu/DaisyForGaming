@@ -532,10 +532,18 @@ int drm_dev_init(struct drm_device *dev,
 	mutex_init(&dev->master_mutex);
 
 	kthread_init_worker(&dev->bridge_enable_worker);
+	/*
+	 * Was kthread_run_perf_critical(), but no such helper is declared or
+	 * defined anywhere in this tree (it is a vendor leftover), so it
+	 * compiled as an implicit `int` return and failed with
+	 * "incompatible integer to pointer conversion". kthread_run() gives the
+	 * identical create+wake behaviour; the SCHED_FIFO bump on the next line
+	 * already provides the real-time priority the vendor helper intended.
+	 */
 	dev->bridge_enable_task =
-			kthread_run_perf_critical(kthread_worker_fn,
-						  &dev->bridge_enable_worker,
-						  "drm_bridge_enable");
+			kthread_run(kthread_worker_fn,
+				    &dev->bridge_enable_worker,
+				    "drm_bridge_enable");
 	if (IS_ERR(dev->bridge_enable_task)) {
 		ret = PTR_ERR(dev->bridge_enable_task);
 		DRM_ERROR("Cannot create bridge_enable kthread: %d\n", ret);

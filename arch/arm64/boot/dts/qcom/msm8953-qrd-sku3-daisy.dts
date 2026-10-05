@@ -88,3 +88,17 @@
 	qcom,fastchg-current-ma = <2000>;
 	qcom,thermal-mitigation = <2000 1000 700 0>;
 };
+
+/*
+ * DaisyForGaming: enable the PM8953 die-temperature thermal zone.
+ * Upstream keeps pm8953_tz disabled, which makes qpnp-temp-alarm probe fail
+ * with rc=-19 (thermal_zone_of_sensor_register finds no matching zone), so
+ * the PMIC overheat trips (105/125 C) never exist and thermal protection is
+ * blind to die temperature. The thermal-zones phandle-based override below
+ * flips just the status bit; the driver stays read-only otherwise.
+ */
+&thermal_zones {
+	pm8953_tz {
+		status = "okay";
+	};
+};

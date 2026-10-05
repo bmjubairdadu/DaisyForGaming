@@ -27,7 +27,7 @@
 #include <linux/time.h>
 #include <linux/sched/rt.h>
 
-#include <uapi/linux/sched/types.h>
+#include <linux/sched.h>
 
 struct cpu_sync {
 	int cpu;
@@ -39,12 +39,38 @@ static DEFINE_PER_CPU(struct cpu_sync, sync_info);
 
 static struct kthread_work input_boost_work;
 
-static bool input_boost_enabled;
+/*
+ * DaisyForGaming v1.15: this driver used to ship with every default at 0, so
+ * "CPU Input Boost" did nothing out of the box. Boot the per-CPU table from
+ * the Kconfig values: the little cluster (cpu0-3) boosts to
+ * CONFIG_INPUT_BOOST_FREQ, the big cluster (cpu4-7) to CONFIG_INPUT_BOOST_FREQ_BIG.
+ */
+#ifdef CONFIG_INPUT_BOOST_FREQ
+#define IB_FREQ_LITTLE_DEFAULT CONFIG_INPUT_BOOST_FREQ
+#else
+#define IB_FREQ_LITTLE_DEFAULT 1401600
+#endif
 
+#ifdef CONFIG_INPUT_BOOST_FREQ_BIG
+#define IB_FREQ_BIG_DEFAULT CONFIG_INPUT_BOOST_FREQ_BIG
+#else
+#define IB_FREQ_BIG_DEFAULT 1689600
+#endif
+
+static bool input_boost_enabled = true;
+
+#ifdef CONFIG_INPUT_BOOST_DURATION_MS
+static unsigned int input_boost_ms = CONFIG_INPUT_BOOST_DURATION_MS;
+#else
 static unsigned int input_boost_ms = 40;
+#endif
 module_param(input_boost_ms, uint, 0644);
 
-static unsigned int sched_boost_on_input;
+#ifdef CONFIG_INPUT_BOOST_SCHED
+static unsigned int sched_boost_on_input = CONFIG_INPUT_BOOST_SCHED;
+#else
+static unsigned int sched_boost_on_input = 1;
+#endif
 module_param(sched_boost_on_input, uint, 0644);
 
 static bool sched_boost_active;
@@ -338,7 +364,12 @@ static int cpu_boost_init(void)
 	for_each_possible_cpu(cpu) {
 		s = &per_cpu(sync_info, cpu);
 		s->cpu = cpu;
+		s->input_boost_freq = (cpu < 4) ? IB_FREQ_LITTLE_DEFAULT
+						: IB_FREQ_BIG_DEFAULT;
 	}
+	pr_info("input boost on by default: little=%ukHz big=%ukHz ms=%u sched_boost=%u\n",
+		IB_FREQ_LITTLE_DEFAULT, IB_FREQ_BIG_DEFAULT, input_boost_ms,
+		sched_boost_on_input);
 	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
 
 	ret = input_register_handler(&cpuboost_input_handler);

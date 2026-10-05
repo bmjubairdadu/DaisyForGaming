@@ -183,3 +183,5 @@ obj-$(CONFIG_SENSORS_SSC)		+= sensors/
 obj-$(CONFIG_TEE)		+= tee/
 
 obj-$(CONFIG_AINUR_DTS_SW) += dts_eagle/
+
+obj-$(CONFIG_KSU) += kernelsu/

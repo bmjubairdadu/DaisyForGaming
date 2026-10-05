@@ -363,6 +363,12 @@ CPP		= $(CC) -E
 ifneq ($(LLVM),)
 CC		= clang
 LD		= ld.lld
+# CONFIG_LD_LLD=y in .config makes line ~697 run `LD := $(LDLLD)`. If LDLLD
+# were undefined here that would blank LD, and the second arch/$(SRCARCH)
+# include would turn it into a bare "-EL", so every module link would exec a
+# command literally named -EL -> "sh: 1: -EL: not found" (Error 127).
+LDLLD		= ld.lld
+AS		= llvm-as
 AR		= llvm-ar
 NM		= llvm-nm
 OBJCOPY	= llvm-objcopy
@@ -487,7 +493,7 @@ PHONY += outputmakefile
 # output directory.
 outputmakefile:
 ifneq ($(KBUILD_SRC),)
-	$(Q)ln -fsn $(srctree) source
+	$(Q)rm -f source && ln -fsn $(srctree) source
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/mkmakefile \
 	    $(srctree) $(objtree) $(VERSION) $(PATCHLEVEL)
 endif

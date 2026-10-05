@@ -138,3 +138,14 @@ clang-weebx/
 environment/
 gcc/
 out/
+
+# DaisyForGaming build & packaging
+out-fp/
+_zipwork/
+_ak3base/
+_folkpatch_tools/
+.dfg_build*
+*.log
+/.scmversion.tmp
+# flashable zips ship in releases/ only
+/*.zip

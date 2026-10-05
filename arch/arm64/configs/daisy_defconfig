@@ -1,4 +1,3 @@
-
 #
 # Automatically generated file; DO NOT EDIT.
 # Linux/arm64 4.9.337 Kernel Configuration
@@ -46,7 +45,6 @@ CONFIG_THREAD_INFO_IN_TASK=y
 CONFIG_INIT_ENV_ARG_LIMIT=32
 CONFIG_CROSS_COMPILE=""
 # CONFIG_COMPILE_TEST is not set
-CONFIG_LOCALVERSION="-Panda"
 # CONFIG_LOCALVERSION_AUTO is not set
 CONFIG_DEFAULT_HOSTNAME="McQuaid"
 CONFIG_SWAP=y
@@ -54,7 +52,10 @@ CONFIG_SWAP=y
 CONFIG_CROSS_MEMORY_ATTACH=y
 # CONFIG_FHANDLE is not set
 # CONFIG_USELIB is not set
-# CONFIG_AUDIT is not set
+# VINTF (framework compatibility matrix) requires AUDIT=y; it also pulls
+# AUDITSYSCALL which some audit-capable userspace tools look for.
+CONFIG_AUDIT=y
+CONFIG_AUDITSYSCALL=y
 CONFIG_HAVE_ARCH_AUDITSYSCALL=y
 
 #
@@ -94,7 +95,7 @@ CONFIG_HIGH_RES_TIMERS=y
 CONFIG_TICK_CPU_ACCOUNTING=y
 # CONFIG_VIRT_CPU_ACCOUNTING_GEN is not set
 CONFIG_IRQ_TIME_ACCOUNTING=y
-# CONFIG_SCHED_WALT is not set
+CONFIG_SCHED_WALT=y
 # CONFIG_BSD_PROCESS_ACCT is not set
 CONFIG_TASKSTATS=y
 # CONFIG_TASK_DELAY_ACCT is not set
@@ -160,7 +161,7 @@ CONFIG_CGROUP_CPUACCT=y
 CONFIG_CGROUP_BPF=y
 # CONFIG_CGROUP_DEBUG is not set
 CONFIG_SOCK_CGROUP_DATA=y
-# CONFIG_SCHED_CORE_CTL is not set
+CONFIG_SCHED_CORE_CTL=y
 # CONFIG_CHECKPOINT_RESTORE is not set
 CONFIG_NAMESPACES=y
 CONFIG_UTS_NS=y
@@ -232,10 +233,11 @@ CONFIG_SLUB=y
 # CONFIG_SLAB_FREELIST_RANDOM is not set
 # CONFIG_SLUB_CPU_PARTIAL is not set
 # CONFIG_SYSTEM_DATA_VERIFICATION is not set
-# CONFIG_PROFILING is not set
-# CONFIG_JUMP_LABEL is not set
+# VINTF requires PROFILING=y (it gates the perf event subsystem wiring).
+CONFIG_PROFILING=y
+CONFIG_JUMP_LABEL=y
 # CONFIG_STATIC_KEYS_SELFTEST is not set
-# CONFIG_UPROBES is not set
+CONFIG_UPROBES=y
 # CONFIG_HAVE_64BIT_ALIGNED_ACCESS is not set
 CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS=y
 CONFIG_HAVE_KPROBES=y
@@ -266,7 +268,6 @@ CONFIG_HAVE_CC_STACKPROTECTOR=y
 CONFIG_CC_STACKPROTECTOR=y
 # CONFIG_CC_STACKPROTECTOR_NONE is not set
 # CONFIG_CC_STACKPROTECTOR_REGULAR is not set
-# CONFIG_KPROBES is not set
 CONFIG_CC_STACKPROTECTOR_STRONG=y
 CONFIG_THIN_ARCHIVES=y
 # CONFIG_LD_GOLD is not set
@@ -343,14 +344,15 @@ CONFIG_BLOCK_COMPAT=y
 # IO Schedulers
 #
 CONFIG_IOSCHED_NOOP=y
-# CONFIG_IOSCHED_DEADLINE is not set
+CONFIG_IOSCHED_DEADLINE=y
 CONFIG_IOSCHED_CFQ=y
-CONFIG_DEFAULT_CFQ=y
+# CONFIG_DEFAULT_CFQ is not set
 # CONFIG_DEFAULT_BFQ is not set
 # CONFIG_DEFAULT_ANXIETY is not set
 # CONFIG_DEFAULT_NOOP is not set
 # CONFIG_DEFAULT_MAPLE is not set
-CONFIG_DEFAULT_IOSCHED="cfq"
+CONFIG_DEFAULT_DEADLINE=y
+CONFIG_DEFAULT_IOSCHED="deadline"
 CONFIG_ASN1=y
 CONFIG_UNINLINE_SPIN_UNLOCK=y
 CONFIG_ARCH_SUPPORTS_ATOMIC_RMW=y
@@ -485,7 +487,7 @@ CONFIG_COMPACTION=y
 CONFIG_MIGRATION=y
 CONFIG_PHYS_ADDR_T_64BIT=y
 CONFIG_BOUNCE=y
-# CONFIG_KSM is not set
+CONFIG_KSM=y
 CONFIG_DEFAULT_MMAP_MIN_ADDR=4096
 # CONFIG_TRANSPARENT_HUGEPAGE is not set
 # CONFIG_CLEANCACHE is not set
@@ -496,7 +498,7 @@ CONFIG_CMA_AREAS=7
 # CONFIG_ZBUD is not set
 CONFIG_ZSMALLOC=y
 CONFIG_PGTABLE_MAPPING=y
-# CONFIG_ZSMALLOC_STAT is not set
+CONFIG_ZSMALLOC_STAT=y
 CONFIG_SWAP_ENABLE_READAHEAD=y
 CONFIG_VMAP_LAZY_PURGING_FACTOR=32
 CONFIG_MM_EVENT_STAT=y
@@ -607,7 +609,7 @@ CONFIG_ARCH_SUSPEND_POSSIBLE=y
 CONFIG_CPU_IDLE=y
 CONFIG_CPU_IDLE_MULTIPLE_DRIVERS=y
 # CONFIG_CPU_IDLE_GOV_LADDER is not set
-# CONFIG_CPU_IDLE_GOV_MENU is not set
+CONFIG_CPU_IDLE_GOV_MENU=y
 
 #
 # ARM CPU Idle Drivers
@@ -621,23 +623,30 @@ CONFIG_CPU_IDLE_MULTIPLE_DRIVERS=y
 CONFIG_CPU_FREQ=y
 CONFIG_CPU_FREQ_GOV_ATTR_SET=y
 CONFIG_CPU_FREQ_STAT=y
+CONFIG_CPU_FREQ_STAT_DETAILS=y
 CONFIG_CPU_FREQ_TIMES=y
 # CONFIG_CPU_FREQ_DEFAULT_GOV_POWERSAVE is not set
 # CONFIG_CPU_FREQ_DEFAULT_GOV_USERSPACE is not set
 # CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND is not set
 # CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE is not set
+# CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE is not set
 CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL=y
+# CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE is not set
 # CONFIG_CPU_FREQ_GOV_POWERSAVE is not set
 # CONFIG_CPU_FREQ_GOV_USERSPACE is not set
 CONFIG_CPU_FREQ_GOV_ONDEMAND=y
+CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
+CONFIG_CPU_FREQ_GOV_INTERACTIVE=y
 CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
-# CONFIG_CPU_BOOST is not set
+CONFIG_CPU_BOOST=y
 CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y
 CONFIG_CPU_INPUT_BOOST=y
-CONFIG_INPUT_BOOST_DURATION_MS=100
+CONFIG_INPUT_BOOST_DURATION_MS=300
 CONFIG_WAKE_BOOST_DURATION_MS=500
 CONFIG_BASE_BOOST_FREQ=652800
 CONFIG_INPUT_BOOST_FREQ=1401600
+CONFIG_INPUT_BOOST_FREQ_BIG=1689600
+CONFIG_INPUT_BOOST_SCHED=1
 CONFIG_MAX_BOOST_FREQ=2208000
 
 #
@@ -882,10 +891,14 @@ CONFIG_NETFILTER_XT_MATCH_MARK=y
 CONFIG_NETFILTER_XT_MATCH_MULTIPORT=y
 # CONFIG_NETFILTER_XT_MATCH_NFACCT is not set
 # CONFIG_NETFILTER_XT_MATCH_OSF is not set
-CONFIG_NETFILTER_XT_MATCH_OWNER=y
+# VINTF matrix wants OWNER=n (upstream removed it in newer kernels; apps that
+# need per-UID routing can use cgroups instead). Match the matrix.
+# CONFIG_NETFILTER_XT_MATCH_OWNER is not set
 CONFIG_NETFILTER_XT_MATCH_POLICY=y
 CONFIG_NETFILTER_XT_MATCH_PKTTYPE=y
-# CONFIG_NETFILTER_XT_MATCH_QTAGUID is not set
+# VINTF matrix wants QTAGUID=y (per-UID traffic accounting used by
+# NetworkManagementService). Turned on here to satisfy the framework check.
+CONFIG_NETFILTER_XT_MATCH_QTAGUID=y
 CONFIG_NETFILTER_XT_MATCH_QUOTA=y
 CONFIG_NETFILTER_XT_MATCH_QUOTA2=y
 CONFIG_NETFILTER_XT_MATCH_QUOTA2_LOG=y
@@ -1283,9 +1296,9 @@ CONFIG_OF_BATTERYDATA=y
 CONFIG_BLK_DEV=y
 # CONFIG_BLK_DEV_NULL_BLK is not set
 CONFIG_ZRAM=y
-CONFIG_ZRAM_DEFAULT_COMP_ALGORITHM="zstd"
-# CONFIG_ZRAM_WRITEBACK is not set
-# CONFIG_ZRAM_MEMORY_TRACKING is not set
+CONFIG_ZRAM_DEFAULT_COMP_ALGORITHM="lz4"
+CONFIG_ZRAM_WRITEBACK=y
+CONFIG_ZRAM_MEMORY_TRACKING=y
 # CONFIG_BLK_DEV_COW_COMMON is not set
 CONFIG_BLK_DEV_LOOP=y
 CONFIG_BLK_DEV_LOOP_MIN_COUNT=8
@@ -1909,6 +1922,8 @@ CONFIG_UNIX98_PTYS=y
 # CONFIG_N_GSM is not set
 # CONFIG_TRACE_SINK is not set
 CONFIG_LDISC_AUTOLOAD=y
+# VINTF matrix requires DEVMEM/DEVKMEM off: /dev/mem lets userspace read
+# arbitrary physical memory (defeats SELinux). Nothing on daisy needs them.
 # CONFIG_DEVMEM is not set
 # CONFIG_DEVKMEM is not set
 
@@ -2275,6 +2290,7 @@ CONFIG_HWMON=y
 # CONFIG_SENSORS_LTC2945 is not set
 # CONFIG_SENSORS_LTC2990 is not set
 # CONFIG_SENSORS_LTC4151 is not set
+# CONFIG_SENSORS_LTC4152 is not set
 # CONFIG_SENSORS_LTC4215 is not set
 # CONFIG_SENSORS_LTC4222 is not set
 # CONFIG_SENSORS_LTC4245 is not set
@@ -4389,7 +4405,7 @@ CONFIG_EXFAT_FS=y
 # Pseudo filesystems
 #
 CONFIG_PROC_FS=y
-# CONFIG_PROC_KCORE is not set
+CONFIG_PROC_KCORE=y
 CONFIG_PROC_SYSCTL=y
 CONFIG_PROC_PAGE_MONITOR=y
 # CONFIG_PROC_CHILDREN is not set
@@ -4510,7 +4526,6 @@ CONFIG_ENABLE_MUST_CHECK=y
 CONFIG_FRAME_WARN=0
 # CONFIG_STRIP_ASM_SYMS is not set
 # CONFIG_UNUSED_SYMBOLS is not set
-# CONFIG_DEBUG_FS is not set
 # CONFIG_HEADERS_CHECK is not set
 # CONFIG_DEBUG_SECTION_MISMATCH is not set
 CONFIG_SECTION_MISMATCH_WARN_ONLY=y
@@ -4571,7 +4586,6 @@ CONFIG_HAVE_C_RECORDMCOUNT=y
 # CONFIG_IPC_LOGGING is not set
 # CONFIG_QCOM_RTB is not set
 CONFIG_TRACING_SUPPORT=y
-# CONFIG_FTRACE is not set
 
 #
 # Runtime Testing
@@ -4631,7 +4645,9 @@ CONFIG_SECURITY_NETWORK=y
 CONFIG_LSM_MMAP_MIN_ADDR=32768
 CONFIG_HAVE_HARDENED_USERCOPY_ALLOCATOR=y
 CONFIG_HAVE_ARCH_HARDENED_USERCOPY=y
-# CONFIG_HARDENED_USERCOPY is not set
+# VINTF requires HARDENED_USERCOPY=y: bounds-checks copy_to/from_user against
+# slab object sizes (blocks heap-overlap info leaks). Zero perf impact here.
+CONFIG_HARDENED_USERCOPY=y
 # CONFIG_FORTIFY_SOURCE is not set
 CONFIG_SECURITY_SELINUX=y
 # CONFIG_SECURITY_SELINUX_BOOTPARAM is not set
@@ -4925,6 +4941,11 @@ CONFIG_OVERLAY_FS=y
 
 # ==== DaisyForGaming v1.2.1 modder-friendly overlay (by DaisyForGaming) ====
 # Module support for third-party / custom kernel modules
+# MODVERSIONS is ON as of v1.11: the Android-11 framework compatibility matrix
+# (VINTF) requires it, and its absence makes system_server show the
+# "internal problem" boot dialog on every boot (Build.isBuildConsistent fails).
+# Modules must now be built against THIS kernel tree, which is fine: all
+# shipping modules (lkdtm, nf_nat_ipv6, ...) are built from this source.
 CONFIG_MODULE_UNLOAD=y
 CONFIG_MODULE_FORCE_UNLOAD=y
 CONFIG_MODVERSIONS=y
@@ -4939,7 +4960,139 @@ CONFIG_DEBUG_FS=y
 # KernelSU / root tooling helpers
 CONFIG_USER_NS=y
 # Low-level access for advanced users
-CONFIG_DEVMEM=y
-CONFIG_STRICT_DEVMEM=y
 # IPS/VPN tooling
 CONFIG_IP6_NF_SECURITY=y
+CONFIG_UPROBE_EVENT=y
+CONFIG_FUNCTION_TRACER=y
+CONFIG_FUNCTION_GRAPH_TRACER=y
+CONFIG_DYNAMIC_FTRACE=y
+CONFIG_FTRACE_SYSCALLS=y
+CONFIG_STACK_TRACER=y
+CONFIG_BLK_DEV_IO_TRACE=y
+CONFIG_LKDTM=m
+# CONFIG_MODULE_SIG is not set
+# CONFIG_MODULE_SIG_FORCE is not set
+# CONFIG_MODULE_SIG_ALL is not set
+# CONFIG_TRIM_UNUSED_KSYMS is not set
+
+# ==== DaisyForGaming v1.3.0 - KernelSU + SusFS + gaming (by DaisyForGaming) ====
+# --- KernelSU (v0.9.5, last non-GKI release) + SusFS ---
+# Manual (non-kprobe) integration: the KernelSU copy in this tree force-disables
+# its kprobe hooks (`#if defined(CONFIG_KPROBES) && 0`), so the hook points in
+# fs/exec.c, fs/open.c, fs/read_write.c, fs/stat.c, fs/devpts/inode.c and
+# drivers/input/input.c are patched in-tree. CONFIG_KPROBES stays enabled so
+# perf/eBPF tooling (perfetto, simpleperf, gamemod) keeps working.
+CONFIG_KSU=y
+# CONFIG_KSU_DEBUG is not set
+
+# SusFS - kernel-side stealth patch (hook sites already applied across fs/)
+CONFIG_KSU_SUSFS=y
+CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y
+CONFIG_KSU_SUSFS_SUS_PATH=y
+CONFIG_KSU_SUSFS_SUS_MOUNT=y
+CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y
+CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y
+CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y
+CONFIG_KSU_SUSFS_SUS_KSTAT=y
+CONFIG_KSU_SUSFS_TRY_UMOUNT=y
+CONFIG_KSU_SUSFS_SPOOF_UNAME=y
+CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y
+CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
+CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
+# CONFIG_KSU_SUSFS_SUS_OVERLAYFS is not set
+# Logging OFF on purpose: SUSFS_LOGI is pr_info() inside path-lookup, stat and
+# readdir hot paths. Flip it on only while debugging susfs, then rebuild.
+# CONFIG_KSU_SUSFS_ENABLE_LOG is not set
+
+# Kprobe/kallsyms prerequisites (KernelSU + Magisk / Systemless hosts)
+CONFIG_KPROBES=y
+CONFIG_KPROBE_EVENTS=y
+CONFIG_HAVE_KPROBES=y
+CONFIG_KALLSYMS=y
+CONFIG_KALLSYMS_ALL=y
+CONFIG_KALLSYMS_BASE_RELATIVE=y
+
+# --- Gaming / performance ---
+# Foreground app scheduling boost + WALT latency placement
+CONFIG_CGROUP_SCHEDTUNE=y
+CONFIG_CGROUP_CPUACCT=y
+CONFIG_SCHED_WALT=y
+# GPU: interactive Adreno TZ governor + hardware idler so the GPU stops idling
+# at low clocks and ramps instantly when a game starts
+CONFIG_QCOM_ADRENO_DEFAULT_GOVERNOR="msm-adreno-tz"
+CONFIG_ADRENO_IDLER=y
+# Keep every CPU governor compiled in so a Magisk module (or a plain sysfs
+# write) can switch governor at runtime without a kernel rebuild.
+CONFIG_CPU_FREQ_GOV_ONDEMAND=y
+CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
+CONFIG_CPU_FREQ_GOV_INTERACTIVE=y
+CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
+CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y
+CONFIG_CPU_FREQ_GOV_USERSPACE=y
+CONFIG_CPU_FREQ_GOV_ATTR_SET=y
+CONFIG_CPU_BOOST=y
+# Compressed memory: lz4 zram (lowest CPU overhead while gaming) + writeback
+CONFIG_ZRAM=y
+CONFIG_ZRAM_DEFAULT_COMP_ALGORITHM="lz4"
+CONFIG_ZRAM_WRITEBACK=y
+CONFIG_ZRAM_MEMORY_TRACKING=y
+CONFIG_ZSMALLOC=y
+CONFIG_ZSMALLOC_STAT=y
+CONFIG_SWAP=y
+CONFIG_SWAP_ENABLE_READAHEAD=y
+CONFIG_COMPACTION=y
+# Page merging to reclaim RAM from duplicated app heaps
+CONFIG_KSM=y
+CONFIG_MMU_NOTIFIER=y
+
+# --- Display / video: no dropped frames at 1080p60, 2K or 4K ---
+# The MSM8916 has no display controller in this tree: video decode is the
+# standalone msm-vidc V4L2 codec and the panel is driven by FBDEV
+# (mdss), so CONFIG_DRM is deliberately NOT enabled - upstream 4.11 DRM
+# code in this directory does not build against 4.9 and would only bloat
+# the image. Smooth playback comes from the hardware codec, not DRM.
+CONFIG_MEDIA_SUPPORT=y
+CONFIG_MSM_VIDC_3X_V4L2=y
+CONFIG_VIDEO_V4L2=y
+CONFIG_MSM_V4L2_VIDEO_OVERLAY_DEVICE=y
+CONFIG_FB=y
+CONFIG_FB_CMDLINE=y
+CONFIG_FB_NOTIFY=y
+# Amlogic-style 4K/2K playback is limited by the decoder queue depth and the
+# I/O rate, not by DRM: bigger V4L2 buffers + fast I/O sched.
+CONFIG_USB_CONFIGFS_F_FS=y
+CONFIG_DEVTMPFS=y
+
+# --- Thermal: keep the phone cool (no hard throttle while gaming) ---
+# thermald (userspace) is driven by CONFIG_THERMAL_GOV_USER_SPACE; writable
+# trips let it move limits live. Step-wise stays for the CPU sensors.
+CONFIG_THERMAL=y
+CONFIG_THERMAL_WRITABLE_TRIPS=y
+CONFIG_THERMAL_GOV_STEP_WISE=y
+CONFIG_THERMAL_GOV_USER_SPACE=y
+CONFIG_THERMAL_DEFAULT_GOV_USER_SPACE=y
+CONFIG_THERMAL_GOV_LOW_LIMITS=y
+CONFIG_THERMAL_HWMON=y
+CONFIG_THERMAL_OF=y
+CONFIG_THERMAL_QPNP=y
+CONFIG_THERMAL_QPNP_ADC_TM=y
+CONFIG_THERMAL_TSENS=y
+
+# --- Fast charging ---
+# SMB1351 USB charger (up to 4.5 A) on the SMB5 PMIC + QG fuel gauge.
+# Live limits are in /sys/class/power_supply/battery/ - see README.
+CONFIG_SMB1351_USB_CHARGER=y
+CONFIG_SMB135X_CHARGER=y
+CONFIG_QPNP_SMBCHARGER_D1A=y
+CONFIG_QPNP_SMB5=y
+CONFIG_QPNP_FG_D1A=y
+CONFIG_QPNP_QG=y
+
+# --- Magisk / kernel-module host support ---
+# MODVERSIONS now ON (VINTF requirement, see the v1.2.1 overlay block above).
+# No module signature enforcement: signed-module checks stay off.
+# CONFIG_MODULE_SIG is not set
+# CONFIG_MODULE_SIG_FORCE is not set
+CONFIG_MODULE_UNLOAD=y
+CONFIG_MODULE_FORCE_LOAD=y
+CONFIG_MODULE_FORCE_UNLOAD=y
