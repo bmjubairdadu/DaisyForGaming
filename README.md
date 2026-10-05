@@ -24,8 +24,8 @@
 
 | Flashable zip | Root stack | Kernel build |
 |---|---|---|
-| **[DaisyForGaming-v1.17-KSU.zip](releases/DaisyForGaming-v1.17-KSU.zip)** | KernelSU (built-in) **or** Magisk | `CONFIG_KSU=y` + SusFS v1.5.5 |
-| **[DaisyForGaming-v1.17-FolkPatch-Magisk.zip](releases/DaisyForGaming-v1.17-FolkPatch-Magisk.zip)** | FolkPatch (patch boot) **or** Magisk | vanilla — no in-kernel root |
+| **[DaisyForGaming-v1.17-KSU.zip](https://github.com/bmjubairdadu/DaisyForGaming/releases/download/v1.17/DaisyForGaming-v1.17-KSU.zip)** | KernelSU (built-in) **or** Magisk | `CONFIG_KSU=y` + SusFS v1.5.5 |
+| **[DaisyForGaming-v1.17-FolkPatch-Magisk.zip](https://github.com/bmjubairdadu/DaisyForGaming/releases/download/v1.17/DaisyForGaming-v1.17-FolkPatch-Magisk.zip)** | FolkPatch (patch boot) **or** Magisk | vanilla — no in-kernel root |
 
 > **Pick ONE root stack per kernel.** Never patch the KSU build's boot with FolkPatch/KernelPatch — KernelPatch installs its own execve hooks and conflicts with in-kernel KernelSU (instant bootloop). The FolkPatch build has no in-kernel root, so KernelPatch can patch it cleanly.
 
