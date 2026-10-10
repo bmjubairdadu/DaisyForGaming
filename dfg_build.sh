@@ -53,6 +53,6 @@ strings out/vmlinux 2>/dev/null | grep -m1 'Linux version 4\.9'
 echo "KSU strings:   $(strings out/vmlinux 2>/dev/null | grep -c -i kernelsu)  (expect 0)"
 echo "SusFS strings: $(strings out/vmlinux 2>/dev/null | grep -c -i susfs)  (expect 0)"
 echo "input boost:   $(strings out/vmlinux 2>/dev/null | grep -c 'input boost on by default')"
-echo "boost_mode:    $(strings out/vmlinux 2>/dev/null | grep -c 'boost_mode=battery')  (expect >=1)"
+echo "boost_mode:    $(strings out/vmlinux 2>/dev/null | grep -c 'boost_mode=auto')  (expect >=1)"
 
 echo BUILD_DONE

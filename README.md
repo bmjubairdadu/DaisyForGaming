@@ -35,13 +35,18 @@ working as always — root is applied **after** flashing, never in-kernel.
 
 ## 🎮 Gaming features
 
-- **Three boost profiles — one node (new in v1.0-final):** `boost_mode` in
-  `/sys/module/cpu_boost/parameters/` switches the whole touch-boost profile at runtime:
-  `0` = battery (boost off, coolest for video/browsing/standby) · `1` = balanced (default:
-  little **1036 MHz**, big **1401 MHz**, **150 ms**) · `2` = gaming (little **1401 MHz**,
-  big **1689 MHz**, **250 ms** + WALT sched boost on touch). While the charger is connected the
-  boost stays off (`boost_on_charging=0` default) — that heat made thermal-engine cut charger
-  current. Set `1` in `boost_on_charging` if you game on the charger.
+- **Auto game detection — one node (new in v1.0-final):** `boost_mode` in
+  `/sys/module/cpu_boost/parameters/` runs the whole touch-boost profile, **default `3` = auto**:
+  the kernel samples the Adreno busy ratio — screen off drops to **battery** instantly, a
+  sustained GPU-heavy foreground app (busy ≥ 50 % for ~6 s — that's a running game) lifts to
+  **gaming** (little 1401 MHz / big 1689 MHz, 250 ms + WALT sched boost on touch), and everything
+  else (video, browsing, scrolling — all low-GPU work) stays on **balanced** (little 1036 MHz,
+  big 1401 MHz, 150 ms). Hysteresis keeps game-loading screens from flapping the mode. Force a
+  fixed profile any time with `0`/`1`/`2`; threshold is
+  `/sys/module/cpu_boost/parameters/auto_gpu_busy`, applied profile shows in
+  `boost_mode_effective`. While the charger is connected the boost stays off
+  (`boost_on_charging=0` default) — that heat made thermal-engine cut charger current. Set `1`
+  in `boost_on_charging` if you game on the charger.
 - **schedutil ramp retune (new in v1.0-final):** up-rate-limit 20 ms → **5 ms** (burst loads —
   frame starts, scene changes, video seeks — reach target clocks inside the frame, not a full
   WALT window later) and down-rate-limit 0.5 ms → **20 ms** (clocks hold one window before
@@ -106,7 +111,9 @@ working as always — root is applied **after** flashing, never in-kernel.
 
 | Node | Value |
 |---|---|
-| `/sys/module/cpu_boost/parameters/boost_mode` | `1` (balanced) — `0` battery, `2` gaming |
+| `/sys/module/cpu_boost/parameters/boost_mode` | `3` (auto-detect) — `0` battery, `1` balanced, `2` gaming |
+| `/sys/module/cpu_boost/parameters/boost_mode_effective` | read-only: profile auto applied now |
+| `/sys/module/cpu_boost/parameters/auto_gpu_busy` | `50` (% GPU busy counted as "game running") |
 | `/sys/module/cpu_boost/parameters/input_boost_freq` | `0:1036800 … 4:1401600` |
 | `/sys/module/cpu_boost/parameters/input_boost_ms` | `150` |
 | `/sys/module/cpu_boost/parameters/sched_boost_on_input` | `0` |

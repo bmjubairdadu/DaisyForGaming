@@ -7,8 +7,12 @@
 #
 # Boost profiles (single node, no script edits needed):
 #   echo 0 > /sys/module/cpu_boost/parameters/boost_mode   # battery (off)
-#   echo 1 > /sys/module/cpu_boost/parameters/boost_mode   # balanced (default)
+#   echo 1 > /sys/module/cpu_boost/parameters/boost_mode   # balanced
 #   echo 2 > /sys/module/cpu_boost/parameters/boost_mode   # gaming
+#   echo 3 > /sys/module/cpu_boost/parameters/boost_mode   # auto (default):
+#           screen off -> battery, running game (GPU busy) -> gaming,
+#           everything else -> balanced. Threshold:
+#           /sys/module/cpu_boost/parameters/auto_gpu_busy (default 50%)
 
 LOG=/data/local/tmp/dfg_tune.log
 say() { echo "$(date '+%H:%M:%S') $*" >> "$LOG"; }
@@ -21,10 +25,10 @@ while [ $i -lt 120 ]; do
 done
 say "v1.0-final tuning start"
 
-# ---- CPU input boost: balanced profile, charging-aware ----
+# ---- CPU input boost: AUTO profile (game detection), charging-aware ----
 if [ -e /sys/module/cpu_boost/parameters/boost_mode ]; then
-  w /sys/module/cpu_boost/parameters/boost_mode 1 \
-    && say "boost_mode = 1 (balanced: 1036/1401 MHz, 150ms)"
+  w /sys/module/cpu_boost/parameters/boost_mode 3 \
+    && say "boost_mode = 3 (auto: game detect via GPU busy >= 50%, screen-aware)"
   w /sys/module/cpu_boost/parameters/boost_on_charging 0 \
     && say "boost_on_charging = 0 (no boost while plugged in)"
 elif [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
@@ -89,7 +93,8 @@ w /proc/sys/vm/swappiness 30 && say "swappiness = 30 (WROTE OK)" || say "swappin
 # ---- final state for diagnostics ----
 say "gov: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null)"
 say "cpu7 max: $(cat /sys/devices/system/cpu/cpu7/cpufreq/scaling_max_freq 2>/dev/null)"
-say "boost_mode now = $(cat /sys/module/cpu_boost/parameters/boost_mode 2>/dev/null)"
+say "boost_mode now = $(cat /sys/module/cpu_boost/parameters/boost_mode 2>/dev/null) (effective: $(cat /sys/module/cpu_boost/parameters/boost_mode_effective 2>/dev/null))"
+say "auto_gpu_busy now = $(cat /sys/module/cpu_boost/parameters/auto_gpu_busy 2>/dev/null)"
 say "schedutil up/down rate limit: $(cat /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us 2>/dev/null)/$(cat /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us 2>/dev/null)"
 say "swappiness now = $(cat /proc/sys/vm/swappiness 2>/dev/null)"
 say "fsync_enabled = $(cat /sys/module/sync/parameters/fsync_enabled 2>/dev/null)"

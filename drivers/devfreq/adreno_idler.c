@@ -30,6 +30,7 @@
 
 #include <linux/module.h>
 #include <linux/devfreq.h>
+#include <linux/jiffies.h>
 #include <linux/state_notifier.h>
 #include <linux/msm_adreno_devfreq.h>
 
@@ -62,9 +63,31 @@ module_param_named(adreno_idler_active, adreno_idler_active, bool, 0664);
 
 static unsigned int idlecount = 0;
 
+/*
+ * DaisyForGaming: last GPU busy ratio, sampled on every msm-adreno-tz
+ * update. cpu-boost's auto mode (boost_mode=3) reads this to detect
+ * sustained GPU-heavy usage (games). The ratio is the same
+ * busy_time/total_time math msm-adreno-tz itself uses for load.
+ */
+static unsigned int gpu_busy_ratio;
+static unsigned long gpu_busy_updated;
+
+void adreno_gpu_busy_ratio(unsigned int *ratio, unsigned long *stamp)
+{
+	*ratio = gpu_busy_ratio;
+	*stamp = gpu_busy_updated;
+}
+EXPORT_SYMBOL_GPL(adreno_gpu_busy_ratio);
+
 int adreno_idler(struct devfreq_dev_status stats, struct devfreq *devfreq,
 		 unsigned long *freq)
 {
+	if (stats.total_time)
+		gpu_busy_ratio = stats.busy_time * 100 / stats.total_time;
+	else
+		gpu_busy_ratio = 0;
+	gpu_busy_updated = jiffies;
+
 	if (!adreno_idler_active)
 		return 0;
 

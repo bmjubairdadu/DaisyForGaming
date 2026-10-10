@@ -32,12 +32,20 @@ Fresh versioning restart — this is the **final build line**. The old KSU/Vanni
   down 0.5 ms → **20 ms** (clocks hold one WALT window before dropping — removes the up/down
   seesaw behind **video frame-time jitter** and needless transition churn). Still
   runtime-tunable per policy.
-- **New `boost_mode` node in cpu-boost** — switch the whole input-boost profile with one write,
-  no scripts: `0` battery (boost off), `1` balanced (default: 1036/1401 MHz, 150 ms,
-  no sched boost — the cool v1.1 values), `2` gaming (1401/1689 MHz, 250 ms, WALT sched boost
-  on touch — the proven v1.0 values for gaming sessions).
-- Boot tune script (`99-dfg-tune.sh`) asserts `boost_mode=1`, keeps `boost_on_charging=0`,
-  and now logs the schedutil rate limits + boost mode for diagnostics.
+- **New `boost_mode` node in cpu-boost — now with AUTO game detection (default):** one write
+  switches the whole input-boost profile, no scripts: `0` battery (boost off), `1` balanced
+  (1036/1401 MHz, 150 ms, no sched boost — the cool v1.1 values), `2` gaming (1401/1689 MHz,
+  250 ms, WALT sched boost on touch — the proven v1.0 values), and **`3` auto (default)**:
+  the kernel watches the Adreno busy ratio on every msm-adreno-tz update — screen off drops to
+  battery instantly, a sustained GPU-heavy foreground app (≥ `auto_gpu_busy` % busy, default 50,
+  for ~6 s) counts as a running game and lifts the profile to gaming, everything else (video,
+  browsing, scrolling) stays balanced. Three-sample hysteresis both ways keeps game-loading
+  screens from flapping the mode; the detection threshold is runtime-tunable via
+  `/sys/module/cpu_boost/parameters/auto_gpu_busy` and the applied profile is visible in
+  `boost_mode_effective`.
+- Boot tune script (`99-dfg-tune.sh`) asserts `boost_mode=3` (auto), keeps
+  `boost_on_charging=0`, and logs the schedutil rate limits + effective boost profile for
+  diagnostics.
 
 ### 🧪 Unchanged (all still shipped)
 - Thermal trips CPU 80 °C / per-CPU 90 °C / GPU 85 °C / pop-mem 80 °C, charging-aware boost

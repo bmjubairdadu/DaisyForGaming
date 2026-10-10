@@ -25,6 +25,9 @@
 #include <linux/slab.h>
 #include <linux/input.h>
 #include <linux/time.h>
+#include <linux/fb.h>
+#include <linux/jiffies.h>
+#include <linux/workqueue.h>
 #include <linux/sched/rt.h>
 #include <linux/power_supply.h>
 
@@ -119,36 +122,40 @@ module_param(sched_boost_on_input, uint, 0644);
  * profile at runtime — no script edits needed:
  *
  *   0 = battery   input boost completely off (coolest, best standby)
- *   1 = balanced  default: 1036/1401 MHz, 150 ms, no WALT sched boost
+ *   1 = balanced  1036/1401 MHz, 150 ms, no WALT sched boost
  *   2 = gaming    1401/1689 MHz, 250 ms + WALT sched boost on touch
- *
- * balanced/gaming keep the same clocks the v1.0/v1.1 zips shipped, so
- * nothing new heats up: gaming just re-enables the stronger v1.0 touch
- * boost while a game is actually running, battery suspends the boost for
- * cool video/browsing/standby.
+ *   3 = auto      (default) picks battery/balanced/gaming by itself:
+ *                 screen off -> battery, a sustained GPU-heavy foreground
+ *                 app (a running game) -> gaming, everything else ->
+ *                 balanced. Manual 0/1/2 always wins until you set 3 back.
  */
-static unsigned int boost_mode = 1;
+static unsigned int boost_mode = 3;
 
-static void apply_boost_mode(void)
+/* The profile the auto engine currently has applied (0/1/2). */
+static unsigned int boost_mode_effective = 1;
+module_param(boost_mode_effective, uint, 0444);
+
+static void set_boost_profile(unsigned int profile)
 {
 	unsigned int little = IB_FREQ_LITTLE_DEFAULT;
 	unsigned int big = IB_FREQ_BIG_DEFAULT;
 	int cpu;
 
-	switch (boost_mode) {
-	case 0:
+	input_boost_enabled = true;
+
+	switch (profile) {
+	case 0: /* battery: boost fully off */
 		input_boost_enabled = false;
-		pr_info("boost_mode=battery: input boost off\n");
-		return;
-	case 2:
+		break;
+	case 2: /* gaming: the proven v1.0 touch boost */
 		little = 1401600;
 		big = 1689600;
 		input_boost_ms = 250;
 		sched_boost_on_input = 1;
 		break;
-	case 1:
+	case 1: /* balanced: the cool v1.1 defaults */
 	default:
-		boost_mode = 1;
+		profile = 1;
 		input_boost_ms = IB_MS_DEFAULT;
 		sched_boost_on_input = IB_SCHED_DEFAULT;
 		break;
@@ -158,16 +165,129 @@ static void apply_boost_mode(void)
 		struct cpu_sync *s = &per_cpu(sync_info, cpu);
 		s->input_boost_freq = (cpu < 4) ? little : big;
 	}
-	input_boost_enabled = true;
+	boost_mode_effective = profile;
+}
+
+/* ---- auto mode (boost_mode = 3): GPU-load game detection ---- */
+#define AUTO_CHECK_MS	2000	/* re-evaluation interval */
+#define AUTO_SUSTAIN	3	/* consecutive samples (~6 s) before switching */
+#define AUTO_STALE_MS	3000	/* GPU stats older than this count as idle */
+
+/* Provided by drivers/devfreq/adreno_idler.c (msm-adreno-tz update path). */
+extern void adreno_gpu_busy_ratio(unsigned int *ratio, unsigned long *stamp);
+
+/*
+ * GPU busy ratio (0-100) treated as "a game is running". Raise it if the
+ * detection triggers too eagerly, lower it for light 3D games; 101 disables
+ * detection, 0 applies the gaming boost for any foreground GPU use.
+ */
+static unsigned int auto_gpu_busy = 50;
+module_param(auto_gpu_busy, uint, 0644);
+MODULE_PARM_DESC(auto_gpu_busy,
+	"auto mode: GPU busy % treated as a running game (default 50)");
+
+static bool screen_on = true;
+static unsigned int auto_busy_count, auto_idle_count;
+
+static void auto_boost_tick(struct work_struct *work);
+
+/* Statically initialized so early (cmdline) boosts can schedule it safely. */
+static DECLARE_DELAYED_WORK(auto_boost_work, auto_boost_tick);
+
+static void auto_boost_tick(struct work_struct *work)
+{
+	unsigned int ratio;
+	unsigned long stamp;
+
+	if (boost_mode != 3)
+		return;
+
+	if (!screen_on) {
+		auto_busy_count = auto_idle_count = 0;
+		if (boost_mode_effective != 0) {
+			set_boost_profile(0);
+			pr_info("boost_mode=auto: screen off -> battery\n");
+		}
+		goto requeue;
+	}
+
+	adreno_gpu_busy_ratio(&ratio, &stamp);
+	if (!stamp || time_after(jiffies, stamp + msecs_to_jiffies(AUTO_STALE_MS)))
+		ratio = 0; /* GPU not reporting = idle foreground */
+
+	if (ratio >= auto_gpu_busy) {
+		auto_busy_count++;
+		auto_idle_count = 0;
+	} else {
+		auto_idle_count++;
+		auto_busy_count = 0;
+	}
+
+	if (auto_busy_count >= AUTO_SUSTAIN) {
+		if (boost_mode_effective != 2) {
+			set_boost_profile(2);
+			pr_info("boost_mode=auto: GPU busy %u%% sustained -> gaming\n",
+				ratio);
+		}
+	} else if (auto_idle_count >= AUTO_SUSTAIN) {
+		if (boost_mode_effective != 1) {
+			set_boost_profile(1);
+			pr_info("boost_mode=auto: GPU busy %u%% -> balanced\n",
+				ratio);
+		}
+	}
+
+requeue:
+	schedule_delayed_work(&auto_boost_work, msecs_to_jiffies(AUTO_CHECK_MS));
+}
+
+/* Screen state drops the phone to battery the moment the display blanks. */
+static int cpuboost_fb_notifier(struct notifier_block *nb, unsigned long event,
+				void *data)
+{
+	struct fb_event *evdata = data;
+
+	if (event != FB_EVENT_BLANK || !evdata || !evdata->data)
+		return NOTIFY_OK;
+
+	screen_on = (*(int *)evdata->data == FB_BLANK_UNBLANK);
+	if (boost_mode == 3)
+		/* Re-evaluate at once: screen off should not wait 2 s. */
+		mod_delayed_work(system_wq, &auto_boost_work, 0);
+
+	return NOTIFY_OK;
+}
+static struct notifier_block cpuboost_fb_nb = {
+	.notifier_call = cpuboost_fb_notifier,
+};
+
+static void apply_boost_mode(void)
+{
+	if (boost_mode > 3)
+		boost_mode = 3;
+
+	if (boost_mode == 3) {
+		pr_info("boost_mode=auto: screen=%u, GPU-detect at %u%% busy\n",
+			screen_on, auto_gpu_busy);
+		set_boost_profile(screen_on ? 1 : 0);
+		schedule_delayed_work(&auto_boost_work, 0);
+		return;
+	}
+
+	cancel_delayed_work_sync(&auto_boost_work);
+	set_boost_profile(boost_mode);
 	pr_info("boost_mode=%u: little=%ukHz big=%ukHz ms=%u sched_boost=%u\n",
-		boost_mode, little, big, input_boost_ms, sched_boost_on_input);
+		boost_mode,
+		per_cpu(sync_info, 0).input_boost_freq,
+		per_cpu(sync_info, 4).input_boost_freq,
+		input_boost_ms, sched_boost_on_input);
 }
 
 static int set_boost_mode(const char *buf, const struct kernel_param *kp)
 {
 	unsigned int val;
 
-	if (kstrtouint(buf, 0, &val) || val > 2)
+	if (kstrtouint(buf, 0, &val) || val > 3)
 		return -EINVAL;
 	boost_mode = val;
 	apply_boost_mode();
@@ -185,7 +305,7 @@ static const struct kernel_param_ops param_ops_boost_mode = {
 };
 module_param_cb(boost_mode, &param_ops_boost_mode, NULL, 0644);
 MODULE_PARM_DESC(boost_mode,
-	"Input boost profile: 0=battery (off), 1=balanced (default), 2=gaming");
+	"Input boost profile: 0=battery (off), 1=balanced, 2=gaming, 3=auto (default)");
 
 static bool sched_boost_active;
 
@@ -492,6 +612,13 @@ static int cpu_boost_init(void)
 	pr_info("input boost on by default: little=%ukHz big=%ukHz ms=%u sched_boost=%u\n",
 		IB_FREQ_LITTLE_DEFAULT, IB_FREQ_BIG_DEFAULT, input_boost_ms,
 		sched_boost_on_input);
+	boost_mode_effective = 1;
+	if (boost_mode > 3)
+		boost_mode = 3;
+	if (boost_mode == 3)
+		schedule_delayed_work(&auto_boost_work,
+				      msecs_to_jiffies(AUTO_CHECK_MS));
+	fb_register_client(&cpuboost_fb_nb);
 	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
 
 	ret = input_register_handler(&cpuboost_input_handler);
