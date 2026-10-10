@@ -18,6 +18,13 @@ LOG=/data/local/tmp/dfg_tune.log
 say() { echo "$(date '+%H:%M:%S') $*" >> "$LOG"; }
 w() { echo "$2" > "$1" 2>/dev/null; }
 
+# Cap the tuning log at ~100 KB (about 60+ boots): it appends every boot,
+# so without this it would grow forever. dmesg needs no such care - the
+# kernel log is a fixed 128 KB RAM ring buffer that recycles itself.
+if [ -f "$LOG" ] && [ "$(wc -c < "$LOG")" -gt 102400 ]; then
+  : > "$LOG"
+fi
+
 i=0
 while [ $i -lt 120 ]; do
   [ "$(getprop sys.boot_completed)" = "1" ] && break
