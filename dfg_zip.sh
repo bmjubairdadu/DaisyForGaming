@@ -88,6 +88,8 @@ ui_print "      1401MHz big, 150ms, charging-aware";
 ui_print "      boost_mode=auto: running game detected";
 ui_print "      by GPU load -> gaming boost, screen off";
 ui_print "      -> battery, else balanced (0/1/2 to force)";
+ui_print "    - Bypass charging: gaming on the charger";
+ui_print "      feeds the board, battery charging pauses";
 ui_print "    - schedutil snappy-ramp tuning, Adreno";
 ui_print "      msm-adreno-tz + Adreno Idler";
 ui_print "    - top-app schedtune boost (boot script)";

@@ -135,6 +135,10 @@ static unsigned int boost_mode = 3;
 static unsigned int boost_mode_effective = 1;
 module_param(boost_mode_effective, uint, 0444);
 
+/* Bypass-charging re-check (defined below); profile switches re-run it. */
+static void bypass_check_work(struct work_struct *work);
+static DECLARE_DELAYED_WORK(bypass_work, bypass_check_work);
+
 static void set_boost_profile(unsigned int profile)
 {
 	unsigned int little = IB_FREQ_LITTLE_DEFAULT;
@@ -166,6 +170,9 @@ static void set_boost_profile(unsigned int profile)
 		s->input_boost_freq = (cpu < 4) ? little : big;
 	}
 	boost_mode_effective = profile;
+
+	/* Bypass charging follows the profile (gaming + charger = bypass). */
+	schedule_delayed_work(&bypass_work, 0);
 }
 
 /* ---- auto mode (boost_mode = 3): GPU-load game detection ---- */
@@ -259,6 +266,72 @@ static int cpuboost_fb_notifier(struct notifier_block *nb, unsigned long event,
 }
 static struct notifier_block cpuboost_fb_nb = {
 	.notifier_call = cpuboost_fb_notifier,
+};
+
+/* ---- bypass charging while gaming on the charger ----
+ * With the gaming profile active and USB connected, inhibit battery
+ * charging: the charger keeps powering the board directly (the SMB
+ * power-path serves the system rails) while the battery sits still.
+ * Cooler SoC, no charge cycles while gaming. Charging is restored the
+ * moment the profile leaves gaming or the charger is unplugged.
+ */
+static bool bypass_on_gaming = true;
+module_param(bypass_on_gaming, bool, 0644);
+MODULE_PARM_DESC(bypass_on_gaming,
+	"Inhibit battery charging while gaming on the charger (bypass: USB feeds the board)");
+
+static bool bypass_active, psy_ready;
+static unsigned int bypass_passes;
+
+static void set_battery_charging(bool enable)
+{
+	struct power_supply *batt;
+	union power_supply_propval val = { .intval = enable };
+	int ret;
+
+	batt = power_supply_get_by_name("battery");
+	if (!batt)
+		return;
+	ret = power_supply_set_property(batt, POWER_SUPPLY_PROP_CHARGING_ENABLED,
+					&val);
+	power_supply_put(batt);
+	if (ret)
+		pr_err("bypass: charging_enabled=%d failed (%d)\n", enable, ret);
+}
+
+static void bypass_check_work(struct work_struct *work)
+{
+	bool want = bypass_on_gaming && psy_ready &&
+		    boost_mode_effective == 2 && usb_charger_online();
+
+	if (want != bypass_active) {
+		bypass_active = want;
+		bypass_passes = 0;
+		set_battery_charging(!want);
+		pr_info("bypass charging: %s\n",
+			want ? "ON - charger feeds the board while gaming"
+			     : "OFF - battery charging restored");
+	} else if (want && ++bypass_passes % 5 == 0) {
+		/* Re-assert in case userspace flipped charging back on. */
+		set_battery_charging(false);
+	}
+
+	if (want)
+		schedule_delayed_work(&bypass_work, msecs_to_jiffies(2000));
+}
+
+/* Re-check right away when the USB supply changes state. */
+static int cpuboost_psy_notifier(struct notifier_block *nb, unsigned long event,
+				 void *data)
+{
+	if (event == PSY_EVENT_PROP_CHANGED && data &&
+	    !strcmp((const char *)data, "usb"))
+		schedule_delayed_work(&bypass_work, 0);
+
+	return NOTIFY_OK;
+}
+static struct notifier_block cpuboost_psy_nb = {
+	.notifier_call = cpuboost_psy_notifier,
 };
 
 static void apply_boost_mode(void)
@@ -619,6 +692,9 @@ static int cpu_boost_init(void)
 		schedule_delayed_work(&auto_boost_work,
 				      msecs_to_jiffies(AUTO_CHECK_MS));
 	fb_register_client(&cpuboost_fb_nb);
+	power_supply_reg_notifier(&cpuboost_psy_nb);
+	psy_ready = true;
+	schedule_delayed_work(&bypass_work, 0);
 	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
 
 	ret = input_register_handler(&cpuboost_input_handler);

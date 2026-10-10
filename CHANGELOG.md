@@ -43,6 +43,13 @@ Fresh versioning restart — this is the **final build line**. The old KSU/Vanni
   screens from flapping the mode; the detection threshold is runtime-tunable via
   `/sys/module/cpu_boost/parameters/auto_gpu_busy` and the applied profile is visible in
   `boost_mode_effective`.
+- **Bypass charging while gaming on the charger:** when the gaming profile is active and USB is
+  connected, the kernel inhibits battery charging (`POWER_SUPPLY_PROP_CHARGING_ENABLED` on the
+  battery supply) — the charger feeds the board through the SMB power-path while the battery
+  sits still: cooler SoC, no charge cycles while gaming. State re-checks on USB plug/unplug
+  events (power_supply notifier) and re-asserts itself against userspace overrides; charging is
+  restored on leaving the gaming profile or unplugging. Master switch: `bypass_on_gaming`
+  (default on); live state: `/sys/class/power_supply/battery/charging_enabled`.
 - Boot tune script (`99-dfg-tune.sh`) asserts `boost_mode=3` (auto), keeps
   `boost_on_charging=0`, and logs the schedutil rate limits + effective boost profile for
   diagnostics.

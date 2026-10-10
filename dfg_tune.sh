@@ -102,6 +102,8 @@ say "gov: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/nul
 say "cpu7 max: $(cat /sys/devices/system/cpu/cpu7/cpufreq/scaling_max_freq 2>/dev/null)"
 say "boost_mode now = $(cat /sys/module/cpu_boost/parameters/boost_mode 2>/dev/null) (effective: $(cat /sys/module/cpu_boost/parameters/boost_mode_effective 2>/dev/null))"
 say "auto_gpu_busy now = $(cat /sys/module/cpu_boost/parameters/auto_gpu_busy 2>/dev/null)"
+say "bypass_on_gaming = $(cat /sys/module/cpu_boost/parameters/bypass_on_gaming 2>/dev/null)"
+say "charging_enabled = $(cat /sys/class/power_supply/battery/charging_enabled 2>/dev/null)"
 say "schedutil up/down rate limit: $(cat /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us 2>/dev/null)/$(cat /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us 2>/dev/null)"
 say "swappiness now = $(cat /proc/sys/vm/swappiness 2>/dev/null)"
 say "fsync_enabled = $(cat /sys/module/sync/parameters/fsync_enabled 2>/dev/null)"

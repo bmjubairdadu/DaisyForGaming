@@ -47,6 +47,13 @@ working as always — root is applied **after** flashing, never in-kernel.
   `boost_mode_effective`. While the charger is connected the boost stays off
   (`boost_on_charging=0` default) — that heat made thermal-engine cut charger current. Set `1`
   in `boost_on_charging` if you game on the charger.
+- **Bypass charging while gaming on the charger (new in v1.0-final):** when the gaming profile
+  is active and USB is connected, the kernel inhibits battery charging — the charger feeds the
+  board directly through the SMB power-path while the battery sits still. Cooler SoC, no charge
+  cycles while gaming, and charging is restored the moment the profile leaves gaming or the
+  charger is unplugged. Toggle the whole feature with `bypass_on_gaming` in
+  `/sys/module/cpu_boost/parameters/`; current state is visible as
+  `/sys/class/power_supply/battery/charging_enabled` (`0` while bypassing).
 - **schedutil ramp retune (new in v1.0-final):** up-rate-limit 20 ms → **5 ms** (burst loads —
   frame starts, scene changes, video seeks — reach target clocks inside the frame, not a full
   WALT window later) and down-rate-limit 0.5 ms → **20 ms** (clocks hold one window before
@@ -118,6 +125,8 @@ working as always — root is applied **after** flashing, never in-kernel.
 | `/sys/module/cpu_boost/parameters/input_boost_ms` | `150` |
 | `/sys/module/cpu_boost/parameters/sched_boost_on_input` | `0` |
 | `/sys/module/cpu_boost/parameters/boost_on_charging` | `0` (set `1` to boost while charging) |
+| `/sys/module/cpu_boost/parameters/bypass_on_gaming` | `1` — charging pauses while gaming on the charger |
+| `/sys/class/power_supply/battery/charging_enabled` | read it: `0` = bypass active, `1` = normal charging |
 | `/sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us` | `5000` |
 | `/sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us` | `20000` |
 | `/dev/stune/top-app/schedtune.boost` | `10` |
