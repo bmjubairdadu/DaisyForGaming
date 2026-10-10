@@ -121,6 +121,7 @@ ui_print "  Done! DaisyForGaming v1.0 installed.";
 ui_print "  Root: FolkPatch (patch this boot) or Magisk.";
 ui_print "  - JUBAIR HOSEN";
 ui_print " ";
+AKEOF1
 } > anykernel.sh
 echo "[zip] anykernel.sh: $(wc -l < anykernel.sh) lines"
 
