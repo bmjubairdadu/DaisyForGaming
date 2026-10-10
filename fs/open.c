@@ -370,17 +370,6 @@ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
 	int res;
 	unsigned int lookup_flags = LOOKUP_FOLLOW;
 
-#ifdef CONFIG_KSU
-	{
-		int ksu_mode = mode;
-		extern int ksu_handle_faccessat(int *dfd,
-						 const char __user **filename_user,
-						 int *mode, int *flags);
-		ksu_handle_faccessat(&dfd, &filename, &ksu_mode, NULL);
-		mode = ksu_mode;
-	}
-#endif
-
 	if (mode & ~S_IRWXO)	/* where's F_OK, X_OK, W_OK, R_OK? */
 		return -EINVAL;
 

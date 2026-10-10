@@ -573,9 +573,17 @@ static int sugov_init(struct cpufreq_policy *policy)
 		goto stop_kthread;
 	}
 
-	/* Hard-code some sane rate-limit values */
-	tunables->up_rate_limit_us = 20000;
-	tunables->down_rate_limit_us = 500;
+	/*
+	 * DaisyForGaming: rate limits tuned for a WALT 20 ms window on
+	 * MSM8953. Up limit 20 ms -> 5 ms so burst loads (frame starts, scene
+	 * changes, video seeks) reach target clocks inside the frame instead
+	 * of a full WALT window later. Down limit 500 us -> 20 ms so clocks
+	 * hold for one window before dropping: stops the up/down seesaw that
+	 * showed up as video frame-time jitter, while staying fast enough
+	 * (one window) to keep thermals in check.
+	 */
+	tunables->up_rate_limit_us = 5000;
+	tunables->down_rate_limit_us = 20000;
 
 	policy->governor_data = sg_policy;
 	sg_policy->tunables = tunables;

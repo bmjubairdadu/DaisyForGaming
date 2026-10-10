@@ -140,7 +140,7 @@ gcc/
 out/
 
 # DaisyForGaming build & packaging
-out-fp/
+out-*/
 _zipwork/
 _ak3base/
 _folkpatch_tools/

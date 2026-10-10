@@ -58,6 +58,18 @@ static struct kthread_work input_boost_work;
 #define IB_FREQ_BIG_DEFAULT 1689600
 #endif
 
+#ifdef CONFIG_INPUT_BOOST_DURATION_MS
+#define IB_MS_DEFAULT CONFIG_INPUT_BOOST_DURATION_MS
+#else
+#define IB_MS_DEFAULT 40
+#endif
+
+#ifdef CONFIG_INPUT_BOOST_SCHED
+#define IB_SCHED_DEFAULT CONFIG_INPUT_BOOST_SCHED
+#else
+#define IB_SCHED_DEFAULT 1
+#endif
+
 static bool input_boost_enabled = true;
 
 /*
@@ -101,6 +113,79 @@ static unsigned int sched_boost_on_input = CONFIG_INPUT_BOOST_SCHED;
 static unsigned int sched_boost_on_input = 1;
 #endif
 module_param(sched_boost_on_input, uint, 0644);
+
+/*
+ * DaisyForGaming v1.0 (final): one node that switches the whole boost
+ * profile at runtime — no script edits needed:
+ *
+ *   0 = battery   input boost completely off (coolest, best standby)
+ *   1 = balanced  default: 1036/1401 MHz, 150 ms, no WALT sched boost
+ *   2 = gaming    1401/1689 MHz, 250 ms + WALT sched boost on touch
+ *
+ * balanced/gaming keep the same clocks the v1.0/v1.1 zips shipped, so
+ * nothing new heats up: gaming just re-enables the stronger v1.0 touch
+ * boost while a game is actually running, battery suspends the boost for
+ * cool video/browsing/standby.
+ */
+static unsigned int boost_mode = 1;
+
+static void apply_boost_mode(void)
+{
+	unsigned int little = IB_FREQ_LITTLE_DEFAULT;
+	unsigned int big = IB_FREQ_BIG_DEFAULT;
+	int cpu;
+
+	switch (boost_mode) {
+	case 0:
+		input_boost_enabled = false;
+		pr_info("boost_mode=battery: input boost off\n");
+		return;
+	case 2:
+		little = 1401600;
+		big = 1689600;
+		input_boost_ms = 250;
+		sched_boost_on_input = 1;
+		break;
+	case 1:
+	default:
+		boost_mode = 1;
+		input_boost_ms = IB_MS_DEFAULT;
+		sched_boost_on_input = IB_SCHED_DEFAULT;
+		break;
+	}
+
+	for_each_possible_cpu(cpu) {
+		struct cpu_sync *s = &per_cpu(sync_info, cpu);
+		s->input_boost_freq = (cpu < 4) ? little : big;
+	}
+	input_boost_enabled = true;
+	pr_info("boost_mode=%u: little=%ukHz big=%ukHz ms=%u sched_boost=%u\n",
+		boost_mode, little, big, input_boost_ms, sched_boost_on_input);
+}
+
+static int set_boost_mode(const char *buf, const struct kernel_param *kp)
+{
+	unsigned int val;
+
+	if (kstrtouint(buf, 0, &val) || val > 2)
+		return -EINVAL;
+	boost_mode = val;
+	apply_boost_mode();
+	return 0;
+}
+
+static int get_boost_mode(char *buf, const struct kernel_param *kp)
+{
+	return scnprintf(buf, PAGE_SIZE, "%u\n", boost_mode);
+}
+
+static const struct kernel_param_ops param_ops_boost_mode = {
+	.set = set_boost_mode,
+	.get = get_boost_mode,
+};
+module_param_cb(boost_mode, &param_ops_boost_mode, NULL, 0644);
+MODULE_PARM_DESC(boost_mode,
+	"Input boost profile: 0=battery (off), 1=balanced (default), 2=gaming");
 
 static bool sched_boost_active;
 

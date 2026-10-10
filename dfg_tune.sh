@@ -1,9 +1,14 @@
 #!/system/bin/sh
-# DaisyForGaming v1.0 - runtime tuning (runs from Magisk service.d each boot).
-# Re-asserts the input-boost values the kernel already boots with, lifts the
+# DaisyForGaming v1.0 (final line) - runtime tuning (runs from Magisk
+# service.d each boot). Asserts the balanced boost profile, lifts the
 # top-app schedtune group, enables zram lz4 swap (with retry: the ROM's init
 # configures zram concurrently around 40-50s, so one early swapon can race
 # it), applies vm sysctls, and logs the final state for diagnostics.
+#
+# Boost profiles (single node, no script edits needed):
+#   echo 0 > /sys/module/cpu_boost/parameters/boost_mode   # battery (off)
+#   echo 1 > /sys/module/cpu_boost/parameters/boost_mode   # balanced (default)
+#   echo 2 > /sys/module/cpu_boost/parameters/boost_mode   # gaming
 
 LOG=/data/local/tmp/dfg_tune.log
 say() { echo "$(date '+%H:%M:%S') $*" >> "$LOG"; }
@@ -14,13 +19,18 @@ while [ $i -lt 120 ]; do
   [ "$(getprop sys.boot_completed)" = "1" ] && break
   i=$((i+1)); sleep 1
 done
-say "v1.1 tuning start"
+say "v1.0-final tuning start"
 
-# ---- CPU input boost (re-assert kernel defaults; tuned cooler for v1.1) ----
-if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
+# ---- CPU input boost: balanced profile, charging-aware ----
+if [ -e /sys/module/cpu_boost/parameters/boost_mode ]; then
+  w /sys/module/cpu_boost/parameters/boost_mode 1 \
+    && say "boost_mode = 1 (balanced: 1036/1401 MHz, 150ms)"
+  w /sys/module/cpu_boost/parameters/boost_on_charging 0 \
+    && say "boost_on_charging = 0 (no boost while plugged in)"
+elif [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
   echo "0:1036800 1:1036800 2:1036800 3:1036800 4:1401600 5:1401600 6:1401600 7:1401600" \
     > /sys/module/cpu_boost/parameters/input_boost_freq 2>/dev/null \
-    && say "input_boost_freq = 1036(little)/1401(big) MHz"
+    && say "input_boost_freq = 1036(little)/1401(big) MHz (legacy path)"
   w /sys/module/cpu_boost/parameters/input_boost_ms 150 && say "input_boost_ms = 150"
   w /sys/module/cpu_boost/parameters/sched_boost_on_input 0 && say "sched_boost_on_input = 0 (cooler)"
   w /sys/module/cpu_boost/parameters/boost_on_charging 0 \
@@ -79,6 +89,8 @@ w /proc/sys/vm/swappiness 30 && say "swappiness = 30 (WROTE OK)" || say "swappin
 # ---- final state for diagnostics ----
 say "gov: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null)"
 say "cpu7 max: $(cat /sys/devices/system/cpu/cpu7/cpufreq/scaling_max_freq 2>/dev/null)"
+say "boost_mode now = $(cat /sys/module/cpu_boost/parameters/boost_mode 2>/dev/null)"
+say "schedutil up/down rate limit: $(cat /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us 2>/dev/null)/$(cat /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us 2>/dev/null)"
 say "swappiness now = $(cat /proc/sys/vm/swappiness 2>/dev/null)"
 say "fsync_enabled = $(cat /sys/module/sync/parameters/fsync_enabled 2>/dev/null)"
-say "v1.1 tuning done"
+say "v1.0-final tuning done"

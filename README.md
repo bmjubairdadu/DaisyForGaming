@@ -2,10 +2,11 @@
 
 ![Kernel](https://img.shields.io/badge/Linux-4.9.337-orange)
 ![Platform](https://img.shields.io/badge/SoC-Snapdragon_625_(MSM8953)-green)
-![Root](https://img.shields.io/badge/root-KernelSU_/_FolkPatch_/_Magisk-purple)
+![Root](https://img.shields.io/badge/root-FolkPatch_/_Magisk-purple)
 ![License](https://img.shields.io/badge/license-GPL--2.0-red)
 
-> A performance-tuned custom kernel for the **Xiaomi Mi A2 Lite (daisy)** — built for gaming, shipped in two root-stack flavors, flashable via sideload.
+> A performance-tuned custom kernel for the **Xiaomi Mi A2 Lite (daisy)** — built for gaming,
+> one zip, no built-in root: patch it with **FolkPatch** or root it with **Magisk** after flashing.
 
 ---
 
@@ -19,64 +20,102 @@
 | Base tree | TogoFire r54 (Linux 4.9.337) |
 | ROM | Android 11 (tested on Lineage-based ROM) |
 
-## ⬇️ Downloads (v1.1 — stability & cool-thermals release)
+## ⬇️ Downloads (v1.0 — the final line)
 
-Grab the zips from the repo root or the [releases page](https://github.com/bmjubairdadu/DaisyForGaming/releases):
+Grab the zip from the repo root or the [releases page](https://github.com/bmjubairdadu/DaisyForGaming/releases):
 
 | Flashable zip | Root stack | Kernel build |
 |---|---|---|
-| **`DaisyForGaming-v1.1-Gaming-KSU-<date>.zip`** | KernelSU (built-in) **or** Magisk | `CONFIG_KSU=y` + SusFS v1.5.5, manual kprobe-free hooks |
-| **`DaisyForGaming-v1.1-Gaming-Vannila-<date>.zip`** | FolkPatch (patch boot) **or** Magisk | vanilla — no in-kernel root |
+| **`DaisyForGaming-v1.0-Gaming-<date>.zip`** | FolkPatch (patch boot) **or** Magisk | vanilla — **no in-kernel root, KernelSU removed** |
 
-> **Pick ONE root stack per kernel.** Never patch the KSU build's boot with FolkPatch/KernelPatch — KernelPatch installs its own execve hooks and conflicts with in-kernel KernelSU (instant bootloop). The FolkPatch build has no in-kernel root, so KernelPatch can patch it cleanly.
+One kernel, one zip. The old KSU + Vanilla dual-release split is gone: KernelSU and SusFS have
+been pulled out of the kernel tree completely (driver, syscall hooks, configs), so the kernel is a
+clean vanilla shape that FolkPatch/KernelPatch can patch without any hook conflicts. Magisk keeps
+working as always — root is applied **after** flashing, never in-kernel.
 
 ## 🎮 Gaming features
 
-- **CPU touch boost — ON by default, charging-aware (new in v1.1):** little cluster **1036 MHz**, big cluster **1401 MHz**, **150 ms** hold. While the charger is connected the boost stays off (`boost_on_charging=0` default) — that's what kept the SoC hot while plugged in and made the charger cut current. Set `1` in `/sys/module/cpu_boost/parameters/boost_on_charging` if you game on the charger. All values tunable at runtime in `/sys/module/cpu_boost/parameters/`.
-- **top-app schedtune boost** (`boost=10`, `prefer_idle=1`) applied by the boot script — the foreground game keeps scheduler priority.
-- **schedutil** default governor (interactive / performance / ondemand / conservative / userspace also compiled in, with `GOV_ATTR_SET`).
+- **Three boost profiles — one node (new in v1.0-final):** `boost_mode` in
+  `/sys/module/cpu_boost/parameters/` switches the whole touch-boost profile at runtime:
+  `0` = battery (boost off, coolest for video/browsing/standby) · `1` = balanced (default:
+  little **1036 MHz**, big **1401 MHz**, **150 ms**) · `2` = gaming (little **1401 MHz**,
+  big **1689 MHz**, **250 ms** + WALT sched boost on touch). While the charger is connected the
+  boost stays off (`boost_on_charging=0` default) — that heat made thermal-engine cut charger
+  current. Set `1` in `boost_on_charging` if you game on the charger.
+- **schedutil ramp retune (new in v1.0-final):** up-rate-limit 20 ms → **5 ms** (burst loads —
+  frame starts, scene changes, video seeks — reach target clocks inside the frame, not a full
+  WALT window later) and down-rate-limit 0.5 ms → **20 ms** (clocks hold one window before
+  dropping — kills the up/down seesaw that showed up as **video frame-time jitter**). Both still
+  runtime-tunable per policy.
+- **top-app schedtune boost** (`boost=10`, `prefer_idle=1`) applied by the boot script — the
+  foreground game keeps scheduler priority.
+- **schedutil** default governor (interactive / performance / ondemand / conservative / userspace
+  also compiled in, with `GOV_ATTR_SET`).
 - **Adreno msm-adreno-tz** GPU governor + **Adreno Idler** — instant GPU ramp, no hot idling.
-- **zRAM lz4** (2 GB, lowest CPU overhead) + writeback, **UKSM/KSM** page merging (governor `low` via boot script), compaction.
+- **zRAM lz4** (2 GB, lowest CPU overhead) + writeback, KSM page merging, compaction.
 - **deadline** I/O scheduler (cfq/noop also available).
 - **fq_codel** qdisc + **BBR** TCP congestion control — steadier online-game latency.
 - **300 Hz + PREEMPT**, WALT scheduler, schedtune (cgroup boost) support.
-- **microSD fix (v1.1):** UHS-I capped at SDR50 — SDR104 tuning failed intermittently on several cards.
-- Sane **thermal trips** (CPU 80 °C, GPU 85 °C) for sustained performance without sudden drops; **no overclock on purpose** — thermal headroom beats a paper spec.
+- **microSD fix:** UHS-I capped at SDR50 — SDR104 tuning failed intermittently on several cards.
+- Sane **thermal trips** (CPU 80 °C, GPU 85 °C) for sustained performance without sudden drops;
+  **no overclock on purpose** — thermal headroom beats a paper spec.
 - Fast-charge paths (2 A, safe 4.40 V float), power-efficient workqueues.
 
-## 🔓 Root & stealth
+## 🔓 Root (FolkPatch / Magisk — never in-kernel)
 
-- **KernelSU v0.9.5** with **manual, kprobe-free hooks** (v1.1: the hooks are always wired up — `CONFIG_KPROBES` stays on for perfetto/simpleperf, but KSU registers no kprobes on the read/exec/input hot paths) + **Safe Mode** (triple-tap Vol− during boot).
-- **SusFS v1.5.5** (KSU build): sus-path/mount/kstat hiding, uname & cmdline spoofing, kallsyms hiding, try-umount.
-- `CONFIG_KPROBES` + `KALLSYMS_ALL` stay on (perfetto/simpleperf ready), `MODVERSIONS` on for VINTF — **no "system inconsistent" boot dialog**.
-- FolkPatch/KP requirements all met: `KALLSYMS` + `KALLSYMS_ALL` = y, KASLR/KPTI off.
+- The kernel ships with **no root inside**: `KALLSYMS` + `KALLSYMS_ALL` = y, KASLR/KPTI off,
+  `MODVERSIONS` on — all KernelPatch/FolkPatch requirements met, so KernelPatch can patch the
+  flashed boot cleanly.
+- **FolkPatch flow:** flash the zip → dump the new boot → patch it in
+  [FolkPatch Manager](https://github.com/LyraVoid/FolkPatch/releases) → flash the patched boot.
+- **Magisk flow:** flash the zip, install/keep Magisk — the ramdisk is preserved untouched.
+
+> ⚠️ **KernelPatch on 4.9 must be ≥ 0.13.8** (FolkPatch V6 Sol = KP 0.13.9 ✅). Older kpimg builds
+> hang the kernel in `setup_arch` at the boot logo — this is a documented upstream 4.9 bug fixed
+> in 0.13.8.
+
+> 💡 Safe test without flashing: `adb reboot bootloader` → `fastboot boot patched_boot.img` —
+> boots once from RAM; force-restart returns to the bootloader.
+
+## 🧩 Kernel modules
+
+- `CONFIG_MODULES=y` with **`MODVERSIONS`** (VINTF requires it — keeps the Android-11
+  "system inconsistent" dialog away) and **no signature enforcement**
+  (`CONFIG_MODULE_SIG` off): unsigned `.ko` modules load without any crypto check on the load
+  path, and there are no KernelSU hooks left on the read/execve/input syscall paths.
+- Modules must be built from **this exact tree** (`MODVERSIONS` symbols) — rebuild your `.ko`
+  files for every kernel you flash; old modules from a previous build will refuse to load.
+- Load them the normal way: `insmod /path/xxx.ko` or `modprobe` with the module in
+  `/vendor_dlkm`/`/system/lib/modules`. If a module misbehaves, `rmmod` it — the module loader
+  itself adds no overhead beyond the module's own init.
 
 ## 📲 Flashing
 
 ### Recovery (recommended)
 1. Reboot to TWRP / OrangeFox (or `adb reboot recovery`).
 2. Install the zip — or **Advanced → ADB Sideload** then `adb sideload DaisyForGaming-v1.0-Gaming-*.zip`.
-3. Reboot. The zip auto-detects `daisy`, gates on Android 11, and stages the boot-time tuning script (`99-dfg-tune.sh`) into Magisk `service.d`.
+3. Reboot. The zip auto-detects `daisy`, gates on Android 11, and stages the boot-time tuning
+   script (`99-dfg-tune.sh`) into Magisk `service.d`.
 
 ### Root setup
-- **KSU zip** → install [KernelSU Manager](https://github.com/tiann/KernelSU/releases); Magisk keeps working too.
-- **FolkPatch zip** → flash the zip first, then dump the new boot, patch it in [FolkPatch Manager](https://github.com/LyraVoid/FolkPatch/releases) and flash the patched boot. Magisk works as-is without patching.
-
-> ⚠️ **KernelPatch on 4.9 must be ≥ 0.13.8** (FolkPatch V6 Sol = KP 0.13.9 ✅). Older kpimg builds hang the kernel in `setup_arch` at the boot logo — this is a documented upstream 4.9 bug fixed in 0.13.8.
-
-> 💡 Safe test without flashing: `adb reboot bootloader` → `fastboot boot patched_boot.img` — boots once from RAM; force-restart returns to bootloader.
+- **FolkPatch** → flash the zip first, then dump the new boot, patch it in FolkPatch Manager and
+  flash the patched boot.
+- **Magisk** → works as-is without patching.
 
 ## 🔧 Runtime tuning (all optional — defaults are already applied)
 
 | Node | Value |
 |---|---|
+| `/sys/module/cpu_boost/parameters/boost_mode` | `1` (balanced) — `0` battery, `2` gaming |
 | `/sys/module/cpu_boost/parameters/input_boost_freq` | `0:1036800 … 4:1401600` |
 | `/sys/module/cpu_boost/parameters/input_boost_ms` | `150` |
 | `/sys/module/cpu_boost/parameters/sched_boost_on_input` | `0` |
 | `/sys/module/cpu_boost/parameters/boost_on_charging` | `0` (set `1` to boost while charging) |
+| `/sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us` | `5000` |
+| `/sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us` | `20000` |
 | `/dev/stune/top-app/schedtune.boost` | `10` |
 | `/sys/module/sync/parameters/fsync_enabled` | `Y` (toggle for faster loading) |
-| `/proc/sys/vm/{swappiness,vfs_cache_pressure,page-cluster,dirty_background_ratio}` | `30 / 20 / 0 / 5` |
+| `/proc/sys/vm/{swappiness,vfs_cache_pressure,page-cluster,dirty_background_ratio}` | `30 / 50 / 0 / 5` |
 
 Tuning log: `/data/local/tmp/dfg_tune.log` (written by `99-dfg-tune.sh` every boot).
 
@@ -85,25 +124,19 @@ Tuning log: `/data/local/tmp/dfg_tune.log` (written by `99-dfg-tune.sh` every bo
 WSL (Ubuntu 22.04) + clang 14, `LLVM=1 LLVM_IAS=1`:
 
 ```bash
-# FolkPatch/Magisk variant (vanilla kernel)
-bash dfg_fp_build.sh
-
-# KSU variant
-bash dfg_ksu_build.sh
-
-# Package a flashable zip
-bash dfg_zip.sh ksu    # -> DaisyForGaming-v1.1-Gaming-KSU-<date>.zip
-bash dfg_zip.sh fp     # -> DaisyForGaming-v1.1-Gaming-Vannila-<date>.zip
+bash dfg_build.sh    # kernel -> out/arch/arm64/boot/Image.gz-dtb
+bash dfg_zip.sh      # -> DaisyForGaming-v1.0-Gaming-<date>.zip
 ```
 
-`dfg_boot_rebuild.py` swaps a boot image's kernel blob while keeping the header + ramdisk byte-identical (handy for kpatch testing).
+`dfg_boot_rebuild.py` swaps a boot image's kernel blob while keeping the header + ramdisk
+byte-identical (handy for kpatch testing).
 
 ## 🐞 Troubleshooting
 
 | Symptom | Cause / fix |
 |---|---|
 | KernelPatch-patched boot hangs at logo | kpimg < 0.13.8 — use FolkPatch V6 Sol (KP 0.13.9) or newer |
-| KernelPatch + KSU kernel bootloops | wrong zip — use the FolkPatch build for KP patching |
+| Old `.ko` module refuses to load | `MODVERSIONS` symbols changed — rebuild the module from this tree |
 | `vm.swappiness` permission denied | fixed (sysctl mode 0644) |
 | Boot warning dialog on Android 11 | keep `MODVERSIONS` on (it is enabled by default) |
 | "zram swapon FAILED" in tune log | harmless ROM race (script retries and confirms swap state) |
@@ -111,11 +144,11 @@ bash dfg_zip.sh fp     # -> DaisyForGaming-v1.1-Gaming-Vannila-<date>.zip
 ## 🙏 Credits
 
 - **TogoFire** r54 — base kernel tree
-- **KernelSU** (tiann) + **SusFS** (susfs4ksu) — root & stealth
 - **AnyKernel3** (osm0sis) — flashable packaging
 - **FolkPatch** (LyraVoid) / **KernelPatch** (bmax121) — boot-patch root
 - Everyone in the daisy community
 
 ## 📄 License & disclaimer
 
-GPL-2.0 — see [COPYING](COPYING). Flash at your own risk; keep a backup of your boot image. A/B device: the zip writes to the **active slot's** boot partition.
+GPL-2.0 — see [COPYING](COPYING). Flash at your own risk; keep a backup of your boot image.
+A/B device: the zip writes to the **active slot's** boot partition.

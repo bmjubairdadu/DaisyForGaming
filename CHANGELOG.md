@@ -2,7 +2,49 @@
 
 All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (`daisy`) are documented here.
 
-## v1.1 — stability, cool thermals & charging-aware boost (2026-10-10)
+## v1.0 — FINAL line: single zip, KSU removed, smoother ramp (2026-10-11)
+
+Fresh versioning restart — this is the **final build line**. The old KSU/Vannila split is gone:
+**one kernel, one zip**, root applied after flashing (FolkPatch / Magisk), never in-kernel.
+
+### 🔓 Root stack change (the big one)
+- **KernelSU and SusFS removed from the kernel tree entirely** — not just disabled:
+  `drivers/kernelsu/` deleted, all in-tree hook points removed (`fs/exec.c`,
+  `fs/read_write.c`, `fs/open.c`, `fs/stat.c`, `fs/devpts/inode.c`,
+  `drivers/input/input.c`), `drivers/Kconfig`/`drivers/Makefile` entries dropped and
+  every `CONFIG_KSU*` line removed from the defconfig.
+- That also removes the last syscall-path overhead the KSU build carried: the execve /
+  vfs_read / input hooks (however cheap) are gone — the syscall paths are stock again.
+- Root now = **FolkPatch** (patch the flashed boot) or **Magisk**. KernelPatch requirements
+  stay met (`KALLSYMS` + `KALLSYMS_ALL` on, KASLR/KPTI off, `RELOCATABLE` off).
+- **One defconfig** (`daisy_defconfig`), **one build script** (`dfg_build.sh`), **one zip**
+  (`DaisyForGaming-v1.0-Gaming-<date>.zip`). `daisy_fp_defconfig`, `dfg_fp_build.sh`,
+  `dfg_ksu_build.sh` and the old dual zips deleted.
+
+### 🧩 Kernel modules
+- Module loading is as lean as 4.9 allows: no signature enforcement
+  (`CONFIG_MODULE_SIG` off — zero crypto on the load path), `MODVERSIONS` kept for VINTF,
+  `MODULE_FORCE_LOAD/UNLOAD` on, and no third-party hooks left in the module/syscall paths.
+- Modules must be rebuilt from this tree (MODVERSIONS symbols) — documented in the README.
+
+### 🎮 Performance / smoothness
+- **schedutil rate-limit retune (default):** up 20 ms → **5 ms** (bursts ramp inside the frame),
+  down 0.5 ms → **20 ms** (clocks hold one WALT window before dropping — removes the up/down
+  seesaw behind **video frame-time jitter** and needless transition churn). Still
+  runtime-tunable per policy.
+- **New `boost_mode` node in cpu-boost** — switch the whole input-boost profile with one write,
+  no scripts: `0` battery (boost off), `1` balanced (default: 1036/1401 MHz, 150 ms,
+  no sched boost — the cool v1.1 values), `2` gaming (1401/1689 MHz, 250 ms, WALT sched boost
+  on touch — the proven v1.0 values for gaming sessions).
+- Boot tune script (`99-dfg-tune.sh`) asserts `boost_mode=1`, keeps `boost_on_charging=0`,
+  and now logs the schedutil rate limits + boost mode for diagnostics.
+
+### 🧪 Unchanged (all still shipped)
+- Thermal trips CPU 80 °C / per-CPU 90 °C / GPU 85 °C / pop-mem 80 °C, charging-aware boost
+  (no boost while plugged in), SDR50 microSD cap, zRAM lz4 2 GB + writeback, KSM, deadline I/O,
+  fq_codel + BBR, 300 Hz PREEMPT + WALT, `MODVERSIONS` (no VINTF dialog), pn533/rbd fixes.
+
+## v1.1 — stability, cool thermals & charging-aware boost (2026-10-10) — *legacy*
 
 The "it crashes / heats / charges slow" release. Everything in v1.0 ships too —
 the only difference between the two zips is still the root stack.

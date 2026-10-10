@@ -4975,36 +4975,11 @@ CONFIG_LKDTM=m
 # CONFIG_MODULE_SIG_ALL is not set
 # CONFIG_TRIM_UNUSED_KSYMS is not set
 
-# ==== DaisyForGaming v1.3.0 - KernelSU + SusFS + gaming (by DaisyForGaming) ====
-# --- KernelSU (v0.9.5, last non-GKI release) + SusFS ---
-# Manual (non-kprobe) integration: the KernelSU copy in this tree force-disables
-# its kprobe hooks (`#if defined(CONFIG_KPROBES) && 0`), so the hook points in
-# fs/exec.c, fs/open.c, fs/read_write.c, fs/stat.c, fs/devpts/inode.c and
-# drivers/input/input.c are patched in-tree. CONFIG_KPROBES stays enabled so
-# perf/eBPF tooling (perfetto, simpleperf, gamemod) keeps working.
-CONFIG_KSU=y
-# CONFIG_KSU_DEBUG is not set
-
-# SusFS - kernel-side stealth patch (hook sites already applied across fs/)
-CONFIG_KSU_SUSFS=y
-CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y
-CONFIG_KSU_SUSFS_SUS_PATH=y
-CONFIG_KSU_SUSFS_SUS_MOUNT=y
-CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y
-CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y
-CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y
-CONFIG_KSU_SUSFS_SUS_KSTAT=y
-CONFIG_KSU_SUSFS_TRY_UMOUNT=y
-CONFIG_KSU_SUSFS_SPOOF_UNAME=y
-CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y
-CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
-CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
-# CONFIG_KSU_SUSFS_SUS_OVERLAYFS is not set
-# Logging OFF on purpose: SUSFS_LOGI is pr_info() inside path-lookup, stat and
-# readdir hot paths. Flip it on only while debugging susfs, then rebuild.
-# CONFIG_KSU_SUSFS_ENABLE_LOG is not set
-
-# Kprobe/kallsyms prerequisites (KernelSU + Magisk / Systemless hosts)
+# ==== DaisyForGaming v1.0 (final line) — vanilla + gaming (by DaisyForGaming) ====
+# NO in-kernel root: KernelSU/SusFS removed from the tree. Root with
+# FolkPatch (patch the boot AFTER flashing) or Magisk — both work on this
+# vanilla-shaped kernel. Kprobe/kallsyms prerequisites kept for FolkPatch/KP
+# and for perf tooling (perfetto, simpleperf, gamemod):
 CONFIG_KPROBES=y
 CONFIG_KPROBE_EVENTS=y
 CONFIG_HAVE_KPROBES=y
