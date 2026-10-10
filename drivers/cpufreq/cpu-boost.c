@@ -316,7 +316,12 @@ static void bypass_check_work(struct work_struct *work)
 		set_battery_charging(false);
 	}
 
-	if (want)
+	/*
+	 * Keep polling while the feature is on: a missed supply event or a
+	 * USB-state flicker (common on PC ports) must never leave charging
+	 * stuck either way. 2 s cadence, one psy property read - negligible.
+	 */
+	if (bypass_on_gaming && psy_ready)
 		schedule_delayed_work(&bypass_work, msecs_to_jiffies(2000));
 }
 
