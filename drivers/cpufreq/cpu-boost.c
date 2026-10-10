@@ -26,6 +26,7 @@
 #include <linux/input.h>
 #include <linux/time.h>
 #include <linux/sched/rt.h>
+#include <linux/power_supply.h>
 
 #include <linux/sched.h>
 
@@ -58,6 +59,34 @@ static struct kthread_work input_boost_work;
 #endif
 
 static bool input_boost_enabled = true;
+
+/*
+ * DaisyForGaming v1.1: while the charger is connected, input boost stays off
+ * by default. Boost heat makes the charger cut current (thermal mitigation),
+ * so plugged-in use both charged slower and ran hotter. Charge-first is the
+ * right default; set boost_on_charging=1 to get boosting while plugged in.
+ */
+static bool boost_on_charging;
+module_param(boost_on_charging, bool, 0644);
+MODULE_PARM_DESC(boost_on_charging,
+	"Apply CPU input boost while USB/AC is connected (0 = off, keeps charging fast and cool)");
+
+static bool usb_charger_online(void)
+{
+	struct power_supply *usb;
+	union power_supply_propval val = { 0, };
+	bool online = false;
+
+	usb = power_supply_get_by_name("usb");
+	if (!usb)
+		return false;
+
+	if (!power_supply_get_property(usb, POWER_SUPPLY_PROP_ONLINE, &val))
+		online = !!val.intval;
+	power_supply_put(usb);
+
+	return online;
+}
 
 #ifdef CONFIG_INPUT_BOOST_DURATION_MS
 static unsigned int input_boost_ms = CONFIG_INPUT_BOOST_DURATION_MS;
@@ -226,6 +255,14 @@ static void do_input_boost(struct kthread_work *work)
 {
 	unsigned int i, ret;
 	struct cpu_sync *i_sync_info;
+
+	/*
+	 * Charging guard: skip the boost without touching the pending
+	 * input_boost_rem work — if a boost is still active, its own removal
+	 * work clears the mins, so nothing gets stuck at boost frequency.
+	 */
+	if (!boost_on_charging && usb_charger_online())
+		return;
 
 	cancel_delayed_work_sync(&input_boost_rem);
 	if (sched_boost_active) {

@@ -1,0 +1,131 @@
+menu "KernelSU"
+
+config KSU
+	tristate "KernelSU function support"
+	depends on OVERLAY_FS
+	default y
+	help
+	  Enable kernel-level root privileges on Android System.
+	  To compile as a module, choose M here: the
+	  module will be called kernelsu.
+
+config KSU_DEBUG
+	bool "KernelSU debug mode"
+	depends on KSU
+	default n
+	help
+	  Enable KernelSU debug mode.
+
+config KSU_SUSFS
+	bool "SUSFS support"
+	depends on KSU
+	default n
+	help
+	  Enable SUSFS support.
+
+config KSU_SUSFS_HAS_MAGIC_MOUNT
+	bool "Enable magic mount support"
+	depends on KSU_SUSFS
+	default y
+	help
+	  Enable magic mount support.
+
+config KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT
+	bool "Enable auto add sus ksu default mount"
+	depends on KSU_SUSFS
+	default y
+	help
+	  Enable auto add sus ksu default mount.
+
+config KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
+	bool "Enable auto add sus bind mount"
+	depends on KSU_SUSFS
+	default y
+	help
+	  Enable auto add sus bind mount.
+
+config KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT
+	bool "Enable auto add try umount for bind mount"
+	depends on KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
+	default y
+	help
+	  Enable auto add try umount for bind mount.
+
+config KSU_SUSFS_SUS_SU
+	bool "Enable hiding su"
+	depends on KSU_SUSFS
+	default n
+	help
+	  Enable hiding su.
+
+config KSU_SUSFS_SUS_PATH
+	bool "Enable sus path"
+	depends on KSU_SUSFS
+	default y
+	help
+	  Enable sus path.
+
+config KSU_SUSFS_SUS_MOUNT
+	bool "Enable sus mount"
+	depends on KSU_SUSFS
+	default n
+	help
+	  Enable sus mount.
+
+config KSU_SUSFS_SUS_KSTAT
+	bool "Enable sus kstat"
+	depends on KSU_SUSFS
+	default n
+	help
+	  Enable sus kstat.
+
+config KSU_SUSFS_SUS_OVERLAYFS
+	bool "Enable sus overlayfs"
+	depends on KSU_SUSFS
+	default n
+	help
+	  Enable sus overlayfs.
+
+config KSU_SUSFS_TRY_UMOUNT
+	bool "Enable try umount"
+	depends on KSU_SUSFS
+	default n
+	help
+	  Enable try umount.
+
+config KSU_SUSFS_SPOOF_UNAME
+	bool "Enable spoof uname"
+	depends on KSU_SUSFS
+	default n
+	help
+	  Enable spoof uname.
+
+config KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
+	bool "Enable hide ksu susfs symbols"
+	depends on KSU_SUSFS
+	default n
+	help
+	  Enable hide ksu susfs symbols.
+
+config KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
+	bool "Enable spoof cmdline or bootconfig"
+	depends on KSU_SUSFS
+	default n
+	help
+	  Enable spoof cmdline or bootconfig.
+
+config KSU_SUSFS_OPEN_REDIRECT
+	bool "Enable open redirect"
+	depends on KSU_SUSFS
+	default y
+	help
+	  Enable open redirect.
+
+config KSU_SUSFS_ENABLE_LOG
+	bool "Enable susfs log"
+	depends on KSU_SUSFS
+	default n
+	help
+	  Enable susfs log.
+
+endmenu

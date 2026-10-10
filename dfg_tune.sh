@@ -14,17 +14,24 @@ while [ $i -lt 120 ]; do
   [ "$(getprop sys.boot_completed)" = "1" ] && break
   i=$((i+1)); sleep 1
 done
-say "v1.0 tuning start"
+say "v1.1 tuning start"
 
-# ---- CPU input boost (re-assert kernel defaults) ----
+# ---- CPU input boost (re-assert kernel defaults; tuned cooler for v1.1) ----
 if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
-  echo "0:1401600 1:1401600 2:1401600 3:1401600 4:1689600 5:1689600 6:1689600 7:1689600" \
+  echo "0:1036800 1:1036800 2:1036800 3:1036800 4:1401600 5:1401600 6:1401600 7:1401600" \
     > /sys/module/cpu_boost/parameters/input_boost_freq 2>/dev/null \
-    && say "input_boost_freq = 1401(little)/1689(big) MHz"
-  w /sys/module/cpu_boost/parameters/input_boost_ms 300 && say "input_boost_ms = 300"
-  w /sys/module/cpu_boost/parameters/sched_boost_on_input 1 && say "sched_boost_on_input = 1"
+    && say "input_boost_freq = 1036(little)/1401(big) MHz"
+  w /sys/module/cpu_boost/parameters/input_boost_ms 150 && say "input_boost_ms = 150"
+  w /sys/module/cpu_boost/parameters/sched_boost_on_input 0 && say "sched_boost_on_input = 0 (cooler)"
+  w /sys/module/cpu_boost/parameters/boost_on_charging 0 \
+    && say "boost_on_charging = 0 (charging-aware boost: no boost while plugged in)"
 else
   say "cpu_boost not present"
+fi
+
+# ---- UKSM: bound background page scanning (heat) ----
+if [ -e /sys/kernel/mm/uksm/cpu_governor ]; then
+  w /sys/kernel/mm/uksm/cpu_governor low && say "uksm governor = low"
 fi
 
 # ---- top-app schedtune group: foreground stays preferred ----
@@ -66,13 +73,12 @@ fi
 
 # ---- vm tuning ----
 w /proc/sys/vm/page-cluster 0 && say "page-cluster = 0"
-w /proc/sys/vm/vfs_cache_pressure 20 && say "vfs_cache_pressure = 20"
+w /proc/sys/vm/vfs_cache_pressure 50 && say "vfs_cache_pressure = 50"
 w /proc/sys/vm/swappiness 30 && say "swappiness = 30 (WROTE OK)" || say "swappiness write FAILED"
-w /proc/sys/vm/dirty_background_ratio 5 && say "dirty_background_ratio = 5"
 
 # ---- final state for diagnostics ----
 say "gov: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null)"
 say "cpu7 max: $(cat /sys/devices/system/cpu/cpu7/cpufreq/scaling_max_freq 2>/dev/null)"
 say "swappiness now = $(cat /proc/sys/vm/swappiness 2>/dev/null)"
 say "fsync_enabled = $(cat /sys/module/sync/parameters/fsync_enabled 2>/dev/null)"
-say "v1.0 tuning done"
+say "v1.1 tuning done"

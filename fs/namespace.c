@@ -1895,6 +1895,46 @@ static inline bool may_mandlock(void)
 }
 #endif
 
+#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
+/*
+ * Backport of path_umount()/can_umount() from v5.9 (fs/namespace.c), the
+ * helper SusFS' try_umount needs: it performs an umount on an already-held
+ * struct path instead of a userland path string. The KSU_SUSFS_TRY_UMOUNT
+ * config gates it so the vanilla (FolkPatch) build stays byte-identical.
+ */
+static int can_umount(const struct path *path, int flags)
+{
+	struct mount *mnt = real_mount(path->mnt);
+
+	if (!may_mount())
+		return -EPERM;
+	if (path->dentry != path->mnt->mnt_root)
+		return -EINVAL;
+	if (!check_mnt(mnt))
+		return -EINVAL;
+	if (mnt->mnt.mnt_flags & MNT_LOCKED) /* Check optimistically */
+		return -EINVAL;
+	if (flags & MNT_FORCE && !capable(CAP_SYS_ADMIN))
+		return -EPERM;
+	return 0;
+}
+
+int path_umount(struct path *path, int flags)
+{
+	struct mount *mnt = real_mount(path->mnt);
+	int ret;
+
+	ret = can_umount(path, flags);
+	if (!ret)
+		ret = do_umount(mnt, flags);
+
+	/* we mustn't call path_put() as that would clear mnt_expiry_mark */
+	dput(path->dentry);
+	mntput(&mnt->mnt);
+	return ret;
+}
+#endif
+
 /*
  * Now umount can handle mount points as well as block devices.
  * This is important for filesystems which use unnamed block devices.
@@ -1954,36 +1994,6 @@ SYSCALL_DEFINE1(oldumount, char __user *, name)
 }
 
 #endif
-
-static int can_umount(const struct path *path, int flags)
- {
-	 struct mount *mnt = real_mount(path->mnt);
-	 if (flags & ~(MNT_FORCE | MNT_DETACH | MNT_EXPIRE | UMOUNT_NOFOLLOW))
-		 return -EINVAL;
-	 if (!may_mount())
-		 return -EPERM;
-	 if (path->dentry != path->mnt->mnt_root)
-		 return -EINVAL;
-	 if (!check_mnt(mnt))
-		 return -EINVAL;
-	 if (mnt->mnt.mnt_flags & MNT_LOCKED)
-		 return -EINVAL;
-	 if (flags & MNT_FORCE && !capable(CAP_SYS_ADMIN))
-		 return -EPERM;
-	 return 0;
- }
-
-int path_umount(struct path *path, int flags)
- {
-	 struct mount *mnt = real_mount(path->mnt);
-	 int ret;
-	 ret = can_umount(path, flags);
-	 if (!ret)
-		 ret = do_umount(mnt, flags);
-	 dput(path->dentry);
-	 mntput_no_expire(mnt);
-	 return ret;
- }
 
 static bool is_mnt_ns_file(struct dentry *dentry)
 {
@@ -3851,7 +3861,10 @@ const struct proc_ns_operations mntns_operations = {
 };
 
 #ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
-extern void susfs_try_umount_all(uid_t uid);
+/* Real SusFS helper (fs/susfs.c): iterates LH_TRY_UMOUNT_PATH in reverse
+ * and unmounts the registered paths for this uid. The original patch
+ * referenced susfs_try_umount_all() which does not exist in this tree. */
+extern void susfs_try_umount(uid_t target_uid);
 void susfs_run_try_umount_for_current_mnt_ns(void) {
 	struct mount *mnt;
 	struct mnt_namespace *mnt_ns;
@@ -3867,7 +3880,7 @@ void susfs_run_try_umount_for_current_mnt_ns(void) {
 	}
 	// Unlock the namespace
 	namespace_unlock();
-	susfs_try_umount_all(current_uid().val);
+	susfs_try_umount(current_uid().val);
 }
 #endif
 #ifdef CONFIG_KSU_SUSFS

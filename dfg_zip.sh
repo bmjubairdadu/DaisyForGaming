@@ -4,7 +4,7 @@
 #        dfg_zip.sh fp    -> DaisyForGaming-v1.0-Gaming-Vannila-<DD-MM-YYYY>.zip  (out-fp/ tree)
 set -e
 VARIANT="${1:?usage: dfg_zip.sh ksu|fp}"
-VER="1.0"
+VER="1.1"
 DATESTAMP="$(date +%m-%d-%Y)"
 SRC=/mnt/d/DaisyForGaming
 cd "$SRC"
@@ -35,7 +35,7 @@ cat <<'AKEOF1'
 ## DaisyForGaming by JUBAIR HOSEN (Linux 4.9.337)
 
 properties() { '
-kernel.string=DaisyForGaming v1.0
+kernel.string=DaisyForGaming v1.1
 do.devicecheck=1
 do.modules=0
 do.systemless=1
@@ -88,9 +88,9 @@ dump_boot;
 
 ui_print " ";
 ui_print "  Kernel features:";
-ui_print "    - Linux 4.9.337  (DaisyForGaming v1.0)";
-ui_print "    - CPU touch boost ON: 1401MHz little /";
-ui_print "      1689MHz big, 300ms + WALT sched boost";
+ui_print "    - Linux 4.9.337  (DaisyForGaming v1.1)";
+ui_print "    - CPU touch boost: 1036MHz little /";
+ui_print "      1401MHz big, 150ms, charging-aware";
 ui_print "    - schedutil governor, Adreno msm-adreno-tz";
 ui_print "    - top-app schedtune boost (boot script)";
 ui_print "    - zRAM lz4 + writeback, UKSM low preset";
@@ -138,12 +138,12 @@ AKEOF2
 
 if [ "$VARIANT" = "ksu" ]; then
     cat <<'TAIL_KSU'
-ui_print "  Done! DaisyForGaming v1.0 (KSU) installed.";
+ui_print "  Done! DaisyForGaming v1.1 (KSU) installed.";
 ui_print "  Root: KernelSU Manager or Magisk.";
 TAIL_KSU
 else
     cat <<'TAIL_FP'
-ui_print "  Done! DaisyForGaming v1.0 (FolkPatch/Magisk) installed.";
+ui_print "  Done! DaisyForGaming v1.1 (FolkPatch/Magisk) installed.";
 TAIL_FP
 fi
 
@@ -160,19 +160,19 @@ grep -q 'VARIANT' anykernel.sh && { echo "FATAL: VARIANT leaked into anykernel.s
 # ---- tuning script: single source from repo ----
 cp "$SRC/dfg_tune.sh" dfg_tune.sh
 chmod 755 dfg_tune.sh
-grep -q 'v1.0 tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"; exit 1; }
+grep -q 'v1.1 tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"; exit 1; }
 
 # ---- banner ----
 {
 cat <<'BAN1'
 **************************************************
-*        DaisyForGaming v1.0                    *
+*        DaisyForGaming v1.1                    *
 **************************************************
 *  Device : Xiaomi Mi A2 Lite (daisy)           *
 *  Kernel : 4.9.337-DaisyForGaming              *
 *  -------------------------------------------- *
-*  CPU touch boost ON (1401/1689MHz, 300ms)     *
-*  WALT sched boost on input + top-app boost    *
+*  CPU touch boost 1036/1401MHz, 150ms         *
+*  Charging-aware boost + top-app boost        *
 BAN1
 if [ "$VARIANT" = "ksu" ]; then
     echo '*  KernelSU + SusFS built in / Magisk OK        *'

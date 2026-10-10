@@ -19,31 +19,34 @@
 | Base tree | TogoFire r54 (Linux 4.9.337) |
 | ROM | Android 11 (tested on Lineage-based ROM) |
 
-## ⬇️ Downloads (v1.0)
+## ⬇️ Downloads (v1.1 — stability & cool-thermals release)
+
+Grab the zips from the repo root or the [releases page](https://github.com/bmjubairdadu/DaisyForGaming/releases):
 
 | Flashable zip | Root stack | Kernel build |
 |---|---|---|
-| **[DaisyForGaming-v1.0-Gaming-KSU-10-05-2026.zip](https://github.com/bmjubairdadu/DaisyForGaming/releases/download/v1.0/DaisyForGaming-v1.0-Gaming-KSU-10-05-2026.zip)** | KernelSU (built-in) **or** Magisk | `CONFIG_KSU=y` + SusFS v1.5.5 |
-| **[DaisyForGaming-v1.0-Gaming-Vannila-10-05-2026.zip](https://github.com/bmjubairdadu/DaisyForGaming/releases/download/v1.0/DaisyForGaming-v1.0-Gaming-Vannila-10-05-2026.zip)** | FolkPatch (patch boot) **or** Magisk | vanilla — no in-kernel root |
+| **`DaisyForGaming-v1.1-Gaming-KSU-<date>.zip`** | KernelSU (built-in) **or** Magisk | `CONFIG_KSU=y` + SusFS v1.5.5, manual kprobe-free hooks |
+| **`DaisyForGaming-v1.1-Gaming-Vannila-<date>.zip`** | FolkPatch (patch boot) **or** Magisk | vanilla — no in-kernel root |
 
 > **Pick ONE root stack per kernel.** Never patch the KSU build's boot with FolkPatch/KernelPatch — KernelPatch installs its own execve hooks and conflicts with in-kernel KernelSU (instant bootloop). The FolkPatch build has no in-kernel root, so KernelPatch can patch it cleanly.
 
 ## 🎮 Gaming features
 
-- **CPU touch boost — ON by default** (this was dead in every previous release): little cluster **1401 MHz**, big cluster **1689 MHz**, **300 ms** hold, re-triggered while touching — plus a **WALT full-throttle scheduler boost on every input** so the game's threads migrate to the big cluster instantly. All values tunable at runtime in `/sys/module/cpu_boost/parameters/`.
+- **CPU touch boost — ON by default, charging-aware (new in v1.1):** little cluster **1036 MHz**, big cluster **1401 MHz**, **150 ms** hold. While the charger is connected the boost stays off (`boost_on_charging=0` default) — that's what kept the SoC hot while plugged in and made the charger cut current. Set `1` in `/sys/module/cpu_boost/parameters/boost_on_charging` if you game on the charger. All values tunable at runtime in `/sys/module/cpu_boost/parameters/`.
 - **top-app schedtune boost** (`boost=10`, `prefer_idle=1`) applied by the boot script — the foreground game keeps scheduler priority.
 - **schedutil** default governor (interactive / performance / ondemand / conservative / userspace also compiled in, with `GOV_ATTR_SET`).
 - **Adreno msm-adreno-tz** GPU governor + **Adreno Idler** — instant GPU ramp, no hot idling.
-- **zRAM lz4** (2 GB, lowest CPU overhead) + writeback, **UKSM/KSM** page merging, compaction.
+- **zRAM lz4** (2 GB, lowest CPU overhead) + writeback, **UKSM/KSM** page merging (governor `low` via boot script), compaction.
 - **deadline** I/O scheduler (cfq/noop also available).
 - **fq_codel** qdisc + **BBR** TCP congestion control — steadier online-game latency.
 - **300 Hz + PREEMPT**, WALT scheduler, schedtune (cgroup boost) support.
-- Sane **thermal trips** (CPU 80 °C, GPU 85 °C — v1.2 fixes) for sustained performance without sudden drops; **no overclock on purpose** — thermal headroom beats a paper spec.
+- **microSD fix (v1.1):** UHS-I capped at SDR50 — SDR104 tuning failed intermittently on several cards.
+- Sane **thermal trips** (CPU 80 °C, GPU 85 °C) for sustained performance without sudden drops; **no overclock on purpose** — thermal headroom beats a paper spec.
 - Fast-charge paths (2 A, safe 4.40 V float), power-efficient workqueues.
 
 ## 🔓 Root & stealth
 
-- **KernelSU v0.9.5** (last non-GKI release) with manual, kprobe-free hooks + **Safe Mode** (triple-tap Vol−).
+- **KernelSU v0.9.5** with **manual, kprobe-free hooks** (v1.1: the hooks are always wired up — `CONFIG_KPROBES` stays on for perfetto/simpleperf, but KSU registers no kprobes on the read/exec/input hot paths) + **Safe Mode** (triple-tap Vol− during boot).
 - **SusFS v1.5.5** (KSU build): sus-path/mount/kstat hiding, uname & cmdline spoofing, kallsyms hiding, try-umount.
 - `CONFIG_KPROBES` + `KALLSYMS_ALL` stay on (perfetto/simpleperf ready), `MODVERSIONS` on for VINTF — **no "system inconsistent" boot dialog**.
 - FolkPatch/KP requirements all met: `KALLSYMS` + `KALLSYMS_ALL` = y, KASLR/KPTI off.
@@ -67,9 +70,10 @@
 
 | Node | Value |
 |---|---|
-| `/sys/module/cpu_boost/parameters/input_boost_freq` | `0:1401600 … 4:1689600` |
-| `/sys/module/cpu_boost/parameters/input_boost_ms` | `300` |
-| `/sys/module/cpu_boost/parameters/sched_boost_on_input` | `1` |
+| `/sys/module/cpu_boost/parameters/input_boost_freq` | `0:1036800 … 4:1401600` |
+| `/sys/module/cpu_boost/parameters/input_boost_ms` | `150` |
+| `/sys/module/cpu_boost/parameters/sched_boost_on_input` | `0` |
+| `/sys/module/cpu_boost/parameters/boost_on_charging` | `0` (set `1` to boost while charging) |
 | `/dev/stune/top-app/schedtune.boost` | `10` |
 | `/sys/module/sync/parameters/fsync_enabled` | `Y` (toggle for faster loading) |
 | `/proc/sys/vm/{swappiness,vfs_cache_pressure,page-cluster,dirty_background_ratio}` | `30 / 20 / 0 / 5` |
@@ -85,11 +89,11 @@ WSL (Ubuntu 22.04) + clang 14, `LLVM=1 LLVM_IAS=1`:
 bash dfg_fp_build.sh
 
 # KSU variant
-wsl make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 daisy_defconfig -j8
+bash dfg_ksu_build.sh
 
 # Package a flashable zip
-bash dfg_zip.sh ksu    # -> DaisyForGaming-v1.0-Gaming-KSU-<date>.zip
-bash dfg_zip.sh fp     # -> DaisyForGaming-v1.0-Gaming-Vannila-<date>.zip
+bash dfg_zip.sh ksu    # -> DaisyForGaming-v1.1-Gaming-KSU-<date>.zip
+bash dfg_zip.sh fp     # -> DaisyForGaming-v1.1-Gaming-Vannila-<date>.zip
 ```
 
 `dfg_boot_rebuild.py` swaps a boot image's kernel blob while keeping the header + ramdisk byte-identical (handy for kpatch testing).

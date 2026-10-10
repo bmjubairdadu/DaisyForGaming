@@ -164,7 +164,11 @@
 
 	qcom,clk-rates = <400000 20000000 25000000 50000000 100000000
 								200000000>;
-	qcom,bus-speed-mode = "SDR12", "SDR25", "SDR50", "DDR50", "SDR104";
+	/* DaisyForGaming: drop SDR104 — UHS-I 200 MHz tuning fails
+	 * intermittently on several microSD cards (card "not found" until
+	 * re-insert). Capping at SDR50 (100 MHz) trades a paper-speed
+	 * nobody notices for always-detectable storage. */
+	qcom,bus-speed-mode = "SDR12", "SDR25", "SDR50", "DDR50";
 
 	status = "ok";
 };

@@ -2,6 +2,47 @@
 
 All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (`daisy`) are documented here.
 
+## v1.1 — stability, cool thermals & charging-aware boost (2026-10-10)
+
+The "it crashes / heats / charges slow" release. Everything in v1.0 ships too —
+the only difference between the two zips is still the root stack.
+
+### 🐞 Fixed
+- **KSU build fixed for real:** the manual (kprobe-free) KSU hooks in
+  `fs/read_write.c`, `fs/exec.c` and `drivers/input/input.c` gate on three
+  flags that only existed in the kprobe-free half of `ksud.c` — with
+  `CONFIG_KPROBES=y` the kernel never linked (the v1.0 zips shipped the older
+  kprobe-based image). `ksud.c` / `sucompat.c` / `ksu.c` now always use the
+  manual hooks. `CONFIG_KPROBES` stays on (perfetto/simpleperf ready), but KSU
+  no longer puts kprobe traps on the read / execve / input hot paths — less
+  syscall jitter, same stealth, same Safe Mode (triple-tap Vol− during boot).
+- **microSD cards going missing:** dropped UHS-I SDR104 — its 200 MHz tuning
+  fails intermittently on several cards ("card not found" until re-insert);
+  now capped at SDR50 (100 MHz).
+
+### 🌡️ Thermals & charging (the heat complaints)
+- **Charging-aware input boost (new):** new `boost_on_charging` kernel param
+  (default **off**) — while USB is connected, the touch boost stays off, so
+  the SoC stops heating from boost-on-every-touch while plugged in. That heat
+  is what made thermal-engine cut the charger current ("charging speed কমে
+  যায় while using"). Want boost while charging (gaming on the charger)?
+  `echo 1 > /sys/module/cpu_boost/parameters/boost_on_charging`.
+- **Cooler daily defaults:** v1.0 boosted every touch to 1401/1689 MHz for
+  300 ms *and* full-throttled the WALT scheduler on every input — that was
+  the main heat source, and heat is what triggers the 80 °C cap that causes
+  the sudden lag/drop feeling. Now: **1036/1401 MHz, 150 ms,
+  `sched_boost_on_input=0`**. Games still push the big cluster to max via
+  schedutil under load; scrolling/browsing no longer cooks the phone.
+- **vm:** `vfs_cache_pressure` 20 → 50 (20 could grow kernel caches on the
+  3 GB variant and add memory pressure — pressure is what gets apps and
+  SystemUI killed).
+
+### 🧪 Unchanged
+- KernelSU 0.9.5 + SusFS v1.5.5 (KSU zip), FolkPatch/Magisk-ready vanilla zip.
+- schedutil default, zRAM lz4 2 GB, UKSM (governor `low` via boot script),
+  deadline I/O, fq_codel + BBR, fsync toggle, thermal trips CPU 80 °C /
+  per-CPU 90 °C / GPU 85 °C / pop-mem 80 °C, `MODVERSIONS` (no VINTF dialog).
+
 ## v1.0 — first release (2026-10-05)
 
 Fresh versioning starts here. Everything below ships in both zips; the only
