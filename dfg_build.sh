@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# DaisyForGaming v1.0 (final line) - THE build. Vanilla-shaped kernel:
-# KernelSU/SusFS removed from the tree, root via FolkPatch (patch boot after
-# flashing) or Magisk. Run from WSL:  bash dfg_build.sh
 SRC=/mnt/d/DaisyForGaming
 cd "$SRC" || exit 1
 

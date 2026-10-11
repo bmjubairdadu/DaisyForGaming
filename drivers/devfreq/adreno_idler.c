@@ -63,12 +63,6 @@ module_param_named(adreno_idler_active, adreno_idler_active, bool, 0664);
 
 static unsigned int idlecount = 0;
 
-/*
- * DaisyForGaming: last GPU busy ratio, sampled on every msm-adreno-tz
- * update. cpu-boost's auto mode (boost_mode=3) reads this to detect
- * sustained GPU-heavy usage (games). The ratio is the same
- * busy_time/total_time math msm-adreno-tz itself uses for load.
- */
 static unsigned int gpu_busy_ratio;
 static unsigned long gpu_busy_updated;
 

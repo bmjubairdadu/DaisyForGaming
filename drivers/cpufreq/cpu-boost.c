@@ -43,12 +43,6 @@ static DEFINE_PER_CPU(struct cpu_sync, sync_info);
 
 static struct kthread_work input_boost_work;
 
-/*
- * DaisyForGaming v1.15: this driver used to ship with every default at 0, so
- * "CPU Input Boost" did nothing out of the box. Boot the per-CPU table from
- * the Kconfig values: the little cluster (cpu0-3) boosts to
- * CONFIG_INPUT_BOOST_FREQ, the big cluster (cpu4-7) to CONFIG_INPUT_BOOST_FREQ_BIG.
- */
 #ifdef CONFIG_INPUT_BOOST_FREQ
 #define IB_FREQ_LITTLE_DEFAULT CONFIG_INPUT_BOOST_FREQ
 #else
@@ -75,12 +69,6 @@ static struct kthread_work input_boost_work;
 
 static bool input_boost_enabled = true;
 
-/*
- * DaisyForGaming v1.1: while the charger is connected, input boost stays off
- * by default. Boost heat makes the charger cut current (thermal mitigation),
- * so plugged-in use both charged slower and ran hotter. Charge-first is the
- * right default; set boost_on_charging=1 to get boosting while plugged in.
- */
 static bool boost_on_charging;
 module_param(boost_on_charging, bool, 0644);
 MODULE_PARM_DESC(boost_on_charging,
@@ -96,12 +84,7 @@ static bool usb_charger_online(void)
 	if (!usb)
 		return false;
 
-	/*
-	 * Read PRESENT (raw charger detect), not ONLINE: smb1351 reports
-	 * ONLINE=0 while charging is inhibited (usb_suspended_status) - which
-	 * our own bypass does - so ONLINE here would flip-flop the bypass and
-	 * the charging-aware boost every poll cycle.
-	 */
+	
 	if (!power_supply_get_property(usb, POWER_SUPPLY_PROP_PRESENT, &val))
 		online = !!val.intval;
 	else if (!power_supply_get_property(usb, POWER_SUPPLY_PROP_ONLINE, &val))
@@ -125,25 +108,11 @@ static unsigned int sched_boost_on_input = 1;
 #endif
 module_param(sched_boost_on_input, uint, 0644);
 
-/*
- * DaisyForGaming v1.0 (final): one node that switches the whole boost
- * profile at runtime — no script edits needed:
- *
- *   0 = battery   input boost completely off (coolest, best standby)
- *   1 = balanced  1036/1401 MHz, 150 ms, no WALT sched boost
- *   2 = gaming    1401/1689 MHz, 250 ms + WALT sched boost on touch
- *   3 = auto      (default) picks battery/balanced/gaming by itself:
- *                 screen off -> battery, a sustained GPU-heavy foreground
- *                 app (a running game) -> gaming, everything else ->
- *                 balanced. Manual 0/1/2 always wins until you set 3 back.
- */
 static unsigned int boost_mode = 3;
 
-/* The profile the auto engine currently has applied (0/1/2). */
 static unsigned int boost_mode_effective = 1;
 module_param(boost_mode_effective, uint, 0444);
 
-/* Bypass-charging re-check (defined below); profile switches re-run it. */
 static void bypass_check_work(struct work_struct *work);
 static DECLARE_DELAYED_WORK(bypass_work, bypass_check_work);
 
@@ -156,16 +125,16 @@ static void set_boost_profile(unsigned int profile)
 	input_boost_enabled = true;
 
 	switch (profile) {
-	case 0: /* battery: boost fully off */
+	case 0: 
 		input_boost_enabled = false;
 		break;
-	case 2: /* gaming: the proven v1.0 touch boost */
+	case 2: 
 		little = 1401600;
 		big = 1689600;
 		input_boost_ms = 250;
 		sched_boost_on_input = 1;
 		break;
-	case 1: /* balanced: the cool v1.1 defaults */
+	case 1: 
 	default:
 		profile = 1;
 		input_boost_ms = IB_MS_DEFAULT;
@@ -179,23 +148,16 @@ static void set_boost_profile(unsigned int profile)
 	}
 	boost_mode_effective = profile;
 
-	/* Bypass charging follows the profile (gaming + charger = bypass). */
+	
 	schedule_delayed_work(&bypass_work, 0);
 }
 
-/* ---- auto mode (boost_mode = 3): GPU-load game detection ---- */
-#define AUTO_CHECK_MS	2000	/* re-evaluation interval */
-#define AUTO_SUSTAIN	3	/* consecutive samples (~6 s) before switching */
-#define AUTO_STALE_MS	3000	/* GPU stats older than this count as idle */
+#define AUTO_CHECK_MS	2000	
+#define AUTO_SUSTAIN	3	
+#define AUTO_STALE_MS	3000	
 
-/* Provided by drivers/devfreq/adreno_idler.c (msm-adreno-tz update path). */
 extern void adreno_gpu_busy_ratio(unsigned int *ratio, unsigned long *stamp);
 
-/*
- * GPU busy ratio (0-100) treated as "a game is running". Raise it if the
- * detection triggers too eagerly, lower it for light 3D games; 101 disables
- * detection, 0 applies the gaming boost for any foreground GPU use.
- */
 static unsigned int auto_gpu_busy = 50;
 module_param(auto_gpu_busy, uint, 0644);
 MODULE_PARM_DESC(auto_gpu_busy,
@@ -206,7 +168,6 @@ static unsigned int auto_busy_count, auto_idle_count;
 
 static void auto_boost_tick(struct work_struct *work);
 
-/* Statically initialized so early (cmdline) boosts can schedule it safely. */
 static DECLARE_DELAYED_WORK(auto_boost_work, auto_boost_tick);
 
 static void auto_boost_tick(struct work_struct *work)
@@ -228,7 +189,7 @@ static void auto_boost_tick(struct work_struct *work)
 
 	adreno_gpu_busy_ratio(&ratio, &stamp);
 	if (!stamp || time_after(jiffies, stamp + msecs_to_jiffies(AUTO_STALE_MS)))
-		ratio = 0; /* GPU not reporting = idle foreground */
+		ratio = 0; 
 
 	if (ratio >= auto_gpu_busy) {
 		auto_busy_count++;
@@ -256,7 +217,6 @@ requeue:
 	schedule_delayed_work(&auto_boost_work, msecs_to_jiffies(AUTO_CHECK_MS));
 }
 
-/* Screen state drops the phone to battery the moment the display blanks. */
 static int cpuboost_fb_notifier(struct notifier_block *nb, unsigned long event,
 				void *data)
 {
@@ -267,7 +227,7 @@ static int cpuboost_fb_notifier(struct notifier_block *nb, unsigned long event,
 
 	screen_on = (*(int *)evdata->data == FB_BLANK_UNBLANK);
 	if (boost_mode == 3)
-		/* Re-evaluate at once: screen off should not wait 2 s. */
+		
 		mod_delayed_work(system_wq, &auto_boost_work, 0);
 
 	return NOTIFY_OK;
@@ -276,13 +236,6 @@ static struct notifier_block cpuboost_fb_nb = {
 	.notifier_call = cpuboost_fb_notifier,
 };
 
-/* ---- bypass charging while gaming on the charger ----
- * With the gaming profile active and USB connected, inhibit battery
- * charging: the charger keeps powering the board directly (the SMB
- * power-path serves the system rails) while the battery sits still.
- * Cooler SoC, no charge cycles while gaming. Charging is restored the
- * moment the profile leaves gaming or the charger is unplugged.
- */
 static bool bypass_on_gaming = true;
 module_param(bypass_on_gaming, bool, 0644);
 MODULE_PARM_DESC(bypass_on_gaming,
@@ -300,11 +253,17 @@ static void set_battery_charging(bool enable)
 	batt = power_supply_get_by_name("battery");
 	if (!batt)
 		return;
-	ret = power_supply_set_property(batt, POWER_SUPPLY_PROP_CHARGING_ENABLED,
+	
+	ret = power_supply_set_property(batt,
+					POWER_SUPPLY_PROP_BATTERY_CHARGING_ENABLED,
 					&val);
+	if (ret == -EINVAL)
+		ret = power_supply_set_property(batt,
+						POWER_SUPPLY_PROP_CHARGING_ENABLED,
+						&val);
 	power_supply_put(batt);
 	if (ret)
-		pr_err("bypass: charging_enabled=%d failed (%d)\n", enable, ret);
+		pr_err("bypass: charging inhibit=%d failed (%d)\n", enable, ret);
 }
 
 static void bypass_check_work(struct work_struct *work)
@@ -320,20 +279,15 @@ static void bypass_check_work(struct work_struct *work)
 			want ? "ON - charger feeds the board while gaming"
 			     : "OFF - battery charging restored");
 	} else if (want && ++bypass_passes % 5 == 0) {
-		/* Re-assert in case userspace flipped charging back on. */
+		
 		set_battery_charging(false);
 	}
 
-	/*
-	 * Keep polling while the feature is on: a missed supply event or a
-	 * USB-state flicker (common on PC ports) must never leave charging
-	 * stuck either way. 2 s cadence, one psy property read - negligible.
-	 */
+	
 	if (bypass_on_gaming && psy_ready)
 		schedule_delayed_work(&bypass_work, msecs_to_jiffies(2000));
 }
 
-/* Re-check right away when the USB supply changes state. */
 static int cpuboost_psy_notifier(struct notifier_block *nb, unsigned long event,
 				 void *data)
 {
@@ -413,7 +367,7 @@ static int set_input_boost_freq(const char *buf, const struct kernel_param *kp)
 	while ((cp = strpbrk(cp + 1, " :")))
 		ntokens++;
 
-	/* single number: apply to all CPUs */
+	
 	if (!ntokens) {
 		if (sscanf(buf, "%u\n", &val) != 1)
 			return -EINVAL;
@@ -422,7 +376,7 @@ static int set_input_boost_freq(const char *buf, const struct kernel_param *kp)
 		goto check_enable;
 	}
 
-	/* CPU:value pair */
+	
 	if (!(ntokens % 2))
 		return -EINVAL;
 
@@ -470,11 +424,6 @@ static const struct kernel_param_ops param_ops_input_boost_freq = {
 };
 module_param_cb(input_boost_freq, &param_ops_input_boost_freq, NULL, 0644);
 
-/*
- * The CPUFREQ_ADJUST notifier is used to override the current policy min to
- * make sure policy min >= boost_min. The cpufreq framework then does the job
- * of enforcing the new policy.
- */
 static int boost_adjust_notify(struct notifier_block *nb, unsigned long val,
 				void *data)
 {
@@ -510,7 +459,7 @@ static void update_policy_online(void)
 {
 	unsigned int i;
 
-	/* Re-evaluate policy to trigger adjust notifier for online CPUs */
+	
 	get_online_cpus();
 	for_each_online_cpu(i) {
 		pr_debug("Updating policy for CPU%d\n", i);
@@ -524,14 +473,14 @@ static void do_input_boost_rem(struct work_struct *work)
 	unsigned int i, ret;
 	struct cpu_sync *i_sync_info;
 
-	/* Reset the input_boost_min for all CPUs in the system */
+	
 	pr_debug("Resetting input boost min for all CPUs\n");
 	for_each_possible_cpu(i) {
 		i_sync_info = &per_cpu(sync_info, i);
 		i_sync_info->input_boost_min = 0;
 	}
 
-	/* Update policies for all online CPUs */
+	
 	update_policy_online();
 
 	if (sched_boost_active) {
@@ -547,11 +496,7 @@ static void do_input_boost(struct kthread_work *work)
 	unsigned int i, ret;
 	struct cpu_sync *i_sync_info;
 
-	/*
-	 * Charging guard: skip the boost without touching the pending
-	 * input_boost_rem work — if a boost is still active, its own removal
-	 * work clears the mins, so nothing gets stuck at boost frequency.
-	 */
+	
 	if (!boost_on_charging && usb_charger_online())
 		return;
 
@@ -561,17 +506,17 @@ static void do_input_boost(struct kthread_work *work)
 		sched_boost_active = false;
 	}
 
-	/* Set the input_boost_min for all CPUs in the system */
+	
 	pr_debug("Setting input boost min for all CPUs\n");
 	for_each_possible_cpu(i) {
 		i_sync_info = &per_cpu(sync_info, i);
 		i_sync_info->input_boost_min = i_sync_info->input_boost_freq;
 	}
 
-	/* Update policies for all online CPUs */
+	
 	update_policy_online();
 
-	/* Enable scheduler boost to migrate tasks to big cluster */
+	
 	if (sched_boost_on_input > 0) {
 		ret = sched_set_boost(sched_boost_on_input);
 		if (ret)
@@ -640,7 +585,7 @@ static void cpuboost_input_disconnect(struct input_handle *handle)
 }
 
 static const struct input_device_id cpuboost_ids[] = {
-	/* multi-touch touchscreen */
+	
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
 			INPUT_DEVICE_ID_MATCH_ABSBIT,
@@ -649,7 +594,7 @@ static const struct input_device_id cpuboost_ids[] = {
 			BIT_MASK(ABS_MT_POSITION_X) |
 			BIT_MASK(ABS_MT_POSITION_Y) },
 	},
-	/* touchpad */
+	
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_KEYBIT |
 			INPUT_DEVICE_ID_MATCH_ABSBIT,
@@ -657,7 +602,7 @@ static const struct input_device_id cpuboost_ids[] = {
 		.absbit = { [BIT_WORD(ABS_X)] =
 			BIT_MASK(ABS_X) | BIT_MASK(ABS_Y) },
 	},
-	/* Keypad */
+	
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_EVBIT,
 		.evbit = { BIT_MASK(EV_KEY) },

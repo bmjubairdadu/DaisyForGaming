@@ -1,26 +1,9 @@
 #!/system/bin/sh
-# DaisyForGaming v1.0 (final line) - runtime tuning (runs from Magisk
-# service.d each boot). Asserts the balanced boost profile, lifts the
-# top-app schedtune group, enables zram lz4 swap (with retry: the ROM's init
-# configures zram concurrently around 40-50s, so one early swapon can race
-# it), applies vm sysctls, and logs the final state for diagnostics.
-#
-# Boost profiles (single node, no script edits needed):
-#   echo 0 > /sys/module/cpu_boost/parameters/boost_mode   # battery (off)
-#   echo 1 > /sys/module/cpu_boost/parameters/boost_mode   # balanced
-#   echo 2 > /sys/module/cpu_boost/parameters/boost_mode   # gaming
-#   echo 3 > /sys/module/cpu_boost/parameters/boost_mode   # auto (default):
-#           screen off -> battery, running game (GPU busy) -> gaming,
-#           everything else -> balanced. Threshold:
-#           /sys/module/cpu_boost/parameters/auto_gpu_busy (default 50%)
 
 LOG=/data/local/tmp/dfg_tune.log
 say() { echo "$(date '+%H:%M:%S') $*" >> "$LOG"; }
 w() { echo "$2" > "$1" 2>/dev/null; }
 
-# Cap the tuning log at ~100 KB (about 60+ boots): it appends every boot,
-# so without this it would grow forever. dmesg needs no such care - the
-# kernel log is a fixed 128 KB RAM ring buffer that recycles itself.
 if [ -f "$LOG" ] && [ "$(wc -c < "$LOG")" -gt 102400 ]; then
   : > "$LOG"
 fi
@@ -32,7 +15,6 @@ while [ $i -lt 120 ]; do
 done
 say "v1.0-final tuning start"
 
-# ---- CPU input boost: AUTO profile (game detection), charging-aware ----
 if [ -e /sys/module/cpu_boost/parameters/boost_mode ]; then
   w /sys/module/cpu_boost/parameters/boost_mode 3 \
     && say "boost_mode = 3 (auto: game detect via GPU busy >= 50%, screen-aware)"
@@ -50,12 +32,10 @@ else
   say "cpu_boost not present"
 fi
 
-# ---- UKSM: bound background page scanning (heat) ----
 if [ -e /sys/kernel/mm/uksm/cpu_governor ]; then
   w /sys/kernel/mm/uksm/cpu_governor low && say "uksm governor = low"
 fi
 
-# ---- top-app schedtune group: foreground stays preferred ----
 if [ -e /dev/stune/top-app/schedtune.boost ]; then
   w /dev/stune/top-app/schedtune.boost 10 && say "top-app schedtune.boost = 10"
   w /dev/stune/top-app/schedtune.prefer_idle 1 && say "top-app schedtune.prefer_idle = 1"
@@ -63,7 +43,6 @@ else
   say "no /dev/stune/top-app"
 fi
 
-# ---- zram swap (lz4; retry while ROM init races us) ----
 if [ -b /dev/block/zram0 ]; then
   ALG=$(cat /sys/block/zram0/comp_algorithm 2>/dev/null | tr '\n' ' ')
   case "$ALG" in
@@ -92,17 +71,16 @@ else
   say "no zram0 device"
 fi
 
-# ---- vm tuning ----
 w /proc/sys/vm/page-cluster 0 && say "page-cluster = 0"
 w /proc/sys/vm/vfs_cache_pressure 50 && say "vfs_cache_pressure = 50"
 w /proc/sys/vm/swappiness 30 && say "swappiness = 30 (WROTE OK)" || say "swappiness write FAILED"
 
-# ---- final state for diagnostics ----
 say "gov: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null)"
 say "cpu7 max: $(cat /sys/devices/system/cpu/cpu7/cpufreq/scaling_max_freq 2>/dev/null)"
 say "boost_mode now = $(cat /sys/module/cpu_boost/parameters/boost_mode 2>/dev/null) (effective: $(cat /sys/module/cpu_boost/parameters/boost_mode_effective 2>/dev/null))"
 say "auto_gpu_busy now = $(cat /sys/module/cpu_boost/parameters/auto_gpu_busy 2>/dev/null)"
 say "bypass_on_gaming = $(cat /sys/module/cpu_boost/parameters/bypass_on_gaming 2>/dev/null)"
+say "battery_charging_enabled = $(cat /sys/class/power_supply/battery/battery_charging_enabled 2>/dev/null)"
 say "charging_enabled = $(cat /sys/class/power_supply/battery/charging_enabled 2>/dev/null)"
 say "schedutil up/down rate limit: $(cat /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us 2>/dev/null)/$(cat /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us 2>/dev/null)"
 say "swappiness now = $(cat /proc/sys/vm/swappiness 2>/dev/null)"

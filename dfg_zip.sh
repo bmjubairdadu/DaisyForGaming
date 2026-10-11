@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# Builds THE DaisyForGaming flashable zip (AnyKernel3, sideload-flashable).
-# One kernel, one zip: vanilla shape, root via FolkPatch (patch boot after
-# flashing) or Magisk. Run from WSL after dfg_build.sh:
-#   bash dfg_zip.sh   ->  DaisyForGaming-v1.0-Gaming-<DD-MM-YYYY>.zip
 set -e
 VER="1.0"
 DATESTAMP="$(date +%m-%d-%Y)"
@@ -22,7 +18,6 @@ rm -f Image.gz-dtb anykernel.sh README.md
 cp "$SRC/$IMAGE" Image.gz-dtb
 echo "[zip] image staged: $(stat -c %s Image.gz-dtb) bytes"
 
-# ---- anykernel.sh (emitted at BUILD time, not flash time) ----
 {
 cat <<'AKEOF1'
 # AnyKernel3 Ramdisk Mod Script
@@ -129,15 +124,12 @@ AKEOF1
 } > anykernel.sh
 echo "[zip] anykernel.sh: $(wc -l < anykernel.sh) lines"
 
-# sanity: no build-time variable may leak into the flash-time script
 grep -q 'VARIANT' anykernel.sh && { echo "FATAL: VARIANT leaked into anykernel.sh"; exit 1; }
 
-# ---- tuning script: single source from repo ----
 cp "$SRC/dfg_tune.sh" dfg_tune.sh
 chmod 755 dfg_tune.sh
 grep -q 'v1.0-final tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"; exit 1; }
 
-# ---- banner ----
 cat > banner <<'BAN'
 **************************************************
 *        DaisyForGaming v1.0 (final line)        *
@@ -158,7 +150,6 @@ rm -f "$OUT"
 zip -q -r -9 "$OUT" .
 echo "[zip]: $(stat -c %s "$OUT") bytes -> $ZIP"
 
-# ---- verification ----
 echo "[zip] files in zip: $(unzip -l "$OUT" | tail -1 | awk '{print $2}')"
 gzip -dc Image.gz-dtb 2>/dev/null | strings > raw.txt
 echo "[zip] KSU strings:   $(grep -icE 'kernelsu|ksu_handle' raw.txt)  (expect 0)"

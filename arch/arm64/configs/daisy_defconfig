@@ -4974,12 +4974,6 @@ CONFIG_LKDTM=m
 # CONFIG_MODULE_SIG_FORCE is not set
 # CONFIG_MODULE_SIG_ALL is not set
 # CONFIG_TRIM_UNUSED_KSYMS is not set
-
-# ==== DaisyForGaming v1.0 (final line) — vanilla + gaming (by DaisyForGaming) ====
-# NO in-kernel root: KernelSU/SusFS removed from the tree. Root with
-# FolkPatch (patch the boot AFTER flashing) or Magisk — both work on this
-# vanilla-shaped kernel. Kprobe/kallsyms prerequisites kept for FolkPatch/KP
-# and for perf tooling (perfetto, simpleperf, gamemod):
 CONFIG_KPROBES=y
 CONFIG_KPROBE_EVENTS=y
 CONFIG_HAVE_KPROBES=y
