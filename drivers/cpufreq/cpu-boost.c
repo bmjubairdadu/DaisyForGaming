@@ -96,7 +96,15 @@ static bool usb_charger_online(void)
 	if (!usb)
 		return false;
 
-	if (!power_supply_get_property(usb, POWER_SUPPLY_PROP_ONLINE, &val))
+	/*
+	 * Read PRESENT (raw charger detect), not ONLINE: smb1351 reports
+	 * ONLINE=0 while charging is inhibited (usb_suspended_status) - which
+	 * our own bypass does - so ONLINE here would flip-flop the bypass and
+	 * the charging-aware boost every poll cycle.
+	 */
+	if (!power_supply_get_property(usb, POWER_SUPPLY_PROP_PRESENT, &val))
+		online = !!val.intval;
+	else if (!power_supply_get_property(usb, POWER_SUPPLY_PROP_ONLINE, &val))
 		online = !!val.intval;
 	power_supply_put(usb);
 
