@@ -36,6 +36,9 @@ if [ -e /sys/kernel/mm/uksm/cpu_governor ]; then
   w /sys/kernel/mm/uksm/cpu_governor low && say "uksm governor = low"
 fi
 
+w /sys/module/cpu_boost/parameters/bypass_on_gaming 0 \
+  && say "bypass_on_gaming = 0 (GPU-auto bypass off: use the DFG Controller app's app-triggered bypass; Gaming tab re-enables kernel auto)"
+
 if [ -e /dev/stune/top-app/schedtune.boost ]; then
   w /dev/stune/top-app/schedtune.boost 10 && say "top-app schedtune.boost = 10"
   w /dev/stune/top-app/schedtune.prefer_idle 1 && say "top-app schedtune.prefer_idle = 1"
