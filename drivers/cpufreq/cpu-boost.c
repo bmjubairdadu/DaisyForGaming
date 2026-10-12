@@ -68,6 +68,30 @@ static struct kthread_work input_boost_work;
 #endif
 
 static bool input_boost_enabled = true;
+static bool input_boost_user_off;
+
+static int input_boost_enabled_set(const char *val,
+		const struct kernel_param *kp)
+{
+	bool v;
+	int rc = param_set_bool(val, kp);
+
+	if (rc)
+		return rc;
+	v = input_boost_enabled;
+	input_boost_user_off = !v;
+	pr_info("cpu_boost: input_boost_enabled=%d (user off=%d)\n", v,
+			input_boost_user_off);
+	return 0;
+}
+
+static struct kernel_param_ops input_boost_enabled_ops = {
+	.set = input_boost_enabled_set,
+	.get = param_get_bool,
+};
+module_param_cb(input_boost_enabled, &input_boost_enabled_ops, NULL, 0644);
+MODULE_PARM_DESC(input_boost_enabled,
+	"Master input boost switch (DFG Controller: Gaming > Input Boost toggle)");
 
 static bool boost_on_charging;
 module_param(boost_on_charging, bool, 0644);
@@ -122,12 +146,20 @@ static void set_boost_profile(unsigned int profile)
 	unsigned int big = IB_FREQ_BIG_DEFAULT;
 	int cpu;
 
-	input_boost_enabled = true;
+	/*
+	 * Respect the DFG Controller's Input Boost master toggle: once the
+	 * user switched boost off from the app, profile refreshes (auto
+	 * engine included) keep it off until the user turns it back on.
+	 */
+	if (input_boost_user_off) {
+		input_boost_enabled = false;
+	} else {
+		input_boost_enabled = true;
+		if (profile == 0)
+			input_boost_user_off = true;
+	}
 
 	switch (profile) {
-	case 0: 
-		input_boost_enabled = false;
-		break;
 	case 2: 
 		little = 1401600;
 		big = 1689600;
@@ -399,7 +431,13 @@ check_enable:
 			break;
 		}
 	}
+	/*
+	 * Setting the freq table to all zeroes is the legacy way to
+	 * disable boost (DFG Controller writes 0:0 1:0 ... for "off").
+	 * Track that as a user-off so profile refreshes keep it off.
+	 */
 	input_boost_enabled = enabled;
+	input_boost_user_off = !enabled;
 
 	return 0;
 }

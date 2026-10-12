@@ -867,3 +867,15 @@ config OKL4_LINK_SHBUF
 	  transport. This driver presents the link to Linux as a character device
 	  which can be written to or read from to access the shared memory. An ioctl
 	  on the device is used to send a virtual interrupt to the partner cell.
+
+config DFG_FAST_CHARGE
+	bool "DaisyForGaming fast charge switch"
+	default y
+	depends on POWER_SUPPLY
+	help
+	  Exposes /sys/kernel/fast_charge/force_fast_charge for the DFG
+	  Controller app. When enabled, raises the constant charge current
+	  through POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX (works with
+	  qpnp-smbcharger_d1a on daisy). The charger driver's thermal
+	  mitigation still applies. Use a good cable and keep the phone cool.
+	  If unsure, say Y.

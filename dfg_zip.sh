@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-VER="1.0"
+VER="1.1"
 DATESTAMP="$(date +%m-%d-%Y)"
 SRC=/mnt/d/DaisyForGaming
 cd "$SRC"
@@ -22,9 +22,8 @@ echo "[zip] image staged: $(stat -c %s Image.gz-dtb) bytes"
 cat <<'AKEOF1'
 # AnyKernel3 Ramdisk Mod Script
 ## DaisyForGaming by JUBAIR HOSEN (Linux 4.9.337)
-
 properties() { '
-kernel.string=DaisyForGaming v1.0
+kernel.string=DaisyForGaming v1.1
 do.devicecheck=1
 do.modules=0
 do.systemless=1
@@ -77,12 +76,14 @@ dump_boot;
 
 ui_print " ";
 ui_print "  Kernel features:";
-ui_print "    - Linux 4.9.337  (DaisyForGaming v1.0 final)";
+ui_print "    - Linux 4.9.337  (DaisyForGaming v1.1)";
 ui_print "    - CPU touch boost: 1036MHz little /";
 ui_print "      1401MHz big, 150ms, charging-aware";
 ui_print "      boost_mode=auto: running game detected";
 ui_print "      by GPU load -> gaming boost, screen off";
 ui_print "      -> battery, else balanced (0/1/2 to force)";
+ui_print "    - DFG Controller native control: input boost";
+ui_print "      master switch, aggressive LMK, fast charge";
 ui_print "    - Bypass charging: gaming on the charger";
 ui_print "      feeds the board, battery charging pauses";
 ui_print "    - schedutil snappy-ramp tuning, Adreno";
@@ -116,7 +117,7 @@ if [ -f /data/adb/service.d/90-kloder.sh ]; then
 fi;
 
 ui_print " ";
-ui_print "  Done! DaisyForGaming v1.0 installed.";
+ui_print "  Done! DaisyForGaming v1.1 installed.";
 ui_print "  Root: FolkPatch (patch this boot) or Magisk.";
 ui_print "  - JUBAIR HOSEN";
 ui_print " ";
@@ -132,13 +133,14 @@ grep -q 'v1.0-final tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"
 
 cat > banner <<'BAN'
 **************************************************
-*        DaisyForGaming v1.0 (final line)        *
+*        DaisyForGaming v1.1 (controller ready)  *
 **************************************************
 *  Device : Xiaomi Mi A2 Lite (daisy)           *
 *  Kernel : 4.9.337-DaisyForGaming              *
 *  -------------------------------------------- *
 *  CPU touch boost 1036/1401MHz, 150ms         *
 *  boost_mode: battery / balanced / gaming      *
+*  DFG Controller: boost switch / LMK / charge  *
 *  Charging-aware boost + top-app boost         *
 *  No built-in root: FolkPatch / Magisk ready   *
 *  zRAM lz4 + writeback, deadline IO, BBR       *

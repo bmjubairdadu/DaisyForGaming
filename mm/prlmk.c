@@ -100,6 +100,24 @@ static short min_adj = 300;
 module_param_named(min_adj, min_adj, short, 0644);
 
 /*
+ * DFG Controller compat: "Aggressive LMK" toggle.
+ * When set, background tasks (adj < min_adj) are also eligible for
+ * killing under LOWMEM_NORMAL pressure instead of only CRITICAL,
+ * and the protected adj_ignore list is honoured less strictly
+ * (services may be reclaimed before the foreground app).
+ *
+ * MODULE_PARAM_PREFIX below rewrites all of these to
+ * /sys/module/lowmemorykiller/parameters/... so the DFG Controller's
+ * node paths keep working unchanged.
+ */
+#undef MODULE_PARAM_PREFIX
+#define MODULE_PARAM_PREFIX "lowmemorykiller."
+static bool lmk_aggressive;
+module_param_named(lmk_aggressive, lmk_aggressive, bool, 0644);
+MODULE_PARM_DESC(lmk_aggressive,
+	"Kill background tasks earlier under memory pressure (0 = default, 1 = aggressive)");
+
+/*
  * Number of ACTIVE FILE backed pages in MiB below which
  * tasks with adjs lesser than min_adj will
  * be killed in addition to killing the other tasks.
@@ -392,19 +410,29 @@ static void sort_and_kill_tasks(void)
 		if (select.ignore)
 			continue;
 
-		if (select.adj < min_adj && !lm_crit)
+		if (select.adj < min_adj && !lm_crit && !lmk_aggressive)
 			continue;
 
 		/*
 		 * Protect the tasks whose adjs are in adj_ignore
 		 * from being killed under high memory pressure.
+		 * In aggressive mode services (adj > 0) lose this
+		 * protection early; the foreground app (adj == 0)
+		 * is always spared unless memory goes CRITICAL.
 		 */
 		if (in_adj_ignore(select.adj)) {
-			if (!select.adj)
-				fg[fgcnt++] = tcnt;
-			else
+			if (!select.adj) {
+				if (!lm_crit)
+					fg[fgcnt++] = tcnt;
+				continue;
+			}
+			if (!lmk_aggressive || lm_crit) {
 				sv[svcnt++] = tcnt;
-
+				continue;
+			}
+			/* aggressive + NORMAL pressure: service is killable */
+			kill_task(select);
+			killcnt++;
 			continue;
 		}
 
@@ -544,5 +572,10 @@ static const struct kernel_param_ops prlmk_ops = {
 };
 
 #undef MODULE_PARAM_PREFIX
+#undef MODULE_PARAM_PREFIX
 #define MODULE_PARAM_PREFIX "lowmemorykiller."
 module_param_cb(minfree, &prlmk_ops, NULL, 0200);
+
+/* Restore the default prefix for anything declared after this point. */
+#undef MODULE_PARAM_PREFIX
+#define MODULE_PARAM_PREFIX "prlmk."
