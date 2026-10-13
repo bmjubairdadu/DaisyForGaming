@@ -1,4 +1,4 @@
-#!/system/bin/sh
+﻿#!/system/bin/sh
 
 LOG=/data/local/tmp/dfg_tune.log
 say() { echo "$(date '+%H:%M:%S') $*" >> "$LOG"; }
@@ -49,10 +49,6 @@ if [ -e /sys/kernel/mm/uksm/cpu_governor ]; then
   w /sys/kernel/mm/uksm/cpu_governor low && say "uksm governor = low"
 fi
 
-if [ -e /sys/module/cpu_boost/parameters/bypass_on_gaming ]; then
-  w /sys/module/cpu_boost/parameters/bypass_on_gaming 1 \
-    && say "bypass_on_gaming = 1 (kernel-owned, safe: needs >=40% batt, <42C)"
-fi
 
 if [ -e /dev/stune/top-app/schedtune.boost ]; then
   w /dev/stune/top-app/schedtune.boost 10 && say "top-app schedtune.boost = 10"

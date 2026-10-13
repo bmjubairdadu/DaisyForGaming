@@ -68,16 +68,10 @@ static struct kthread_work input_boost_work;
 #endif
 
 /*
- * Thermal + battery guards (DaisyForGaming v1.2):
- * The phone used to shut down while gaming on the charger because the
- * bypass path paused charging with no battery level/temperature checks,
- * and boost kept pumping heat until the SoC hit its hard limit.
- * These thresholds keep the device safe even when no controller app runs.
+ * Thermal guard (DaisyForGaming v1.3):
+ * Boost steps down when the battery runs hot, so the device stays safe
+ * even when no controller app runs (CPU throttling starts at 68C via DT).
  */
-#define DFG_BATT_TEMP_COOL_MAX	42000	/* engage bypass only below 42.0C */
-#define DFG_BATT_TEMP_HOT	45000	/* force bypass off above 45.0C */
-#define DFG_BATT_SOC_BYPASS_MIN	40	/* bypass only when battery >= 40% */
-#define DFG_BATT_SOC_RESUME	30	/* resume charging below 30% */
 #define DFG_BOOST_TEMP_WARM	50000	/* drop to balanced above 50.0C */
 #define DFG_BOOST_TEMP_HOT	55000	/* drop to battery above 55.0C */
 
@@ -122,7 +116,6 @@ static bool usb_charger_online(void)
 	if (!usb)
 		return false;
 
-	
 	if (!power_supply_get_property(usb, POWER_SUPPLY_PROP_PRESENT, &val))
 		online = !!val.intval;
 	else if (!power_supply_get_property(usb, POWER_SUPPLY_PROP_ONLINE, &val))
@@ -132,39 +125,20 @@ static bool usb_charger_online(void)
 	return online;
 }
 
-/*
- * Battery guards: returns true when the battery is in a safe window for
- * bypass (enough charge, not too hot). Reads capacity + TEMP from the
- * battery psy. Fail-safe: if anything cannot be read, refuse bypass.
- */
-static bool battery_safe_for_bypass(unsigned int *soc_out, int *temp_out)
+/* Battery temperature in tenths of a degree C, or -1 if unavailable. */
+static int batt_temp_tenths(void)
 {
 	struct power_supply *batt;
 	union power_supply_propval val = { 0, };
-	int soc = -1, temp = -1;
-	bool safe;
+	int temp = -1;
 
 	batt = power_supply_get_by_name("battery");
 	if (!batt)
-		return false;
-
-	if (!power_supply_get_property(batt, POWER_SUPPLY_PROP_CAPACITY, &val))
-		soc = val.intval;
+		return -1;
 	if (!power_supply_get_property(batt, POWER_SUPPLY_PROP_TEMP, &val))
-		temp = val.intval;	/* tenths of a degree C */
+		temp = val.intval;
 	power_supply_put(batt);
-
-	if (soc_out)
-		*soc_out = (soc >= 0) ? (unsigned int)soc : 0;
-	if (temp_out)
-		*temp_out = temp;
-
-	if (soc < 0 || temp < 0)
-		return false;
-
-	safe = (soc >= DFG_BATT_SOC_BYPASS_MIN) &&
-	       (temp <= DFG_BATT_TEMP_COOL_MAX);
-	return safe;
+	return temp;
 }
 
 #ifdef CONFIG_INPUT_BOOST_DURATION_MS
@@ -186,8 +160,6 @@ static unsigned int boost_mode = 3;
 static unsigned int boost_mode_effective = 1;
 module_param(boost_mode_effective, uint, 0444);
 
-static void bypass_check_work(struct work_struct *work);
-static DECLARE_DELAYED_WORK(bypass_work, bypass_check_work);
 
 static void set_boost_profile(unsigned int profile)
 {
@@ -229,8 +201,6 @@ static void set_boost_profile(unsigned int profile)
 	}
 	boost_mode_effective = profile;
 
-	
-	schedule_delayed_work(&bypass_work, 0);
 }
 
 #define AUTO_CHECK_MS	2000	
@@ -274,7 +244,7 @@ static void auto_boost_tick(struct work_struct *work)
 	 * gets the gaming profile, and an already-boosted hot device is
 	 * stepped down. This keeps heat under control without the app.
 	 */
-	battery_safe_for_bypass(NULL, &batt_temp);
+	batt_temp = batt_temp_tenths();
 	if (batt_temp > 0) {
 		if (batt_temp > DFG_BOOST_TEMP_HOT) {
 			auto_busy_count = auto_idle_count = 0;
@@ -343,87 +313,6 @@ static struct notifier_block cpuboost_fb_nb = {
 	.notifier_call = cpuboost_fb_notifier,
 };
 
-static bool bypass_on_gaming = true;
-module_param(bypass_on_gaming, bool, 0644);
-MODULE_PARM_DESC(bypass_on_gaming,
-	"Inhibit battery charging while gaming on the charger (bypass: USB feeds the board)");
-
-static bool bypass_active, psy_ready;
-static unsigned int bypass_passes;
-
-static void set_battery_charging(bool enable)
-{
-	struct power_supply *batt;
-	union power_supply_propval val = { .intval = enable };
-	int ret;
-
-	batt = power_supply_get_by_name("battery");
-	if (!batt)
-		return;
-	
-	ret = power_supply_set_property(batt,
-					POWER_SUPPLY_PROP_BATTERY_CHARGING_ENABLED,
-					&val);
-	if (ret == -EINVAL)
-		ret = power_supply_set_property(batt,
-						POWER_SUPPLY_PROP_CHARGING_ENABLED,
-						&val);
-	power_supply_put(batt);
-	if (ret)
-		pr_err("bypass: charging inhibit=%d failed (%d)\n", enable, ret);
-}
-
-static void bypass_check_work(struct work_struct *work)
-{
-	unsigned int soc = 0;
-	int batt_temp = 0;
-	bool want;
-
-	want = bypass_on_gaming && psy_ready &&
-	       boost_mode_effective == 2 && usb_charger_online();
-
-	if (want) {
-		bool safe = battery_safe_for_bypass(&soc, &batt_temp);
-		if (bypass_active) {
-			/* hysteresis: drop bypass when battery runs low or heats up */
-			if (!safe || soc < DFG_BATT_SOC_RESUME ||
-			    batt_temp > DFG_BATT_TEMP_HOT)
-				want = false;
-		} else {
-			/* engage only from a safe battery window */
-			want = safe;
-		}
-	}
-
-	if (want != bypass_active) {
-		bypass_active = want;
-		bypass_passes = 0;
-		set_battery_charging(!want);
-		pr_info("bypass charging: %s\n",
-			want ? "ON - charger feeds the board while gaming"
-			     : "OFF - battery charging restored");
-	} else if (want && ++bypass_passes % 5 == 0) {
-		
-		set_battery_charging(false);
-	}
-
-	
-	if (bypass_on_gaming && psy_ready)
-		schedule_delayed_work(&bypass_work, msecs_to_jiffies(2000));
-}
-
-static int cpuboost_psy_notifier(struct notifier_block *nb, unsigned long event,
-				 void *data)
-{
-	if (event == PSY_EVENT_PROP_CHANGED && data &&
-	    !strcmp((const char *)data, "usb"))
-		schedule_delayed_work(&bypass_work, 0);
-
-	return NOTIFY_OK;
-}
-static struct notifier_block cpuboost_psy_nb = {
-	.notifier_call = cpuboost_psy_notifier,
-};
 
 static void apply_boost_mode(void)
 {
@@ -780,9 +669,6 @@ static int cpu_boost_init(void)
 		schedule_delayed_work(&auto_boost_work,
 				      msecs_to_jiffies(AUTO_CHECK_MS));
 	fb_register_client(&cpuboost_fb_nb);
-	power_supply_reg_notifier(&cpuboost_psy_nb);
-	psy_ready = true;
-	schedule_delayed_work(&bypass_work, 0);
 	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
 
 	ret = input_register_handler(&cpuboost_input_handler);
