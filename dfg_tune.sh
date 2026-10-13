@@ -15,6 +15,19 @@ while [ $i -lt 120 ]; do
 done
 say "v1.0-final tuning start"
 
+# Load DFG kernel modules (CRC-exact build). vermagic mismatch = skipped.
+if [ -d /data/adb/dfg_modules ]; then
+  for ko in /data/adb/dfg_modules/*.ko; do
+    [ -e "$ko" ] || continue
+    modname=$(basename "$ko" | sed 's/_.*//')
+    if ! grep -q "$modname" /proc/modules 2>/dev/null; then
+      insmod "$ko" 2>/dev/null \
+        && say "module loaded: $(basename $ko)" \
+        || say "module load skipped (vermagic mismatch): $(basename $ko)"
+    fi
+  done
+fi
+
 if [ -e /sys/module/cpu_boost/parameters/boost_mode ]; then
   w /sys/module/cpu_boost/parameters/boost_mode 3 \
     && say "boost_mode = 3 (auto: game detect via GPU busy >= 50%, screen-aware)"
@@ -36,8 +49,10 @@ if [ -e /sys/kernel/mm/uksm/cpu_governor ]; then
   w /sys/kernel/mm/uksm/cpu_governor low && say "uksm governor = low"
 fi
 
-w /sys/module/cpu_boost/parameters/bypass_on_gaming 0 \
-  && say "bypass_on_gaming = 0 (GPU-auto bypass off: use the DFG Controller app's app-triggered bypass; Gaming tab re-enables kernel auto)"
+if [ -e /sys/module/cpu_boost/parameters/bypass_on_gaming ]; then
+  w /sys/module/cpu_boost/parameters/bypass_on_gaming 1 \
+    && say "bypass_on_gaming = 1 (kernel-owned, safe: needs >=40% batt, <42C)"
+fi
 
 if [ -e /dev/stune/top-app/schedtune.boost ]; then
   w /dev/stune/top-app/schedtune.boost 10 && say "top-app schedtune.boost = 10"

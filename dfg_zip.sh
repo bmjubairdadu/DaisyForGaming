@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-VER="1.1"
+VER="1.2"
 DATESTAMP="$(date +%m-%d-%Y)"
 SRC=/mnt/d/DaisyForGaming
 cd "$SRC"
@@ -23,7 +23,7 @@ cat <<'AKEOF1'
 # AnyKernel3 Ramdisk Mod Script
 ## DaisyForGaming by JUBAIR HOSEN (Linux 4.9.337)
 properties() { '
-kernel.string=DaisyForGaming v1.1
+kernel.string=DaisyForGaming v1.2
 do.devicecheck=1
 do.modules=0
 do.systemless=1
@@ -76,7 +76,7 @@ dump_boot;
 
 ui_print " ";
 ui_print "  Kernel features:";
-ui_print "    - Linux 4.9.337  (DaisyForGaming v1.1)";
+ui_print "    - Linux 4.9.337  (DaisyForGaming v1.2)";
 ui_print "    - CPU touch boost: 1036MHz little /";
 ui_print "      1401MHz big, 150ms, charging-aware";
 ui_print "      boost_mode=auto: running game detected";
@@ -98,6 +98,15 @@ ui_print " ";
 
 write_boot;
 
+# Install the kernel modules (CRC-exact for this kernel build).
+if [ -d ./modules ]; then
+  mkdir -p /data/adb/dfg_modules 2>/dev/null;
+  cp -f ./modules/*.ko /data/adb/dfg_modules/ 2>/dev/null;
+  chmod 644 /data/adb/dfg_modules/*.ko 2>/dev/null;
+  ui_print "  Modules staged: rt (memacc) + qx (memacc_qx)";
+  ui_print "  -> /data/adb/dfg_modules (loaded at boot)";
+fi;
+
 # Stage the tuning service script so it survives reboots.
 if [ -f ./dfg_tune.sh ]; then
   if [ -d /data/adb/service.d ]; then
@@ -117,7 +126,7 @@ if [ -f /data/adb/service.d/90-kloder.sh ]; then
 fi;
 
 ui_print " ";
-ui_print "  Done! DaisyForGaming v1.1 installed.";
+ui_print "  Done! DaisyForGaming v1.2 installed.";
 ui_print "  Root: FolkPatch (patch this boot) or Magisk.";
 ui_print "  - JUBAIR HOSEN";
 ui_print " ";
@@ -131,9 +140,17 @@ cp "$SRC/dfg_tune.sh" dfg_tune.sh
 chmod 755 dfg_tune.sh
 grep -q 'v1.0-final tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"; exit 1; }
 
+# Stage the kernel modules (built from THIS exact kernel tree, CRC-exact)
+if [ -d "$SRC/_modules" ]; then
+  mkdir -p modules
+  cp "$SRC"/_modules/rt_*.ko modules/ 2>/dev/null
+  cp "$SRC"/_modules/qx_*.ko modules/ 2>/dev/null
+  echo "[zip] modules staged: $(ls modules/*.ko 2>/dev/null | wc -l)"
+fi
+
 cat > banner <<'BAN'
 **************************************************
-*        DaisyForGaming v1.1 (controller ready)  *
+*      DaisyForGaming v1.2 (cool + stable)  *
 **************************************************
 *  Device : Xiaomi Mi A2 Lite (daisy)           *
 *  Kernel : 4.9.337-DaisyForGaming              *

@@ -67,6 +67,20 @@ static struct kthread_work input_boost_work;
 #define IB_SCHED_DEFAULT 1
 #endif
 
+/*
+ * Thermal + battery guards (DaisyForGaming v1.2):
+ * The phone used to shut down while gaming on the charger because the
+ * bypass path paused charging with no battery level/temperature checks,
+ * and boost kept pumping heat until the SoC hit its hard limit.
+ * These thresholds keep the device safe even when no controller app runs.
+ */
+#define DFG_BATT_TEMP_COOL_MAX	42000	/* engage bypass only below 42.0C */
+#define DFG_BATT_TEMP_HOT	45000	/* force bypass off above 45.0C */
+#define DFG_BATT_SOC_BYPASS_MIN	40	/* bypass only when battery >= 40% */
+#define DFG_BATT_SOC_RESUME	30	/* resume charging below 30% */
+#define DFG_BOOST_TEMP_WARM	50000	/* drop to balanced above 50.0C */
+#define DFG_BOOST_TEMP_HOT	55000	/* drop to battery above 55.0C */
+
 static bool input_boost_enabled = true;
 static bool input_boost_user_off;
 
@@ -116,6 +130,41 @@ static bool usb_charger_online(void)
 	power_supply_put(usb);
 
 	return online;
+}
+
+/*
+ * Battery guards: returns true when the battery is in a safe window for
+ * bypass (enough charge, not too hot). Reads capacity + TEMP from the
+ * battery psy. Fail-safe: if anything cannot be read, refuse bypass.
+ */
+static bool battery_safe_for_bypass(unsigned int *soc_out, int *temp_out)
+{
+	struct power_supply *batt;
+	union power_supply_propval val = { 0, };
+	int soc = -1, temp = -1;
+	bool safe;
+
+	batt = power_supply_get_by_name("battery");
+	if (!batt)
+		return false;
+
+	if (!power_supply_get_property(batt, POWER_SUPPLY_PROP_CAPACITY, &val))
+		soc = val.intval;
+	if (!power_supply_get_property(batt, POWER_SUPPLY_PROP_TEMP, &val))
+		temp = val.intval;	/* tenths of a degree C */
+	power_supply_put(batt);
+
+	if (soc_out)
+		*soc_out = (soc >= 0) ? (unsigned int)soc : 0;
+	if (temp_out)
+		*temp_out = temp;
+
+	if (soc < 0 || temp < 0)
+		return false;
+
+	safe = (soc >= DFG_BATT_SOC_BYPASS_MIN) &&
+	       (temp <= DFG_BATT_TEMP_COOL_MAX);
+	return safe;
 }
 
 #ifdef CONFIG_INPUT_BOOST_DURATION_MS
@@ -206,6 +255,7 @@ static void auto_boost_tick(struct work_struct *work)
 {
 	unsigned int ratio;
 	unsigned long stamp;
+	int batt_temp = 0;
 
 	if (boost_mode != 3)
 		return;
@@ -217,6 +267,31 @@ static void auto_boost_tick(struct work_struct *work)
 			pr_info("boost_mode=auto: screen off -> battery\n");
 		}
 		goto requeue;
+	}
+
+	/*
+	 * Thermal guard runs BEFORE the game detector: a hot device never
+	 * gets the gaming profile, and an already-boosted hot device is
+	 * stepped down. This keeps heat under control without the app.
+	 */
+	battery_safe_for_bypass(NULL, &batt_temp);
+	if (batt_temp > 0) {
+		if (batt_temp > DFG_BOOST_TEMP_HOT) {
+			auto_busy_count = auto_idle_count = 0;
+			if (boost_mode_effective != 0) {
+				set_boost_profile(0);
+				pr_info("boost_mode=auto: batt %d.%dC -> battery (thermal)\n",
+						batt_temp / 10, batt_temp % 10);
+			}
+			goto requeue;
+		}
+		if (batt_temp > DFG_BOOST_TEMP_WARM &&
+		    boost_mode_effective == 2) {
+			set_boost_profile(1);
+			pr_info("boost_mode=auto: batt %d.%dC -> balanced (thermal)\n",
+					batt_temp / 10, batt_temp % 10);
+			goto requeue;
+		}
 	}
 
 	adreno_gpu_busy_ratio(&ratio, &stamp);
@@ -300,8 +375,25 @@ static void set_battery_charging(bool enable)
 
 static void bypass_check_work(struct work_struct *work)
 {
-	bool want = bypass_on_gaming && psy_ready &&
-		    boost_mode_effective == 2 && usb_charger_online();
+	unsigned int soc = 0;
+	int batt_temp = 0;
+	bool want;
+
+	want = bypass_on_gaming && psy_ready &&
+	       boost_mode_effective == 2 && usb_charger_online();
+
+	if (want) {
+		bool safe = battery_safe_for_bypass(&soc, &batt_temp);
+		if (bypass_active) {
+			/* hysteresis: drop bypass when battery runs low or heats up */
+			if (!safe || soc < DFG_BATT_SOC_RESUME ||
+			    batt_temp > DFG_BATT_TEMP_HOT)
+				want = false;
+		} else {
+			/* engage only from a safe battery window */
+			want = safe;
+		}
+	}
 
 	if (want != bypass_active) {
 		bypass_active = want;
