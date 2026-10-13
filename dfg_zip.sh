@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 set -e
 VER="1.3"
 DATESTAMP="$(date +%m-%d-%Y)"
@@ -98,15 +98,6 @@ ui_print " ";
 
 write_boot;
 
-# Install the kernel modules (CRC-exact for this kernel build).
-if [ -d ./modules ]; then
-  mkdir -p /data/adb/dfg_modules 2>/dev/null;
-  cp -f ./modules/*.ko /data/adb/dfg_modules/ 2>/dev/null;
-  chmod 644 /data/adb/dfg_modules/*.ko 2>/dev/null;
-  ui_print "  Modules staged: rt (memacc) + qx (memacc_qx)";
-  ui_print "  -> /data/adb/dfg_modules (loaded at boot)";
-fi;
-
 # Stage the tuning service script so it survives reboots.
 if [ -f ./dfg_tune.sh ]; then
   if [ -d /data/adb/service.d ]; then
@@ -140,13 +131,6 @@ cp "$SRC/dfg_tune.sh" dfg_tune.sh
 chmod 755 dfg_tune.sh
 grep -q 'v1.0-final tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"; exit 1; }
 
-# Stage the kernel modules (built from THIS exact kernel tree, CRC-exact)
-if [ -d "$SRC/_modules" ]; then
-  mkdir -p modules
-  cp "$SRC"/_modules/rt_*.ko modules/ 2>/dev/null
-  cp "$SRC"/_modules/qx_*.ko modules/ 2>/dev/null
-  echo "[zip] modules staged: $(ls modules/*.ko 2>/dev/null | wc -l)"
-fi
 
 cat > banner <<'BAN'
 **************************************************

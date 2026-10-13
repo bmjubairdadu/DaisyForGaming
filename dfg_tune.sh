@@ -15,16 +15,6 @@ while [ $i -lt 120 ]; do
 done
 say "v1.0-final tuning start"
 
-# Load DFG kernel modules (CRC-exact build). vermagic mismatch = skipped.
-if [ -d /data/adb/dfg_modules ]; then
-  for ko in /data/adb/dfg_modules/*.ko; do
-    [ -e "$ko" ] || continue
-    modname=$(basename "$ko" | sed 's/_.*//')
-    if ! grep -q "$modname" /proc/modules 2>/dev/null; then
-      insmod "$ko" 2>/dev/null \
-        && say "module loaded: $(basename $ko)" \
-        || say "module load skipped (vermagic mismatch): $(basename $ko)"
-    fi
   done
 fi
 

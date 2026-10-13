@@ -97,7 +97,7 @@ static struct kernel_param_ops input_boost_enabled_ops = {
 	.set = input_boost_enabled_set,
 	.get = param_get_bool,
 };
-module_param_cb(input_boost_enabled, &input_boost_enabled_ops, NULL, 0644);
+module_param_cb(input_boost_enabled, &input_boost_enabled_ops, &input_boost_enabled, 0644);
 MODULE_PARM_DESC(input_boost_enabled,
 	"Master input boost switch (DFG Controller: Gaming > Input Boost toggle)");
 
