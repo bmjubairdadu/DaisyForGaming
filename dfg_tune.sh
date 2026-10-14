@@ -127,6 +127,14 @@ w /proc/sys/vm/extra_free_kbytes 24576 && say "extra_free_kbytes = 24576"
 w /proc/sys/vm/watermark_scale_factor 200 && say "watermark_scale_factor = 200"
 w /proc/sys/vm/page-cluster 0 && say "page-cluster = 0"
 
+# 9. Network & Gaming Low Latency (TCP BBR & packet pacing)
+w /proc/sys/net/ipv4/tcp_congestion_control bbr
+w /proc/sys/net/core/default_qdisc fq
+w /proc/sys/net/ipv4/tcp_notsent_lowat 16384
+w /proc/sys/net/ipv4/tcp_fastopen 3
+w /proc/sys/net/ipv4/tcp_syncookies 1
+say "Network TCP BBR & low-latency pacing configured"
+
 say "gov: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null)"
 say "DaisyForGaming boot tuning completed successfully"
 
