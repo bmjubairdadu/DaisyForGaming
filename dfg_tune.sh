@@ -26,28 +26,28 @@ say "DaisyForGaming autonomous tuning start"
 if [ -e /sys/module/cpu_boost/parameters/boost_mode ]; then
   w /sys/module/cpu_boost/parameters/boost_mode 1 \
     && say "boost_mode = 1 (Balanced default)"
-  w /sys/module/cpu_boost/parameters/boost_on_charging 0 \
-    && say "boost_on_charging = 0 (thermal safe)"
+  w /sys/module/cpu_boost/parameters/boost_on_charging 1 \
+    && say "boost_on_charging = 1 (touch responsive while charging)"
 fi
 
 if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
   echo "0:1036800 1:1036800 2:1036800 3:1036800 4:1401600 5:1401600 6:1401600 7:1401600" \
     > /sys/module/cpu_boost/parameters/input_boost_freq 2>/dev/null \
     && say "input_boost_freq = 1036(little)/1401(big) MHz"
-  w /sys/module/cpu_boost/parameters/input_boost_ms 150 && say "input_boost_ms = 150"
-  w /sys/module/cpu_boost/parameters/sched_boost_on_input 0 && say "sched_boost_on_input = 0"
+  w /sys/module/cpu_boost/parameters/input_boost_ms 60 && say "input_boost_ms = 60"
+  w /sys/module/cpu_boost/parameters/sched_boost_on_input 1 && say "sched_boost_on_input = 1"
 fi
 
-# 2. Schedutil governor balanced-response & anti-heating tuning
+# 2. Schedutil governor responsiveness & 60fps frame holding (Prevents video/UI stutter)
 for cpu_sched in /sys/devices/system/cpu/cpu*/cpufreq/schedutil; do
   if [ -d "$cpu_sched" ]; then
-    w "$cpu_sched/up_rate_limit_us" 1000
-    w "$cpu_sched/down_rate_limit_us" 5000
+    w "$cpu_sched/up_rate_limit_us" 500
+    w "$cpu_sched/down_rate_limit_us" 20000
   fi
 done
-say "schedutil rate limits configured (up: 1000us, down: 5000us)"
+say "schedutil rate limits configured (up: 500us, down: 20000us for 60fps pacing)"
 
-# 3. Top-app & Foreground schedtune responsiveness (Prevents video/UI jitter)
+# 3. Top-app & Foreground schedtune & CPUSets responsiveness (Zero video/UI jitter)
 if [ -e /dev/stune/top-app/schedtune.boost ]; then
   w /dev/stune/top-app/schedtune.boost 10 && say "top-app schedtune.boost = 10"
   w /dev/stune/top-app/schedtune.prefer_idle 1 && say "top-app schedtune.prefer_idle = 1"
@@ -56,12 +56,22 @@ if [ -e /dev/stune/foreground/schedtune.boost ]; then
   w /dev/stune/foreground/schedtune.boost 5 && say "foreground schedtune.boost = 5"
   w /dev/stune/foreground/schedtune.prefer_idle 1 && say "foreground schedtune.prefer_idle = 1"
 fi
+for cg in /dev/cpuset; do
+  [ -d "$cg/top-app" ] && w "$cg/top-app/cpus" 0-7
+  [ -d "$cg/foreground" ] && w "$cg/foreground/cpus" 0-7
+  [ -d "$cg/background" ] && w "$cg/background/cpus" 0-3
+  [ -d "$cg/system-background" ] && w "$cg/system-background/cpus" 0-3
+done
+say "CPUSets optimized (top-app & foreground assigned all 8 cores)"
 
-# 4. GPU & Display Anti-Lag (Disable adreno_idler to guarantee 60fps / 2K / 4K smoothness)
+# 4. GPU & Display Anti-Lag (Butter smooth 60fps / 1080p / 2K / 4K video & gaming)
 w /sys/module/adreno_idler/parameters/adreno_idler_active 0
 w /sys/class/kgsl/kgsl-3d0/devfreq/adreno_idler_active 0
 w /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
-say "GPU governor = msm-adreno-tz (adreno_idler disabled for smooth video)"
+w /sys/class/kgsl/kgsl-3d0/min_clock_mhz 216
+w /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 216000000
+w /sys/class/kgsl/kgsl-3d0/idle_timer 80
+say "GPU governor = msm-adreno-tz (min_clock: 216MHz for 60fps video compositing)"
 
 # 5. Storage I/O Read-Ahead Optimization (Smooth 1080p/2K/4K high-bitrate video playback)
 for q in /sys/block/mmcblk*/queue /sys/block/dm-*/queue; do
@@ -84,7 +94,7 @@ if [ -e /sys/kernel/fast_charge/force_fast_charge ]; then
   say "force_fast_charge = 1 (2000mA target)"
 fi
 
-# 8. zRAM & VM Tuning (Aggressive cache reclaim, zero memory stalls, junk cleaning)
+# 8. zRAM & VM Tuning (Butter smooth multitasking, zero memory stalls, no screen freezes)
 if [ -b /dev/block/zram0 ]; then
   ALG=$(cat /sys/block/zram0/comp_algorithm 2>/dev/null | tr '\n' ' ')
   case "$ALG" in
@@ -106,27 +116,24 @@ if [ -b /dev/block/zram0 ]; then
   done
 fi
 
-w /proc/sys/vm/vfs_cache_pressure 150 && say "vfs_cache_pressure = 150 (active dentry/inode reclaim)"
+w /proc/sys/vm/vfs_cache_pressure 100 && say "vfs_cache_pressure = 100 (balanced dentry/inode cache)"
 w /proc/sys/vm/swappiness 60 && say "swappiness = 60"
-w /proc/sys/vm/dirty_ratio 10 && say "dirty_ratio = 10"
-w /proc/sys/vm/dirty_background_ratio 5 && say "dirty_background_ratio = 5"
+w /proc/sys/vm/dirty_ratio 20 && say "dirty_ratio = 20 (smooth buffering, no I/O stalls)"
+w /proc/sys/vm/dirty_background_ratio 10 && say "dirty_background_ratio = 10"
+w /proc/sys/vm/dirty_expire_centisecs 200
+w /proc/sys/vm/dirty_writeback_centisecs 500
 w /proc/sys/vm/min_free_kbytes 32768 && say "min_free_kbytes = 32768 (smooth reclaim headroom)"
 w /proc/sys/vm/extra_free_kbytes 24576 && say "extra_free_kbytes = 24576"
+w /proc/sys/vm/watermark_scale_factor 200 && say "watermark_scale_factor = 200"
 w /proc/sys/vm/page-cluster 0 && say "page-cluster = 0"
-
-# Initial cache flush & defragmentation
-sync
-echo 3 > /proc/sys/vm/drop_caches 2>/dev/null
-echo 1 > /proc/sys/vm/compact_memory 2>/dev/null
-say "Initial cache dropped & RAM compacted"
 
 say "gov: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null)"
 say "DaisyForGaming boot tuning completed successfully"
 
 # ==============================================================================
 # Autonomous RAM & Application Junk Cleaner Daemon
-# Continuously cleans dead pagecache, trims buffers, defragments memory,
-# and removes temporary junk so the phone remains smooth 24/7 without lag.
+# Screen-Aware: NEVER touches memory while screen is ON (zero freezes / zero video lag).
+# Cleans filesystem junk and maintains RAM health silently when phone is asleep.
 # ==============================================================================
 RAM_CLEAN_PIDFILE=/data/local/tmp/dfg_ram_cleaner.pid
 if [ -f "$RAM_CLEAN_PIDFILE" ]; then
@@ -134,34 +141,56 @@ if [ -f "$RAM_CLEAN_PIDFILE" ]; then
   [ -n "$OLD_PID" ] && [ -d "/proc/$OLD_PID" ] && kill -9 "$OLD_PID" 2>/dev/null
 fi
 
+is_screen_on() {
+  # 1. Backlight brightness
+  bl=$(cat /sys/class/leds/lcd-backlight/brightness 2>/dev/null)
+  [ -n "$bl" ] && [ "$bl" -gt 0 ] && return 0
+
+  # 2. Framebuffer blank status (0 = ON / UNBLANK)
+  fb=$(cat /sys/class/graphics/fb0/blank 2>/dev/null)
+  [ "$fb" = "0" ] && return 0
+
+  # 3. DRM CRTC active
+  crtc=$(cat /sys/class/drm/card0/sde-crtc-0/active 2>/dev/null)
+  [ "$crtc" = "1" ] && return 0
+
+  return 1
+}
+
 (
   echo $$ > "$RAM_CLEAN_PIDFILE"
-  say "Autonomous RAM & Cache Cleaner daemon active (PID: $$)"
-  clean_ticks=0
+  say "Autonomous Screen-Aware RAM & Junk Cleaner active (PID: $$)"
 
   while true; do
-    sleep 30
-    clean_ticks=$((clean_ticks + 1))
+    sleep 45
 
     # Ensure UKSM/KSM remains disabled
     [ -e /sys/kernel/mm/uksm/run ] && echo 0 > /sys/kernel/mm/uksm/run 2>/dev/null
     [ -e /sys/kernel/mm/ksm/run ] && echo 0 > /sys/kernel/mm/ksm/run 2>/dev/null
 
-    avail=$(awk '/MemAvailable:/ {print $2}' /proc/meminfo 2>/dev/null)
-    cached=$(awk '/^Cached:/ {print $2}' /proc/meminfo 2>/dev/null)
+    # If user is actively using the phone (screen ON): DO NOT TOUCH MEMORY!
+    if is_screen_on; then
+      continue
+    fi
 
-    # Clean condition:
-    # 1. Available RAM < 384 MB (393216 KB)
-    # 2. Cached junk > 500 MB (512000 KB)
-    # 3. Every 5 minutes (10 * 30s) unconditionally
-    if [ -n "$avail" ] && [ "$avail" -lt 393216 ] || [ -n "$cached" ] && [ "$cached" -gt 512000 ] || [ "$clean_ticks" -ge 10 ]; then
-      clean_ticks=0
-      sync
-      echo 3 > /proc/sys/vm/drop_caches 2>/dev/null
+    # User is NOT using phone (screen OFF / locked). Confirm screen stays off for 15s:
+    sleep 15
+    if is_screen_on; then
+      continue
+    fi
+
+    # Clean storage junk files silently
+    rm -rf /data/tombstones/* /data/system/dropbox/* /data/anr/* 2>/dev/null
+    rm -rf /data/local/tmp/kflash /data/local/tmp/ak3 /data/local/tmp/test 2>/dev/null
+    rm -f /data/local/tmp/*.log.bak 2>/dev/null
+
+    # Check free memory while screen is OFF
+    avail=$(awk '/MemAvailable:/ {print $2}' /proc/meminfo 2>/dev/null)
+    if [ -n "$avail" ] && [ "$avail" -lt 307200 ]; then
+      # Free dentries/inodes safely without evicting active app code
+      echo 2 > /proc/sys/vm/drop_caches 2>/dev/null
       echo 1 > /proc/sys/vm/compact_memory 2>/dev/null
-      rm -rf /data/local/tmp/kflash /data/local/tmp/ak3 /data/local/tmp/test 2>/dev/null
-      rm -f /data/local/tmp/*.log.bak 2>/dev/null
-      say "RAM auto-clean triggered: pagecache dropped & memory compacted (MemAvailable was ${avail}KB)"
+      say "Screen-off maintenance: dentries trimmed & memory compacted (MemAvailable was ${avail}KB)"
     fi
   done
 ) &
