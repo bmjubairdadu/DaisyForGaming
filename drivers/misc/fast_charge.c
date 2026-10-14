@@ -105,15 +105,27 @@ static bool ps_read_int(enum power_supply_property prop, int *out)
 static int ps_set_charging(bool enable)
 {
 	union power_supply_propval val = { .intval = enable ? 1 : 0 };
+	union power_supply_propval chg_val = { .intval = 1 };
 	int ret;
 
 	if (!batt_psy)
 		return -ENODEV;
+
+	/* Keep charger input connected so adapter powers the motherboard */
+	power_supply_set_property(batt_psy,
+			POWER_SUPPLY_PROP_CHARGING_ENABLED, &chg_val);
+
+	/* Suspend or resume battery charging: 0 = direct motherboard power only */
 	ret = power_supply_set_property(batt_psy,
 			POWER_SUPPLY_PROP_BATTERY_CHARGING_ENABLED, &val);
-	if (ret)
-		ret = power_supply_set_property(batt_psy,
-				POWER_SUPPLY_PROP_CHARGING_ENABLED, &val);
+
+	if (!enable) {
+		union power_supply_propval fcc_zero = { .intval = 0 };
+		power_supply_set_property(batt_psy,
+				POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX, &fcc_zero);
+	} else if (force_fast_charge) {
+		fast_charge_apply();
+	}
 	return ret;
 }
 

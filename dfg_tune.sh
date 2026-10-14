@@ -243,7 +243,9 @@ is_ff_active() {
 enable_bypass() {
   w /sys/kernel/fast_charge/bypass_charging 1
   w /sys/class/power_supply/battery/battery_charging_enabled 0
-  w /sys/class/power_supply/battery/charging_enabled 0
+  w /sys/class/power_supply/battery/charging_enabled 1
+  w /sys/class/power_supply/battery/constant_charge_current_max 0
+  w /sys/class/power_supply/usb/current_max 2000000 2>/dev/null || true
   w /sys/module/cpu_boost/parameters/boost_mode 2
   w /dev/stune/top-app/schedtune.boost 15
 }
@@ -252,6 +254,7 @@ disable_bypass() {
   w /sys/kernel/fast_charge/bypass_charging 0
   w /sys/class/power_supply/battery/battery_charging_enabled 1
   w /sys/class/power_supply/battery/charging_enabled 1
+  w /sys/class/power_supply/battery/constant_charge_current_max 2000000 2>/dev/null || true
   w /sys/module/cpu_boost/parameters/boost_mode 1
   w /dev/stune/top-app/schedtune.boost 10
 }
