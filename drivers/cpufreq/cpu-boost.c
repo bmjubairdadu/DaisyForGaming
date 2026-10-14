@@ -67,13 +67,6 @@ static struct kthread_work input_boost_work;
 #define IB_SCHED_DEFAULT 1
 #endif
 
-/*
- * Thermal guard (DaisyForGaming v1.3):
- * Boost steps down when the battery runs hot, so the device stays safe
- * even when no controller app runs (CPU throttling starts at 68C via DT).
- */
-#define DFG_BOOST_TEMP_WARM	50000	/* drop to balanced above 50.0C */
-#define DFG_BOOST_TEMP_HOT	55000	/* drop to battery above 55.0C */
 
 static bool input_boost_enabled = true;
 static bool input_boost_user_off;
@@ -125,21 +118,6 @@ static bool usb_charger_online(void)
 	return online;
 }
 
-/* Battery temperature in tenths of a degree C, or -1 if unavailable. */
-static int batt_temp_tenths(void)
-{
-	struct power_supply *batt;
-	union power_supply_propval val = { 0, };
-	int temp = -1;
-
-	batt = power_supply_get_by_name("battery");
-	if (!batt)
-		return -1;
-	if (!power_supply_get_property(batt, POWER_SUPPLY_PROP_TEMP, &val))
-		temp = val.intval;
-	power_supply_put(batt);
-	return temp;
-}
 
 #ifdef CONFIG_INPUT_BOOST_DURATION_MS
 static unsigned int input_boost_ms = CONFIG_INPUT_BOOST_DURATION_MS;
@@ -155,41 +133,42 @@ static unsigned int sched_boost_on_input = 1;
 #endif
 module_param(sched_boost_on_input, uint, 0644);
 
-static unsigned int boost_mode = 3;
+static unsigned int boost_mode = 1;
 
 static unsigned int boost_mode_effective = 1;
 module_param(boost_mode_effective, uint, 0444);
 
-
-static void set_boost_profile(unsigned int profile)
+static void apply_boost_mode(void)
 {
 	unsigned int little = IB_FREQ_LITTLE_DEFAULT;
 	unsigned int big = IB_FREQ_BIG_DEFAULT;
 	int cpu;
 
-	/*
-	 * Respect the DFG Controller's Input Boost master toggle: once the
-	 * user switched boost off from the app, profile refreshes (auto
-	 * engine included) keep it off until the user turns it back on.
-	 */
 	if (input_boost_user_off) {
 		input_boost_enabled = false;
 	} else {
 		input_boost_enabled = true;
-		if (profile == 0)
+		if (boost_mode == 0)
 			input_boost_user_off = true;
 	}
 
-	switch (profile) {
-	case 2: 
+	switch (boost_mode) {
+	case 0:
+		input_boost_enabled = false;
+		little = 0;
+		big = 0;
+		break;
+	case 2:
 		little = 1401600;
 		big = 1689600;
 		input_boost_ms = 250;
 		sched_boost_on_input = 1;
 		break;
-	case 1: 
+	case 1:
 	default:
-		profile = 1;
+		boost_mode = 1;
+		little = IB_FREQ_LITTLE_DEFAULT;
+		big = IB_FREQ_BIG_DEFAULT;
 		input_boost_ms = IB_MS_DEFAULT;
 		sched_boost_on_input = IB_SCHED_DEFAULT;
 		break;
@@ -199,136 +178,8 @@ static void set_boost_profile(unsigned int profile)
 		struct cpu_sync *s = &per_cpu(sync_info, cpu);
 		s->input_boost_freq = (cpu < 4) ? little : big;
 	}
-	boost_mode_effective = profile;
+	boost_mode_effective = boost_mode;
 
-}
-
-#define AUTO_CHECK_MS	2000	
-#define AUTO_SUSTAIN	3	
-#define AUTO_STALE_MS	3000	
-
-extern void adreno_gpu_busy_ratio(unsigned int *ratio, unsigned long *stamp);
-
-static unsigned int auto_gpu_busy = 50;
-module_param(auto_gpu_busy, uint, 0644);
-MODULE_PARM_DESC(auto_gpu_busy,
-	"auto mode: GPU busy % treated as a running game (default 50)");
-
-static bool screen_on = true;
-static unsigned int auto_busy_count, auto_idle_count;
-
-static void auto_boost_tick(struct work_struct *work);
-
-static DECLARE_DELAYED_WORK(auto_boost_work, auto_boost_tick);
-
-static void auto_boost_tick(struct work_struct *work)
-{
-	unsigned int ratio;
-	unsigned long stamp;
-	int batt_temp = 0;
-
-	if (boost_mode != 3)
-		return;
-
-	if (!screen_on) {
-		auto_busy_count = auto_idle_count = 0;
-		if (boost_mode_effective != 0) {
-			set_boost_profile(0);
-			pr_info("boost_mode=auto: screen off -> battery\n");
-		}
-		goto requeue;
-	}
-
-	/*
-	 * Thermal guard runs BEFORE the game detector: a hot device never
-	 * gets the gaming profile, and an already-boosted hot device is
-	 * stepped down. This keeps heat under control without the app.
-	 */
-	batt_temp = batt_temp_tenths();
-	if (batt_temp > 0) {
-		if (batt_temp > DFG_BOOST_TEMP_HOT) {
-			auto_busy_count = auto_idle_count = 0;
-			if (boost_mode_effective != 0) {
-				set_boost_profile(0);
-				pr_info("boost_mode=auto: batt %d.%dC -> battery (thermal)\n",
-						batt_temp / 10, batt_temp % 10);
-			}
-			goto requeue;
-		}
-		if (batt_temp > DFG_BOOST_TEMP_WARM &&
-		    boost_mode_effective == 2) {
-			set_boost_profile(1);
-			pr_info("boost_mode=auto: batt %d.%dC -> balanced (thermal)\n",
-					batt_temp / 10, batt_temp % 10);
-			goto requeue;
-		}
-	}
-
-	adreno_gpu_busy_ratio(&ratio, &stamp);
-	if (!stamp || time_after(jiffies, stamp + msecs_to_jiffies(AUTO_STALE_MS)))
-		ratio = 0; 
-
-	if (ratio >= auto_gpu_busy) {
-		auto_busy_count++;
-		auto_idle_count = 0;
-	} else {
-		auto_idle_count++;
-		auto_busy_count = 0;
-	}
-
-	if (auto_busy_count >= AUTO_SUSTAIN) {
-		if (boost_mode_effective != 2) {
-			set_boost_profile(2);
-			pr_info("boost_mode=auto: GPU busy %u%% sustained -> gaming\n",
-				ratio);
-		}
-	} else if (auto_idle_count >= AUTO_SUSTAIN) {
-		if (boost_mode_effective != 1) {
-			set_boost_profile(1);
-			pr_info("boost_mode=auto: GPU busy %u%% -> balanced\n",
-				ratio);
-		}
-	}
-
-requeue:
-	schedule_delayed_work(&auto_boost_work, msecs_to_jiffies(AUTO_CHECK_MS));
-}
-
-static int cpuboost_fb_notifier(struct notifier_block *nb, unsigned long event,
-				void *data)
-{
-	struct fb_event *evdata = data;
-
-	if (event != FB_EVENT_BLANK || !evdata || !evdata->data)
-		return NOTIFY_OK;
-
-	screen_on = (*(int *)evdata->data == FB_BLANK_UNBLANK);
-	if (boost_mode == 3)
-		
-		mod_delayed_work(system_wq, &auto_boost_work, 0);
-
-	return NOTIFY_OK;
-}
-static struct notifier_block cpuboost_fb_nb = {
-	.notifier_call = cpuboost_fb_notifier,
-};
-
-
-static void apply_boost_mode(void)
-{
-	if (boost_mode > 3)
-		boost_mode = 3;
-
-	if (boost_mode == 3) {
-		pr_info("boost_mode=auto: screen=%u, GPU-detect at %u%% busy\n",
-			screen_on, auto_gpu_busy);
-		set_boost_profile(screen_on ? 1 : 0);
-		schedule_delayed_work(&auto_boost_work, 0);
-		return;
-	}
-
-	cancel_delayed_work_sync(&auto_boost_work);
-	set_boost_profile(boost_mode);
 	pr_info("boost_mode=%u: little=%ukHz big=%ukHz ms=%u sched_boost=%u\n",
 		boost_mode,
 		per_cpu(sync_info, 0).input_boost_freq,
@@ -340,7 +191,7 @@ static int set_boost_mode(const char *buf, const struct kernel_param *kp)
 {
 	unsigned int val;
 
-	if (kstrtouint(buf, 0, &val) || val > 3)
+	if (kstrtouint(buf, 0, &val) || val > 2)
 		return -EINVAL;
 	boost_mode = val;
 	apply_boost_mode();
@@ -358,7 +209,7 @@ static const struct kernel_param_ops param_ops_boost_mode = {
 };
 module_param_cb(boost_mode, &param_ops_boost_mode, NULL, 0644);
 MODULE_PARM_DESC(boost_mode,
-	"Input boost profile: 0=battery (off), 1=balanced, 2=gaming, 3=auto (default)");
+	"Input boost profile: 0=battery (off), 1=balanced (default), 2=gaming");
 
 static bool sched_boost_active;
 
@@ -662,13 +513,9 @@ static int cpu_boost_init(void)
 	pr_info("input boost on by default: little=%ukHz big=%ukHz ms=%u sched_boost=%u\n",
 		IB_FREQ_LITTLE_DEFAULT, IB_FREQ_BIG_DEFAULT, input_boost_ms,
 		sched_boost_on_input);
+	boost_mode = 1;
 	boost_mode_effective = 1;
-	if (boost_mode > 3)
-		boost_mode = 3;
-	if (boost_mode == 3)
-		schedule_delayed_work(&auto_boost_work,
-				      msecs_to_jiffies(AUTO_CHECK_MS));
-	fb_register_client(&cpuboost_fb_nb);
+	apply_boost_mode();
 	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
 
 	ret = input_register_handler(&cpuboost_input_handler);

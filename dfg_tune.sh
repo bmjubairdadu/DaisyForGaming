@@ -1,4 +1,4 @@
-﻿#!/system/bin/sh
+#!/system/bin/sh
 
 LOG=/data/local/tmp/dfg_tune.log
 say() { echo "$(date '+%H:%M:%S') $*" >> "$LOG"; }
@@ -14,13 +14,9 @@ while [ $i -lt 120 ]; do
   i=$((i+1)); sleep 1
 done
 say "v1.0-final tuning start"
-
-  done
-fi
-
 if [ -e /sys/module/cpu_boost/parameters/boost_mode ]; then
-  w /sys/module/cpu_boost/parameters/boost_mode 3 \
-    && say "boost_mode = 3 (auto: game detect via GPU busy >= 50%, screen-aware)"
+  w /sys/module/cpu_boost/parameters/boost_mode 1 \
+    && say "boost_mode = 1 (balanced)"
   w /sys/module/cpu_boost/parameters/boost_on_charging 0 \
     && say "boost_on_charging = 0 (no boost while plugged in)"
 elif [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then

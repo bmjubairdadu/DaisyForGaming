@@ -35,18 +35,15 @@ working as always — root is applied **after** flashing, never in-kernel.
 
 ## 🎮 Gaming features
 
-- **Auto game detection — one node (new in v1.0-final):** `boost_mode` in
-  `/sys/module/cpu_boost/parameters/` runs the whole touch-boost profile, **default `3` = auto**:
-  the kernel samples the Adreno busy ratio — screen off drops to **battery** instantly, a
-  sustained GPU-heavy foreground app (busy ≥ 50 % for ~6 s — that's a running game) lifts to
-  **gaming** (little 1401 MHz / big 1689 MHz, 250 ms + WALT sched boost on touch), and everything
-  else (video, browsing, scrolling — all low-GPU work) stays on **balanced** (little 1036 MHz,
-  big 1401 MHz, 150 ms). Hysteresis keeps game-loading screens from flapping the mode. Force a
-  fixed profile any time with `0`/`1`/`2`; threshold is
-  `/sys/module/cpu_boost/parameters/auto_gpu_busy`, applied profile shows in
-  `boost_mode_effective`. While the charger is connected the boost stays off
-  (`boost_on_charging=0` default) — that heat made thermal-engine cut charger current. Set `1`
-  in `boost_on_charging` if you game on the charger.
+- **CPU Boost Profiles (`boost_mode`):** `boost_mode` in
+  `/sys/module/cpu_boost/parameters/` controls the touch-boost profile (**default `1` = balanced**):
+  - `0 = battery`: input boost completely off (coolest, best standby and video).
+  - `1 = balanced` (default): little 1036 MHz, big 1401 MHz, 150 ms touch boost (smooth, cool daily use).
+  - `2 = gaming`: little 1401 MHz, big 1689 MHz, 250 ms + WALT sched boost on touch (max responsiveness).
+  Auto game detection has been removed to prevent background jitter, thermal spikes, and frame drops.
+  Profiles are applied instantly and deterministically via sysfs or the DFG Controller. While the charger
+  is connected, boost stays off (`boost_on_charging=0` default) to keep device cool. Set `1` in
+  `boost_on_charging` if you want boosting while on charger.
 - **Bypass charging while gaming on the charger (new in v1.0-final):** when the gaming profile
   is active and USB is connected, the kernel inhibits battery charging — the charger feeds the
   board directly through the SMB power-path while the battery sits still. Cooler SoC, no charge
