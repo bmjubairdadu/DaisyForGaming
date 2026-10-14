@@ -533,7 +533,8 @@ static void msm_isp_cfg_framedrop_reg(struct vfe_device *vfe_dev,
 		stream_info->stream_handle, framedrop_pattern,
 		framedrop_period);
 
-	BUG_ON(0 == framedrop_period);
+	if (WARN_ON(0 == framedrop_period))
+		framedrop_period = 1;
 	if (DUAL_VFE_AND_VFE1(stream_info, vfe_dev)) {
 		vfe0_stream_info = msm_isp_vfe_get_stream(
 					vfe_dev->common_data->dual_vfe_res,

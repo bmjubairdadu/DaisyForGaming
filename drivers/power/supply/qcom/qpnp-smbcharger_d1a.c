@@ -2587,7 +2587,7 @@ static int smbchg_set_fastchg_current_user(struct smbchg_chip *chip,
 
 	pr_smb(PR_STATUS, "User setting FCC to %d\n", current_ma);
 
-	rc = vote(chip->fcc_votable, BATT_TYPE_FCC_VOTER, true, current_ma);
+	rc = vote(chip->fcc_votable, BATT_TYPE_FCC_VOTER, (current_ma > 0), current_ma);
 	if (rc < 0)
 		pr_err("Couldn't vote en rc %d\n", rc);
 	return rc;

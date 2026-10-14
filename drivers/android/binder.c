@@ -2045,10 +2045,13 @@ static int binder_inc_ref_for_node(struct binder_proc *proc,
 static void binder_pop_transaction_ilocked(struct binder_thread *target_thread,
 					   struct binder_transaction *t)
 {
-	BUG_ON(!target_thread);
+	if (WARN_ON(!target_thread))
+		return;
 	assert_spin_locked(&target_thread->proc->inner_lock);
-	BUG_ON(target_thread->transaction_stack != t);
-	BUG_ON(target_thread->transaction_stack->from != target_thread);
+	if (WARN_ON(target_thread->transaction_stack != t))
+		return;
+	if (WARN_ON(target_thread->transaction_stack->from != target_thread))
+		return;
 	target_thread->transaction_stack =
 		target_thread->transaction_stack->from_parent;
 	t->from = NULL;

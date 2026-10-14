@@ -149,3 +149,6 @@ _folkpatch_tools/
 /.scmversion.tmp
 # flashable zips ship in releases/ only
 /*.zip
+*.img
+gh_sync.py
+run_flash.sh

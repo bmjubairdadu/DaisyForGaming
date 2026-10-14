@@ -717,7 +717,7 @@ static void msm_ispif_enable_crop(struct ispif_device *ispif,
 			ispif->base + ISPIF_VFE_m_PIX_INTF_n_CROP(vfe_intf, 1));
 	else {
 		pr_err("%s: invalid intftype=%d\n", __func__, intftype);
-		BUG_ON(1);
+		WARN_ON_ONCE(1);
 		return;
 	}
 }
@@ -752,7 +752,7 @@ static void msm_ispif_enable_intf_cids(struct ispif_device *ispif,
 		break;
 	default:
 		pr_err("%s: invalid intftype=%d\n", __func__, intftype);
-		BUG_ON(1);
+		WARN_ON_ONCE(1);
 		return;
 	}
 

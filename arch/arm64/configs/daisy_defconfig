@@ -101,7 +101,7 @@ CONFIG_TASKSTATS=y
 # CONFIG_TASK_DELAY_ACCT is not set
 CONFIG_TASK_XACCT=y
 CONFIG_TASK_IO_ACCOUNTING=y
-# CONFIG_PSI is not set
+CONFIG_PSI=y
 # CONFIG_PSI_DEFAULT_DISABLED is not set
 
 #
@@ -487,7 +487,7 @@ CONFIG_COMPACTION=y
 CONFIG_MIGRATION=y
 CONFIG_PHYS_ADDR_T_64BIT=y
 CONFIG_BOUNCE=y
-CONFIG_KSM=y
+# CONFIG_KSM is not set
 CONFIG_DEFAULT_MMAP_MIN_ADDR=4096
 # CONFIG_TRANSPARENT_HUGEPAGE is not set
 # CONFIG_CLEANCACHE is not set
@@ -3928,7 +3928,7 @@ CONFIG_DEVFREQ_GOV_USERSPACE=y
 CONFIG_DEVFREQ_GOV_CPUFREQ=y
 CONFIG_QCOM_BIMC_BWMON=y
 # CONFIG_ARM_MEMLAT_MON is not set
-CONFIG_ADRENO_IDLER=y
+# CONFIG_ADRENO_IDLER is not set
 # CONFIG_QCOMCCI_HWMON is not set
 # CONFIG_QCOM_M4M_HWMON is not set
 CONFIG_DEVFREQ_GOV_QCOM_BW_HWMON=y
@@ -4627,7 +4627,7 @@ CONFIG_ARCH_HAS_DEVMEM_IS_ALLOWED=y
 CONFIG_KEYS=y
 # CONFIG_PERSISTENT_KEYRINGS is not set
 # CONFIG_BIG_KEYS is not set
-# CONFIG_ENCRYPTED_KEYS is not set
+CONFIG_ENCRYPTED_KEYS=y
 # CONFIG_KEY_DH_OPERATIONS is not set
 
 #
@@ -4717,7 +4717,7 @@ CONFIG_CRYPTO_ABLK_HELPER=y
 #
 # CONFIG_CRYPTO_CCM is not set
 CONFIG_CRYPTO_GCM=y
-# CONFIG_CRYPTO_CHACHA20POLY1305 is not set
+CONFIG_CRYPTO_CHACHA20POLY1305=y
 CONFIG_CRYPTO_SEQIV=y
 CONFIG_CRYPTO_ECHAINIV=y
 
@@ -4732,7 +4732,8 @@ CONFIG_CRYPTO_ECB=y
 # CONFIG_CRYPTO_PCBC is not set
 CONFIG_CRYPTO_XTS=y
 # CONFIG_CRYPTO_KEYWRAP is not set
-# CONFIG_CRYPTO_ADIANTUM is not set
+CONFIG_CRYPTO_ADIANTUM=y
+CONFIG_CRYPTO_NHPOLY1305=y
 
 #
 # Hash modes
@@ -4749,7 +4750,7 @@ CONFIG_CRYPTO_CRC32C=y
 CONFIG_CRYPTO_CRC32=y
 # CONFIG_CRYPTO_CRCT10DIF is not set
 CONFIG_CRYPTO_GHASH=y
-# CONFIG_CRYPTO_POLY1305 is not set
+CONFIG_CRYPTO_POLY1305=y
 CONFIG_CRYPTO_MD4=y
 CONFIG_CRYPTO_MD5=y
 # CONFIG_CRYPTO_MICHAEL_MIC is not set
@@ -4779,7 +4780,7 @@ CONFIG_CRYPTO_DES=y
 # CONFIG_CRYPTO_FCRYPT is not set
 # CONFIG_CRYPTO_KHAZAD is not set
 # CONFIG_CRYPTO_SALSA20 is not set
-# CONFIG_CRYPTO_CHACHA20 is not set
+CONFIG_CRYPTO_CHACHA20=y
 # CONFIG_CRYPTO_SEED is not set
 # CONFIG_CRYPTO_SERPENT is not set
 # CONFIG_CRYPTO_TEA is not set
@@ -4951,14 +4952,14 @@ CONFIG_MODULE_UNLOAD=y
 CONFIG_MODULE_FORCE_UNLOAD=y
 CONFIG_MODVERSIONS=y
 CONFIG_MODULE_FORCE_LOAD=y
-# Kallsyms: full symbol table (module dev, KernelSU, debugging)
+# Kallsyms: full symbol table (custom modules & root dev)
 CONFIG_DEBUG_KERNEL=y
 CONFIG_KALLSYMS_ALL=y
 # Debugging / tracing power-tools
 CONFIG_FTRACE=y
 CONFIG_DYNAMIC_DEBUG=y
 CONFIG_DEBUG_FS=y
-# KernelSU / root tooling helpers
+# FolkPatch & Magisk root tooling helpers
 CONFIG_USER_NS=y
 # Low-level access for advanced users
 # IPS/VPN tooling
@@ -4987,10 +4988,9 @@ CONFIG_KALLSYMS_BASE_RELATIVE=y
 CONFIG_CGROUP_SCHEDTUNE=y
 CONFIG_CGROUP_CPUACCT=y
 CONFIG_SCHED_WALT=y
-# GPU: interactive Adreno TZ governor + hardware idler so the GPU stops idling
-# at low clocks and ramps instantly when a game starts
+# GPU: Qualcomm native Adreno TZ governor for smooth 60fps / 2K / 4K video & gaming
 CONFIG_QCOM_ADRENO_DEFAULT_GOVERNOR="msm-adreno-tz"
-CONFIG_ADRENO_IDLER=y
+# CONFIG_ADRENO_IDLER is not set
 # Keep every CPU governor compiled in so a Magisk module (or a plain sysfs
 # write) can switch governor at runtime without a kernel rebuild.
 CONFIG_CPU_FREQ_GOV_ONDEMAND=y
@@ -5012,7 +5012,7 @@ CONFIG_SWAP=y
 CONFIG_SWAP_ENABLE_READAHEAD=y
 CONFIG_COMPACTION=y
 # Page merging to reclaim RAM from duplicated app heaps
-CONFIG_KSM=y
+# CONFIG_KSM is not set
 CONFIG_MMU_NOTIFIER=y
 
 # --- Display / video: no dropped frames at 1080p60, 2K or 4K ---

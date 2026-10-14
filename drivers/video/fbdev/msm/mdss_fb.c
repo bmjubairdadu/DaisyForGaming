@@ -317,6 +317,15 @@ static int mdss_fb_notify_update(struct msm_fb_data_type *mfd,
 	return ret;
 }
 
+/* DaisyForGaming: optional soft dimmer (DFG Controller toggle). */
+static bool backlight_dimmer;
+module_param_named(backlight_dimmer, backlight_dimmer, bool, 0644);
+MODULE_PARM_DESC(backlight_dimmer,
+	"DaisyForGaming: dim backlight by ~8% for power saving (0=off 1=on)");
+
+/* DaisyForGaming: High Brightness Mode (force max brightness). */
+static bool hbm_enabled;
+
 static int lcd_backlight_registered;
 
 static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
@@ -332,6 +341,12 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 
 	if (value > mfd->panel_info->brightness_max)
 		value = mfd->panel_info->brightness_max;
+
+	/* DFG: HBM forces max; dimmer trims ~8% when enabled */
+	if (hbm_enabled && value)
+		value = mfd->panel_info->brightness_max;
+	else if (backlight_dimmer && value > 0)
+		value -= value * 8 / 100;
 
 	/* This maps android backlight level 0 to 255 into
 	 * driver backlight level 0 to bl_max with rounding
@@ -372,6 +387,33 @@ static struct led_classdev backlight_led = {
 	.brightness_get = mdss_fb_get_bl_brightness,
 	.max_brightness = MDSS_MAX_BL_BRIGHTNESS,
 };
+
+static ssize_t hbm_show(struct device *dev, struct device_attribute *attr,
+			char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%d\n", hbm_enabled ? 1 : 0);
+}
+
+static ssize_t hbm_store(struct device *dev, struct device_attribute *attr,
+			 const char *buf, size_t count)
+{
+	struct msm_fb_data_type *mfd = dev_get_drvdata(dev->parent);
+	int val;
+
+	if (kstrtoint(buf, 10, &val) || (val != 0 && val != 1))
+		return -EINVAL;
+
+	hbm_enabled = !!val;
+
+	if (mfd && mfd->panel_info)
+		mdss_fb_set_bl_brightness(&backlight_led,
+			hbm_enabled ? mfd->panel_info->brightness_max
+				    : backlight_led.brightness);
+
+	pr_info("DaisyForGaming HBM: %s\n", hbm_enabled ? "on" : "off");
+	return count;
+}
+static DEVICE_ATTR(hbm, 0644, hbm_show, hbm_store);
 
 static ssize_t mdss_fb_get_type(struct device *dev,
 				struct device_attribute *attr, char *buf)
@@ -1408,8 +1450,11 @@ static int mdss_fb_probe(struct platform_device *pdev)
 		backlight_led.max_brightness = mfd->panel_info->brightness_max;
 		if (led_classdev_register(&pdev->dev, &backlight_led))
 			pr_err("led_classdev_register failed\n");
-		else
+		else {
 			lcd_backlight_registered = 1;
+			if (device_create_file(backlight_led.dev, &dev_attr_hbm))
+				pr_err("hbm attr create failed\n");
+		}
 	}
 
 	mdss_fb_init_panel_modes(mfd, pdata);

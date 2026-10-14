@@ -40,6 +40,22 @@ static struct power_supply *batt_psy;
 static DEFINE_MUTEX(fast_charge_lock);
 static struct delayed_work psy_attach_dw;
 
+/*
+ * Charge stop level (battery health): when set (60..95), charging is paused
+ * once the battery reaches that percentage and resumed CHARGE_LIMIT_RESUME_GAP
+ * percent below it. Exposed as
+ * /sys/class/power_supply/battery/charge_stop_level so the DFG Controller's
+ * Battery tab works out of the box. 0 = feature off.
+ */
+#define CHARGE_LIMIT_POLL_MS	20000
+#define CHARGE_LIMIT_RESUME_GAP	4
+#define CHARGE_LIMIT_TEMP_MAX	450	/* tenths of C - never force-charge when hot */
+
+static int charge_stop_level;
+static bool charge_limit_paused;
+static struct delayed_work charge_limit_dw;
+static bool charge_limit_attr_created;
+
 static int fast_charge_set_current_locked(int ma)
 {
 	union power_supply_propval val = { 0, };
@@ -47,11 +63,12 @@ static int fast_charge_set_current_locked(int ma)
 	if (!batt_psy)
 		return -ENODEV;
 
-	/* ma == 0 means "undo our cap, let the charger driver decide" */
-	if (ma == 0)
-		return 0;
-
-	val.intval = ma;
+	/*
+	 * CONSTANT_CHARGE_CURRENT_MAX is in microamps (uA).
+	 * qpnp-smbcharger divides by 1000 to set mA into its BATT_TYPE_FCC_VOTER.
+	 * Convert mA to uA so the driver receives the exact target current.
+	 */
+	val.intval = (ma > 0) ? (ma * 1000) : 0;
 	return power_supply_set_property(batt_psy,
 			POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX, &val);
 }
@@ -72,6 +89,95 @@ static void fast_charge_apply(void)
 				force_fast_charge ? fast_charge_current_ma : 0);
 	mutex_unlock(&fast_charge_lock);
 }
+
+static bool ps_read_int(enum power_supply_property prop, int *out)
+{
+	union power_supply_propval val = { 0, };
+
+	if (!batt_psy)
+		return false;
+	if (power_supply_get_property(batt_psy, prop, &val))
+		return false;
+	*out = val.intval;
+	return true;
+}
+
+static int ps_set_charging(bool enable)
+{
+	union power_supply_propval val = { .intval = enable ? 1 : 0 };
+	int ret;
+
+	if (!batt_psy)
+		return -ENODEV;
+	ret = power_supply_set_property(batt_psy,
+			POWER_SUPPLY_PROP_BATTERY_CHARGING_ENABLED, &val);
+	if (ret)
+		ret = power_supply_set_property(batt_psy,
+				POWER_SUPPLY_PROP_CHARGING_ENABLED, &val);
+	return ret;
+}
+
+static void charge_limit_tick(struct work_struct *work)
+{
+	int cap, temp;
+
+	if (charge_stop_level > 0 && batt_psy) {
+		if (ps_read_int(POWER_SUPPLY_PROP_CAPACITY, &cap) &&
+		    ps_read_int(POWER_SUPPLY_PROP_TEMP, &temp)) {
+			if (!charge_limit_paused &&
+			    cap >= charge_stop_level &&
+			    temp < CHARGE_LIMIT_TEMP_MAX) {
+				if (!ps_set_charging(false)) {
+					charge_limit_paused = true;
+					pr_info("charge_limit: %d%% reached, charging paused\n",
+						cap);
+				}
+			} else if (charge_limit_paused &&
+				   cap <= charge_stop_level - CHARGE_LIMIT_RESUME_GAP) {
+				if (!ps_set_charging(true)) {
+					charge_limit_paused = false;
+					pr_info("charge_limit: %d%%, charging resumed\n",
+						cap);
+				}
+			}
+		}
+	}
+
+	if (charge_stop_level > 0)
+		schedule_delayed_work(&charge_limit_dw,
+				msecs_to_jiffies(CHARGE_LIMIT_POLL_MS));
+}
+
+static ssize_t charge_stop_level_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%d\n",
+			charge_stop_level > 0 ? charge_stop_level : 0);
+}
+
+static ssize_t charge_stop_level_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	int val;
+
+	if (kstrtoint(buf, 10, &val))
+		return -EINVAL;
+	if (val != 0 && (val < 60 || val > 95))
+		return -EINVAL;
+
+	charge_stop_level = val;
+
+	if (val == 0 && charge_limit_paused) {
+		ps_set_charging(true);
+		charge_limit_paused = false;
+	}
+	if (val > 0)
+		mod_delayed_work(system_wq, &charge_limit_dw, 0);
+
+	return count;
+}
+static DEVICE_ATTR(charge_stop_level, 0644,
+		charge_stop_level_show, charge_stop_level_store);
 
 static ssize_t force_fast_charge_show(struct kobject *kobj,
 		struct kobj_attribute *attr, char *buf)
@@ -131,9 +237,36 @@ static struct kobj_attribute fast_charge_current_attr =
 	__ATTR(fast_charge_current, 0644,
 			fast_charge_current_show, fast_charge_current_store);
 
+static bool bypass_charging_active;
+
+static ssize_t bypass_charging_show(struct kobject *kobj,
+		struct kobj_attribute *attr, char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%d\n", bypass_charging_active ? 1 : 0);
+}
+
+static ssize_t bypass_charging_store(struct kobject *kobj,
+		struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	int val;
+
+	if (kstrtoint(buf, 10, &val) || (val != 0 && val != 1))
+		return -EINVAL;
+
+	bypass_charging_active = !!val;
+	ps_set_charging(!bypass_charging_active);
+	pr_info("fast_charge: bypass_charging = %d\n", bypass_charging_active);
+
+	return count;
+}
+static struct kobj_attribute bypass_charging_attr =
+	__ATTR(bypass_charging, 0644,
+			bypass_charging_show, bypass_charging_store);
+
 static struct attribute *fast_charge_attrs[] = {
 	&force_fast_charge_attr.attr,
 	&fast_charge_current_attr.attr,
+	&bypass_charging_attr.attr,
 	NULL,
 };
 
@@ -170,6 +303,16 @@ static void fast_charge_psy_attach(struct work_struct *work)
 	pr_info("fast_charge: attached to battery psy\n");
 	if (force_fast_charge)
 		fast_charge_apply();
+
+	if (!charge_limit_attr_created) {
+		if (device_create_file(&batt_psy->dev,
+				&dev_attr_charge_stop_level))
+			pr_warn("fast_charge: charge_stop_level attr failed\n");
+		else
+			charge_limit_attr_created = true;
+	}
+	if (charge_stop_level > 0)
+		schedule_delayed_work(&charge_limit_dw, 0);
 }
 
 static int __init fast_charge_init(void)
@@ -187,6 +330,7 @@ static int __init fast_charge_init(void)
 	}
 
 	INIT_DELAYED_WORK(&psy_attach_dw, fast_charge_psy_attach);
+	INIT_DELAYED_WORK(&charge_limit_dw, charge_limit_tick);
 	schedule_delayed_work(&psy_attach_dw, msecs_to_jiffies(5000));
 
 	pr_info("fast_charge: DaisyForGaming fast-charge switch ready\n");
@@ -196,6 +340,11 @@ static int __init fast_charge_init(void)
 static void __exit fast_charge_exit(void)
 {
 	cancel_delayed_work_sync(&psy_attach_dw);
+	cancel_delayed_work_sync(&charge_limit_dw);
+	if (charge_limit_paused)
+		ps_set_charging(true);
+	if (charge_limit_attr_created && batt_psy)
+		device_remove_file(&batt_psy->dev, &dev_attr_charge_stop_level);
 	sysfs_remove_group(fast_charge_kobj, &fast_charge_attr_group);
 	kobject_put(fast_charge_kobj);
 }

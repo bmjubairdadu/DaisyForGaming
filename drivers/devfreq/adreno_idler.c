@@ -57,8 +57,8 @@ module_param_named(adreno_idler_idlewait, idlewait, uint, 0664);
 static unsigned int downdifferential = 20;
 module_param_named(adreno_idler_downdifferential, downdifferential, uint, 0664);
 
-/* Master switch to activate the whole routine */
-static bool adreno_idler_active = true;
+/* Master switch to activate the whole routine (default OFF for smooth 60fps/2K/4K video) */
+static bool adreno_idler_active = false;
 module_param_named(adreno_idler_active, adreno_idler_active, bool, 0664);
 
 static unsigned int idlecount = 0;
