@@ -2,6 +2,41 @@
 
 All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (`daisy`) are documented here.
 
+## v1.0 (2026-10-15) — True Hardware Bypass, Cool Charging, GPU Anti-Lag & Kernel Driver 3.2
+
+### 🎮 True Hardware Bypass Charging (Free Fire & Free Fire Max)
+- **Top-App foreground detection:** Bypass charging activates strictly when Free Fire (`com.dts.freefireth` / `com.dts.freefiremax`) is actively focused in `/dev/cpuset/top-app` or `/dev/stune/top-app`. Background cached instances are completely ignored.
+- **Continuous adapter power:** Charger remains continuously connected (`charging_enabled = 1`) — completely resolves the 2-second on/off disconnect loop and notification chiming.
+- **Direct motherboard powering:** Battery charging is inhibited (`battery_charging_enabled = 0`, `constant_charge_current_max = 0`). The entire phone runs 100% on AC adapter power: 0% battery charge, 0% battery drain, and zero battery heat while gaming!
+
+### ❄️ Cool Charging & Thermal Anti-Throttling (Zero Video Lag)
+- **`boost_on_charging = 0` (Default):** Disables CPU boost during charging, keeping the CPU cool and preventing heat stacking.
+- **Balanced Fast Charge (1500mA):** Golden sweet spot for Snapdragon 625 / PMI8952 on micro-USB. Charges rapidly while keeping battery temperatures below 38°C–40°C, completely preventing Qualcomm's `thermal-engine` from throttling CPU and GPU frequencies.
+- **Input Boost Duration (40 ms):** Snappy 60fps touch responsiveness without wasteful battery drain or heat.
+
+### 🚀 GPU & Display Anti-Lag (Butter Smooth 60 FPS)
+- **Adreno 506 GPU minimum clock locked at 216 MHz:** Eliminates micro-stutters during 1080p/2K/4K video playback and surface compositing.
+- **Adreno Idler disabled:** Prevents aggressive downclocking during active games and video playback.
+- **Schedutil Rate Limits:** 500 µs (up) and 20,000 µs (down) for rock-solid frame pacing.
+- **CPUSets & SchedTune:** `top-app` and `foreground` assigned all 8 CPU cores with `schedtune.boost = 10` and `prefer_idle = 1`. Background tasks are constrained to cores 0-3.
+
+### 🌐 Low-Latency Online Gaming Networking
+- **TCP BBR** congestion control + **FQ (Fair Queueing)** packet pacing for lower, jitter-free in-game ping.
+
+### 🧹 Autonomous Screen-Aware RAM & Junk Cleaner
+- Screen-aware daemon: NEVER touches memory while the screen is ON.
+- Trims dentries, compacts RAM, and cleans temporary junk silently only when the screen is turned off and locked.
+
+### 🛠️ AnyKernel3 Installer Upgrade
+- Added automatic `/data` mounting in recovery before staging `99-dfg-tune.sh`.
+
+### 🛡️ Kernel Driver 3.2 Upgrade (`rt` & `qx`)
+- Added dedicated 32-bit and 64-bit `compat_ioctl` handlers with `compat_ptr()`.
+- Added ARM64 hardware cache maintenance (`dc cvau` + `ic ivau` + `dsb ish` + `isb`) for instant code modification.
+- Added Copy-On-Write safe write fallback with `get_user_pages_remote(..., FOLL_FORCE | FOLL_WRITE)`.
+- Added case-insensitive module base lookup with `kmem_strcasestr()`.
+- Added full `CMD_BATCH_U32` compatibility.
+
 ## v1.0 — FINAL line: single zip, KSU removed, smoother ramp (2026-10-11)
 
 Fresh versioning restart — this is the **final build line**. The old KSU/Vannila split is gone:

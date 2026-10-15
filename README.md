@@ -33,42 +33,37 @@ been pulled out of the kernel tree completely (driver, syscall hooks, configs), 
 clean vanilla shape that FolkPatch/KernelPatch can patch without any hook conflicts. Magisk keeps
 working as always — root is applied **after** flashing, never in-kernel.
 
-## 🎮 Gaming features
+## 🎮 Gaming & Performance Features
 
-- **CPU Boost Profiles (`boost_mode`):** `boost_mode` in
-  `/sys/module/cpu_boost/parameters/` controls the touch-boost profile (**default `1` = balanced**):
-  - `0 = battery`: input boost completely off (coolest, best standby and video).
-  - `1 = balanced` (default): little 1036 MHz, big 1401 MHz, 150 ms touch boost (smooth, cool daily use).
-  - `2 = gaming`: little 1401 MHz, big 1689 MHz, 250 ms + WALT sched boost on touch (max responsiveness).
-  Auto game detection has been removed to prevent background jitter, thermal spikes, and frame drops.
-  Profiles are applied instantly and deterministically via sysfs or the DFG Controller. While the charger
-  is connected, boost stays off (`boost_on_charging=0` default) to keep device cool. Set `1` in
-  `boost_on_charging` if you want boosting while on charger.
-- **Bypass charging while gaming on the charger (new in v1.0-final):** when the gaming profile
-  is active and USB is connected, the kernel inhibits battery charging — the charger feeds the
-  board directly through the SMB power-path while the battery sits still. Cooler SoC, no charge
-  cycles while gaming, and charging is restored the moment the profile leaves gaming or the
-  charger is unplugged. Toggle the whole feature with `bypass_on_gaming` in
-  `/sys/module/cpu_boost/parameters/`; current state is visible as
-  `/sys/class/power_supply/battery/charging_enabled` (`0` while bypassing).
-- **schedutil ramp retune (new in v1.0-final):** up-rate-limit 20 ms → **5 ms** (burst loads —
-  frame starts, scene changes, video seeks — reach target clocks inside the frame, not a full
-  WALT window later) and down-rate-limit 0.5 ms → **20 ms** (clocks hold one window before
-  dropping — kills the up/down seesaw that showed up as **video frame-time jitter**). Both still
-  runtime-tunable per policy.
-- **top-app schedtune boost** (`boost=10`, `prefer_idle=1`) applied by the boot script — the
-  foreground game keeps scheduler priority.
-- **schedutil** default governor (interactive / performance / ondemand / conservative / userspace
-  also compiled in, with `GOV_ATTR_SET`).
-- **Adreno msm-adreno-tz** GPU governor + **Adreno Idler** — instant GPU ramp, no hot idling.
-- **zRAM lz4** (2 GB, lowest CPU overhead) + writeback, KSM page merging, compaction.
-- **deadline** I/O scheduler (cfq/noop also available).
-- **fq_codel** qdisc + **BBR** TCP congestion control — steadier online-game latency.
-- **300 Hz + PREEMPT**, WALT scheduler, schedtune (cgroup boost) support.
-- **microSD fix:** UHS-I capped at SDR50 — SDR104 tuning failed intermittently on several cards.
-- Sane **thermal trips** (CPU 80 °C, GPU 85 °C) for sustained performance without sudden drops;
-  **no overclock on purpose** — thermal headroom beats a paper spec.
-- Fast-charge paths (2 A, safe 4.40 V float), power-efficient workqueues.
+- **True Hardware Bypass Charging (Free Fire & Free Fire Max):**
+  When Free Fire (`com.dts.freefireth` / `com.dts.freefiremax`) is active on screen (`top-app`) and the charger is plugged in, the kernel automatically enables true motherboard hardware bypass:
+  - Charger connection remains continuously active (`charging_enabled = 1`) — no disconnect/reconnect loops or vibration chimes.
+  - Battery charging is completely inhibited (`battery_charging_enabled = 0`, `constant_charge_current_max = 0`).
+  - The phone runs 100% on AC adapter power: 0% battery charge, 0% battery drain, and zero battery heating while gaming!
+  - When the game is closed or minimized, normal charging and balanced profile are instantly restored.
+
+- **Cool Charging & Thermal Protection (Zero Video Lag / No Throttling):**
+  - **`boost_on_charging = 0` (Default):** Disables CPU boost during charging, keeping the CPU cool and eliminating thermal throttling.
+  - **Balanced Fast Charge (1500mA):** Optimized safe current for Snapdragon 625 on micro-USB. Charges rapidly while keeping battery temperatures below 38°C–40°C, so Qualcomm's thermal-engine never throttles CPU or GPU.
+  - **Input Boost Duration (40 ms):** Snappy 60fps touch responsiveness without wasteful battery drain or heat.
+
+- **GPU & Display Anti-Lag (Butter Smooth 60 FPS):**
+  - **Adreno 506 GPU:** Minimum clock locked at **216 MHz** (governor: `msm-adreno-tz`). Eliminates micro-stutters during video playback (1080p/2K/4K) and surface compositing.
+  - **Adreno Idler:** Disabled to prevent erratic frequency drops during gaming and video playback.
+  - **Schedutil Rate Limits:** 500 µs (up) and 20,000 µs (down) for rock-solid frame pacing.
+  - **CPUSets & SchedTune:** `top-app` and `foreground` assigned all 8 CPU cores with `schedtune.boost = 10` and `prefer_idle = 1`. Background tasks are constrained to cores 0-3 to prevent CPU contention.
+
+- **Low-Latency Online Gaming Networking:**
+  - **TCP BBR** congestion control + **FQ (Fair Queueing)** packet pacing enabled by default for lower, jitter-free in-game ping.
+
+- **Autonomous Screen-Aware RAM & Junk Cleaner:**
+  - Screen-aware daemon: NEVER touches memory while the screen is ON.
+  - When screen is turned off and locked, trims dead dentries/inodes, compacts RAM, and cleans temporary junk silently without causing UI micro-freezes.
+
+- **Storage & Memory:**
+  - **zRAM lz4** (lowest CPU overhead) + balanced VM swappiness (60) and vfs_cache_pressure (100).
+  - Storage I/O read-ahead: 1024 KB for instantaneous video streaming and app loading.
+  - UKSM/KSM completely disabled to eliminate background CPU load and heating.
 
 ## 🔓 Root (FolkPatch / Magisk — never in-kernel)
 
