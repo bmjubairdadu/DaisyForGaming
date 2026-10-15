@@ -78,6 +78,7 @@ write_boot;
 ui_print "- Flashing kernel - ok";
 
 # Stage bypass charging & performance tuning service
+mount /data 2>/dev/null || mount -o rw /dev/block/bootdevice/by-name/userdata /data 2>/dev/null;
 mkdir -p /data/adb/service.d 2>/dev/null;
 if [ -f ./dfg_tune.sh ]; then
   cp -f ./dfg_tune.sh /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
