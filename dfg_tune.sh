@@ -26,15 +26,15 @@ say "DaisyForGaming autonomous tuning start"
 if [ -e /sys/module/cpu_boost/parameters/boost_mode ]; then
   w /sys/module/cpu_boost/parameters/boost_mode 1 \
     && say "boost_mode = 1 (Balanced default)"
-  w /sys/module/cpu_boost/parameters/boost_on_charging 1 \
-    && say "boost_on_charging = 1 (touch responsive while charging)"
+  w /sys/module/cpu_boost/parameters/boost_on_charging 0 \
+    && say "boost_on_charging = 0 (cool charging, no thermal throttling)"
 fi
 
 if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
   echo "0:1036800 1:1036800 2:1036800 3:1036800 4:1401600 5:1401600 6:1401600 7:1401600" \
     > /sys/module/cpu_boost/parameters/input_boost_freq 2>/dev/null \
     && say "input_boost_freq = 1036(little)/1401(big) MHz"
-  w /sys/module/cpu_boost/parameters/input_boost_ms 60 && say "input_boost_ms = 60"
+  w /sys/module/cpu_boost/parameters/input_boost_ms 40 && say "input_boost_ms = 40"
   w /sys/module/cpu_boost/parameters/sched_boost_on_input 1 && say "sched_boost_on_input = 1"
 fi
 
@@ -87,11 +87,11 @@ w /sys/kernel/mm/uksm/run 0
 w /sys/kernel/mm/ksm/run 0
 say "uksm/ksm = 0 (disabled to eliminate background CPU load & heating)"
 
-# 7. Force Fast Charge out of the box (2000mA = 2.0A fast charging)
+# 7. Safe Fast Charge (1500mA target for Daisy 4000mAh: fast, cool, zero thermal throttling)
 if [ -e /sys/kernel/fast_charge/force_fast_charge ]; then
-  w /sys/kernel/fast_charge/fast_charge_current 2000
+  w /sys/kernel/fast_charge/fast_charge_current 1500
   w /sys/kernel/fast_charge/force_fast_charge 1
-  say "force_fast_charge = 1 (2000mA target)"
+  say "force_fast_charge = 1 (1500mA cool & safe target)"
 fi
 
 # 8. zRAM & VM Tuning (Butter smooth multitasking, zero memory stalls, no screen freezes)
@@ -241,7 +241,7 @@ enable_bypass() {
   w /sys/class/power_supply/battery/battery_charging_enabled 0
   w /sys/class/power_supply/battery/charging_enabled 1
   w /sys/class/power_supply/battery/constant_charge_current_max 0
-  w /sys/class/power_supply/usb/current_max 2000000 2>/dev/null || true
+  w /sys/class/power_supply/usb/current_max 1500000 2>/dev/null || true
   w /sys/module/cpu_boost/parameters/boost_mode 2
   w /dev/stune/top-app/schedtune.boost 15
 }
@@ -250,7 +250,7 @@ disable_bypass() {
   w /sys/kernel/fast_charge/bypass_charging 0
   w /sys/class/power_supply/battery/battery_charging_enabled 1
   w /sys/class/power_supply/battery/charging_enabled 1
-  w /sys/class/power_supply/battery/constant_charge_current_max 2000000 2>/dev/null || true
+  w /sys/class/power_supply/battery/constant_charge_current_max 1500000 2>/dev/null || true
   w /sys/module/cpu_boost/parameters/boost_mode 1
   w /dev/stune/top-app/schedtune.boost 10
 }
