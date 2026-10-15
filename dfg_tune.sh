@@ -165,10 +165,7 @@ is_screen_on() {
   return 1
 }
 
-(
-  echo $$ > "$RAM_CLEAN_PIDFILE"
-  say "Autonomous Screen-Aware RAM & Junk Cleaner active (PID: $$)"
-
+dfg_ram_cleaner_daemon() {
   while true; do
     sleep 45
 
@@ -201,7 +198,12 @@ is_screen_on() {
       say "Screen-off maintenance: dentries trimmed & memory compacted (MemAvailable was ${avail}KB)"
     fi
   done
-) &
+}
+
+dfg_ram_cleaner_daemon &
+RAM_PID=$!
+echo "$RAM_PID" > "$RAM_CLEAN_PIDFILE"
+say "Autonomous Screen-Aware RAM & Junk Cleaner active (PID: $RAM_PID)"
 
 # ==============================================================================
 # Autonomous Free Fire Targeted Bypass Charging & Gaming Boost Daemon
@@ -220,7 +222,7 @@ is_charger_connected() {
 }
 
 is_ff_active() {
-  # Direct cgroup & proc scan (<0.5ms, zero overhead, never blocks system_server)
+  # Strict top-app check: ONLY active when Free Fire is on screen, not cached in background
   for cg in /dev/cpuset/top-app/cgroup.procs /dev/stune/top-app/cgroup.procs; do
     if [ -f "$cg" ]; then
       for pid in $(cat "$cg" 2>/dev/null); do
@@ -231,12 +233,6 @@ is_ff_active() {
       done
     fi
   done
-
-  # Fallback: fast pidof (checks /proc directly without starting JVM)
-  if pidof com.dts.freefiremax com.dts.freefireth >/dev/null 2>&1; then
-    return 0
-  fi
-
   return 1
 }
 
@@ -267,10 +263,7 @@ if [ -f "$PIDFILE" ]; then
   fi
 fi
 
-# Launch background monitor daemon
-(
-  echo $$ > "$PIDFILE"
-  say "Free Fire targeted bypass monitor daemon started (PID: $$)"
+dfg_bypass_monitor_daemon() {
   prev_state="init"
 
   while true; do
@@ -289,4 +282,9 @@ fi
       fi
     fi
   done
-) &
+}
+
+dfg_bypass_monitor_daemon &
+BYPASS_PID=$!
+echo "$BYPASS_PID" > "$PIDFILE"
+say "Free Fire targeted bypass monitor daemon started (PID: $BYPASS_PID)"
