@@ -38,14 +38,21 @@ if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
   w /sys/module/cpu_boost/parameters/sched_boost_on_input 1 && say "sched_boost_on_input = 1"
 fi
 
-# 2. Schedutil governor responsiveness & 60fps frame holding (Prevents video/UI stutter)
+# 2. Schedutil governor responsiveness & CPU Floor (Zero video/UI stutter)
+for cpu in /sys/devices/system/cpu/cpu*/cpufreq; do
+  if [ -d "$cpu" ]; then
+    w "$cpu/scaling_min_freq" 1036800
+  fi
+done
+say "CPU minimum frequency set to 1036MHz (prevents low-clock video stutter)"
+
 for cpu_sched in /sys/devices/system/cpu/cpu*/cpufreq/schedutil; do
   if [ -d "$cpu_sched" ]; then
-    w "$cpu_sched/up_rate_limit_us" 500
+    w "$cpu_sched/up_rate_limit_us" 0
     w "$cpu_sched/down_rate_limit_us" 20000
   fi
 done
-say "schedutil rate limits configured (up: 500us, down: 20000us for 60fps pacing)"
+say "schedutil rate limits configured (up: 0us instant ramp, down: 20000us for 60fps pacing)"
 
 # 3. Top-app & Foreground schedtune & CPUSets responsiveness (Zero video/UI jitter)
 if [ -e /dev/stune/top-app/schedtune.boost ]; then
@@ -53,25 +60,27 @@ if [ -e /dev/stune/top-app/schedtune.boost ]; then
   w /dev/stune/top-app/schedtune.prefer_idle 1 && say "top-app schedtune.prefer_idle = 1"
 fi
 if [ -e /dev/stune/foreground/schedtune.boost ]; then
-  w /dev/stune/foreground/schedtune.boost 5 && say "foreground schedtune.boost = 5"
+  w /dev/stune/foreground/schedtune.boost 10 && say "foreground schedtune.boost = 10"
   w /dev/stune/foreground/schedtune.prefer_idle 1 && say "foreground schedtune.prefer_idle = 1"
 fi
 for cg in /dev/cpuset; do
   [ -d "$cg/top-app" ] && w "$cg/top-app/cpus" 0-7
   [ -d "$cg/foreground" ] && w "$cg/foreground/cpus" 0-7
-  [ -d "$cg/background" ] && w "$cg/background/cpus" 0-3
-  [ -d "$cg/system-background" ] && w "$cg/system-background/cpus" 0-3
+  [ -d "$cg/background" ] && w "$cg/background/cpus" 0-7
+  [ -d "$cg/system-background" ] && w "$cg/system-background/cpus" 0-7
+  [ -d "$cg/restricted" ] && w "$cg/restricted/cpus" 0-7
 done
-say "CPUSets optimized (top-app & foreground assigned all 8 cores)"
+say "CPUSets optimized (all 8 cores available for media decoding & background streaming)"
 
 # 4. GPU & Display Anti-Lag (Butter smooth 60fps / 1080p / 2K / 4K video & gaming)
 w /sys/module/adreno_idler/parameters/adreno_idler_active 0
 w /sys/class/kgsl/kgsl-3d0/devfreq/adreno_idler_active 0
 w /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
-w /sys/class/kgsl/kgsl-3d0/min_clock_mhz 216
-w /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 216000000
+w /sys/class/kgsl/kgsl-3d0/min_clock_mhz 320
+w /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 320000000
+w /sys/class/kgsl/kgsl-3d0/min_pwrlevel 4
 w /sys/class/kgsl/kgsl-3d0/idle_timer 80
-say "GPU governor = msm-adreno-tz (min_clock: 216MHz for 60fps video compositing)"
+say "GPU governor = msm-adreno-tz (min_clock: 320MHz for 3.38GB/s bus bandwidth & smooth 60fps compositing)"
 
 # 5. Storage I/O Read-Ahead Optimization (Smooth 1080p/2K/4K high-bitrate video playback)
 for q in /sys/block/mmcblk*/queue /sys/block/dm-*/queue; do
