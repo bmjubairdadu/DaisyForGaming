@@ -241,9 +241,9 @@ enable_bypass() {
   w /sys/class/power_supply/battery/battery_charging_enabled 0
   w /sys/class/power_supply/battery/charging_enabled 1
   w /sys/class/power_supply/battery/constant_charge_current_max 0
-  w /sys/class/power_supply/usb/current_max 1500000 2>/dev/null || true
-  w /sys/module/cpu_boost/parameters/boost_mode 2
-  w /dev/stune/top-app/schedtune.boost 15
+  w /sys/class/power_supply/usb/current_max 1000000 2>/dev/null || true
+  w /sys/module/cpu_boost/parameters/boost_mode 1
+  w /dev/stune/top-app/schedtune.boost 10
 }
 
 disable_bypass() {
@@ -251,6 +251,7 @@ disable_bypass() {
   w /sys/class/power_supply/battery/battery_charging_enabled 1
   w /sys/class/power_supply/battery/charging_enabled 1
   w /sys/class/power_supply/battery/constant_charge_current_max 1500000 2>/dev/null || true
+  w /sys/class/power_supply/usb/current_max 1500000 2>/dev/null || true
   w /sys/module/cpu_boost/parameters/boost_mode 1
   w /dev/stune/top-app/schedtune.boost 10
 }

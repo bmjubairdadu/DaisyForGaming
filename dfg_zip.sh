@@ -69,22 +69,23 @@ ui_print "- Checking Android version - ok";
 SLOT_SUFFIX=$(getprop ro.boot.slot_suffix 2>/dev/null);
 ui_print "- Checking boot slot - ok";
 
-# Unpack boot image
-dump_boot;
-ui_print "- Unpacking boot image - ok";
+# Flash kernel while preserving recovery ramdisk, SELinux labels, and crypto intact
+split_boot;
+ui_print "- Splitting boot image - ok";
 
-# Flash kernel
-write_boot;
+flash_boot;
 ui_print "- Flashing kernel - ok";
 
-# Stage bypass charging & performance tuning service
-mount /data 2>/dev/null || mount -o rw /dev/block/bootdevice/by-name/userdata /data 2>/dev/null;
-mkdir -p /data/adb/service.d 2>/dev/null;
-if [ -f ./dfg_tune.sh ]; then
-  cp -f ./dfg_tune.sh /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
-  chmod 755 /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
-  rm -f /data/adb/service.d/90-kloder.sh 2>/dev/null;
-  ui_print "- Staging Free Fire bypass & performance tune - ok";
+# Stage bypass charging & performance tuning service if /data is accessible
+if [ -d /data/adb/service.d ] || mount /data 2>/dev/null; then
+  if [ -d /data/adb/service.d ]; then
+    if [ -f ./dfg_tune.sh ]; then
+      cp -f ./dfg_tune.sh /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
+      chmod 755 /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
+      rm -f /data/adb/service.d/90-kloder.sh 2>/dev/null;
+      ui_print "- Staging Free Fire bypass & performance tune - ok";
+    fi;
+  fi;
 fi;
 
 ui_print " ";

@@ -7,6 +7,8 @@ export CROSS_COMPILE=aarch64-linux-gnu-
 export PATH=$PATH:/usr/lib/ccache
 export LLVM=1 LLVM_IAS=1
 export KBUILD_BUILD_USER=daisy KBUILD_BUILD_HOST=daisy
+export KBUILD_BUILD_VERSION=12
+export KBUILD_BUILD_TIMESTAMP="Wed Oct 14 21:17:31 +06 2026"
 
 LOG=$SRC/.dfg_build.log
 : > "$LOG"
