@@ -126,7 +126,7 @@ MODULE_PARM_DESC(lmk_aggressive,
  * too low, and task killing can be more aggressive when too
  * high.
  */
-static int free_file_limit = 20000;
+static int free_file_limit = 4096;
 module_param_named(free_file_limit, free_file_limit, int, 0644);
 
 /*
@@ -443,20 +443,12 @@ static void sort_and_kill_tasks(void)
 
 	/*
 	 * If no tasks were killed under high memory pressure,
-	 * kill the protected tasks as well.
-	 *
-	 * Kill the services first, and then the foreground tasks.
+	 * kill background services if needed. Never kill foreground apps.
 	 */
 	if (!killcnt && is_low_mem() == LOWMEM_CRITICAL) {
-		while (svcnt || fgcnt) {
+		while (svcnt) {
 			if (is_low_mem() < LOWMEM_CRITICAL)
 				return;
-
-			if (!svcnt) {
-				select = selected[fg[--fgcnt]];
-				kill_task(select);
-				continue;
-			}
 
 			select = selected[sv[--svcnt]];
 			kill_task(select);
@@ -490,7 +482,7 @@ static void proc_tasks(struct work_struct *work)
 			continue;
 
 		adj = p->signal->oom_score_adj;
-		if (adj < 0) {
+		if (adj <= 0) {
 			task_unlock(p);
 			continue;
 		}

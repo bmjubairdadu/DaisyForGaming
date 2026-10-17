@@ -26,8 +26,8 @@ say "DaisyForGaming autonomous tuning start"
 if [ -e /sys/module/cpu_boost/parameters/boost_mode ]; then
   w /sys/module/cpu_boost/parameters/boost_mode 1 \
     && say "boost_mode = 1 (Balanced default)"
-  w /sys/module/cpu_boost/parameters/boost_on_charging 0 \
-    && say "boost_on_charging = 0 (cool charging, no thermal throttling)"
+  w /sys/module/cpu_boost/parameters/boost_on_charging 1 \
+    && say "boost_on_charging = 1 (touch boost active while charging)"
 fi
 
 if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
@@ -48,11 +48,11 @@ say "CPU minimum frequency set to 1036MHz (prevents low-clock video stutter)"
 
 for cpu_sched in /sys/devices/system/cpu/cpu*/cpufreq/schedutil; do
   if [ -d "$cpu_sched" ]; then
-    w "$cpu_sched/up_rate_limit_us" 0
+    w "$cpu_sched/up_rate_limit_us" 500
     w "$cpu_sched/down_rate_limit_us" 20000
   fi
 done
-say "schedutil rate limits configured (up: 0us instant ramp, down: 20000us for 60fps pacing)"
+say "schedutil rate limits configured (up: 500us instant ramp, down: 20000us for 60fps pacing)"
 
 # 3. Top-app & Foreground schedtune & CPUSets responsiveness (Zero video/UI jitter)
 if [ -e /dev/stune/top-app/schedtune.boost ]; then
@@ -66,21 +66,21 @@ fi
 for cg in /dev/cpuset; do
   [ -d "$cg/top-app" ] && w "$cg/top-app/cpus" 0-7
   [ -d "$cg/foreground" ] && w "$cg/foreground/cpus" 0-7
-  [ -d "$cg/background" ] && w "$cg/background/cpus" 0-7
-  [ -d "$cg/system-background" ] && w "$cg/system-background/cpus" 0-7
-  [ -d "$cg/restricted" ] && w "$cg/restricted/cpus" 0-7
+  [ -d "$cg/background" ] && w "$cg/background/cpus" 0-3
+  [ -d "$cg/system-background" ] && w "$cg/system-background/cpus" 0-3
+  [ -d "$cg/restricted" ] && w "$cg/restricted/cpus" 0-3
 done
-say "CPUSets optimized (all 8 cores available for media decoding & background streaming)"
+say "CPUSets optimized (top-app & foreground on all 8 cores; background isolated to 0-3)"
 
 # 4. GPU & Display Anti-Lag (Butter smooth 60fps / 1080p / 2K / 4K video & gaming)
 w /sys/module/adreno_idler/parameters/adreno_idler_active 0
 w /sys/class/kgsl/kgsl-3d0/devfreq/adreno_idler_active 0
 w /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
-w /sys/class/kgsl/kgsl-3d0/min_clock_mhz 320
-w /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 320000000
-w /sys/class/kgsl/kgsl-3d0/min_pwrlevel 4
+w /sys/class/kgsl/kgsl-3d0/min_clock_mhz 216
+w /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 216000000
+w /sys/class/kgsl/kgsl-3d0/min_pwrlevel 5
 w /sys/class/kgsl/kgsl-3d0/idle_timer 80
-say "GPU governor = msm-adreno-tz (min_clock: 320MHz for 3.38GB/s bus bandwidth & smooth 60fps compositing)"
+say "GPU governor = msm-adreno-tz (min_clock: 216MHz for smooth 60fps compositing without excess heat)"
 
 # 5. Storage I/O Read-Ahead Optimization (Smooth 1080p/2K/4K high-bitrate video playback)
 for q in /sys/block/mmcblk*/queue /sys/block/dm-*/queue; do
@@ -131,9 +131,9 @@ w /proc/sys/vm/dirty_ratio 20 && say "dirty_ratio = 20 (smooth buffering, no I/O
 w /proc/sys/vm/dirty_background_ratio 10 && say "dirty_background_ratio = 10"
 w /proc/sys/vm/dirty_expire_centisecs 200
 w /proc/sys/vm/dirty_writeback_centisecs 500
-w /proc/sys/vm/min_free_kbytes 32768 && say "min_free_kbytes = 32768 (smooth reclaim headroom)"
-w /proc/sys/vm/extra_free_kbytes 24576 && say "extra_free_kbytes = 24576"
-w /proc/sys/vm/watermark_scale_factor 200 && say "watermark_scale_factor = 200"
+w /proc/sys/vm/min_free_kbytes 8192 && say "min_free_kbytes = 8192 (smooth reclaim headroom)"
+w /proc/sys/vm/extra_free_kbytes 0 && say "extra_free_kbytes = 0 (prevents premature kswapd thrashing)"
+w /proc/sys/vm/watermark_scale_factor 10 && say "watermark_scale_factor = 10 (standard balanced watermarks)"
 w /proc/sys/vm/page-cluster 0 && say "page-cluster = 0"
 
 # 9. Network & Gaming Low Latency (TCP BBR & packet pacing)

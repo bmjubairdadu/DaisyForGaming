@@ -94,10 +94,10 @@ module_param_cb(input_boost_enabled, &input_boost_enabled_ops, &input_boost_enab
 MODULE_PARM_DESC(input_boost_enabled,
 	"Master input boost switch (DFG Controller: Gaming > Input Boost toggle)");
 
-static bool boost_on_charging;
+static bool boost_on_charging = true;
 module_param(boost_on_charging, bool, 0644);
 MODULE_PARM_DESC(boost_on_charging,
-	"Apply CPU input boost while USB/AC is connected (0 = off, keeps charging fast and cool)");
+	"Apply CPU input boost while USB/AC is connected (0 = off, 1 = on)");
 
 static bool usb_charger_online(void)
 {
