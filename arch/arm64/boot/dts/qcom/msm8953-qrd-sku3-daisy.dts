@@ -83,10 +83,10 @@
 #include "sakura/sakura-camera.dtsi"
 #include "sakura/general-clk.dtsi"
 
-/* DaisyForGaming: safe fast charging (JUBAIR HOSEN) - 6 thermal levels matching thermal-engine so charging never shuts down unexpectedly */
+/* DaisyForGaming: cool safe charging (JUBAIR HOSEN) - 1500mA target, 500mA floor so charging never disconnects */
 &qpnp_smbcharger {
-	qcom,fastchg-current-ma = <2000>;
-	qcom,thermal-mitigation = <2000 1500 1200 900 600 0>;
+	qcom,fastchg-current-ma = <1500>;
+	qcom,thermal-mitigation = <1500 1300 1100 900 700 500>;
 };
 
 /*

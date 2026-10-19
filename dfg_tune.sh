@@ -41,10 +41,10 @@ fi
 # 2. Schedutil governor responsiveness & CPU Floor (Zero video/UI stutter)
 for cpu in /sys/devices/system/cpu/cpu*/cpufreq; do
   if [ -d "$cpu" ]; then
-    w "$cpu/scaling_min_freq" 1036800
+    w "$cpu/scaling_min_freq" 652800
   fi
 done
-say "CPU minimum frequency set to 1036MHz (prevents low-clock video stutter)"
+say "CPU minimum frequency set to 652MHz (cool idle & zero thermal heating)"
 
 for cpu_sched in /sys/devices/system/cpu/cpu*/cpufreq/schedutil; do
   if [ -d "$cpu_sched" ]; then
@@ -73,14 +73,14 @@ done
 say "CPUSets optimized (top-app & foreground on all 8 cores; background isolated to 0-3)"
 
 # 4. GPU & Display Anti-Lag (Butter smooth 60fps / 1080p / 2K / 4K video & gaming)
-w /sys/module/adreno_idler/parameters/adreno_idler_active 0
-w /sys/class/kgsl/kgsl-3d0/devfreq/adreno_idler_active 0
+w /sys/module/adreno_idler/parameters/adreno_idler_active 1
+w /sys/class/kgsl/kgsl-3d0/devfreq/adreno_idler_active 1
 w /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
-w /sys/class/kgsl/kgsl-3d0/min_clock_mhz 216
-w /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 216000000
-w /sys/class/kgsl/kgsl-3d0/min_pwrlevel 5
-w /sys/class/kgsl/kgsl-3d0/idle_timer 80
-say "GPU governor = msm-adreno-tz (min_clock: 216MHz for smooth 60fps compositing without excess heat)"
+w /sys/class/kgsl/kgsl-3d0/min_clock_mhz 133
+w /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 133300000
+w /sys/class/kgsl/kgsl-3d0/min_pwrlevel 6
+w /sys/class/kgsl/kgsl-3d0/idle_timer 64
+say "GPU governor = msm-adreno-tz (dynamic 133-650MHz scaling, cool & butter smooth)"
 
 # 5. Storage I/O Read-Ahead Optimization (Smooth 1080p/2K/4K high-bitrate video playback)
 for q in /sys/block/mmcblk*/queue /sys/block/dm-*/queue; do
@@ -136,13 +136,9 @@ w /proc/sys/vm/extra_free_kbytes 0 && say "extra_free_kbytes = 0 (prevents prema
 w /proc/sys/vm/watermark_scale_factor 10 && say "watermark_scale_factor = 10 (standard balanced watermarks)"
 w /proc/sys/vm/page-cluster 0 && say "page-cluster = 0"
 
-# 9. Network & Gaming Low Latency (TCP BBR & packet pacing)
-w /proc/sys/net/ipv4/tcp_congestion_control bbr
-w /proc/sys/net/core/default_qdisc fq
-w /proc/sys/net/ipv4/tcp_notsent_lowat 16384
-w /proc/sys/net/ipv4/tcp_fastopen 3
-w /proc/sys/net/ipv4/tcp_syncookies 1
-say "Network TCP BBR & low-latency pacing configured"
+# 9. Network Low Latency (Zero data/wifi lag)
+w /proc/sys/net/ipv4/tcp_congestion_control cubic
+say "Network TCP cubic configured (stable, zero data/wifi lag)"
 
 say "gov: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null)"
 say "DaisyForGaming boot tuning completed successfully"
@@ -250,7 +246,6 @@ enable_bypass() {
   w /sys/class/power_supply/battery/battery_charging_enabled 0
   w /sys/class/power_supply/battery/charging_enabled 1
   w /sys/class/power_supply/battery/constant_charge_current_max 0
-  w /sys/class/power_supply/usb/current_max 1000000 2>/dev/null || true
   w /sys/module/cpu_boost/parameters/boost_mode 1
   w /dev/stune/top-app/schedtune.boost 10
 }
@@ -260,7 +255,6 @@ disable_bypass() {
   w /sys/class/power_supply/battery/battery_charging_enabled 1
   w /sys/class/power_supply/battery/charging_enabled 1
   w /sys/class/power_supply/battery/constant_charge_current_max 1500000 2>/dev/null || true
-  w /sys/class/power_supply/usb/current_max 1500000 2>/dev/null || true
   w /sys/module/cpu_boost/parameters/boost_mode 1
   w /dev/stune/top-app/schedtune.boost 10
 }
