@@ -1,19 +1,27 @@
 #!/system/bin/sh
-# DaisyForGaming System Boot Tuning & Autonomous Free Fire Bypass Charging Service
-# Author: JUBAIR HOSEN
+# DaisyForGaming System Boot Tuning
+# Device: Xiaomi Mi A2 Lite (daisy) - MSM8953
+# Clean, Cool, & Anti-Lag Optimization (No background loops)
 
 LOG=/data/local/tmp/dfg_tune.log
-PIDFILE=/data/local/tmp/dfg_ff_monitor.pid
-
 say() { echo "$(date '+%H:%M:%S') $*" >> "$LOG"; }
 w() { echo "$2" > "$1" 2>/dev/null; }
 
-# Rotate log if too big
+# Rotate log if too big (> 100KB)
 if [ -f "$LOG" ] && [ "$(wc -c < "$LOG")" -gt 102400 ]; then
   : > "$LOG"
 fi
 
-# Wait for boot completion (up to 120s)
+# Clean up legacy daemon pid files and kill if still lingering
+for pidf in /data/local/tmp/dfg_ff_monitor.pid /data/local/tmp/dfg_ram_cleaner.pid; do
+  if [ -f "$pidf" ]; then
+    old_pid=$(cat "$pidf" 2>/dev/null)
+    [ -n "$old_pid" ] && [ -d "/proc/$old_pid" ] && kill -9 "$old_pid" 2>/dev/null
+    rm -f "$pidf" 2>/dev/null
+  fi
+done
+
+# Wait for Android boot completion (up to 120s)
 i=0
 while [ $i -lt 120 ]; do
   [ "$(getprop sys.boot_completed)" = "1" ] && break
@@ -22,12 +30,13 @@ done
 
 say "DaisyForGaming autonomous tuning start"
 
-# 1. CPU Boost Profile & Touch Boost
+# 1. CPU Boost Profile & Touch Boost (Balanced & Cool)
 if [ -e /sys/module/cpu_boost/parameters/boost_mode ]; then
   w /sys/module/cpu_boost/parameters/boost_mode 1 \
-    && say "boost_mode = 1 (Balanced default)"
-  w /sys/module/cpu_boost/parameters/boost_on_charging 1 \
-    && say "boost_on_charging = 1 (touch boost active while charging)"
+    && say "boost_mode = 1 (Balanced)"
+  # Disable touch boost while charging to prevent device overheating on charger
+  w /sys/module/cpu_boost/parameters/boost_on_charging 0 \
+    && say "boost_on_charging = 0 (cool charging: no CPU boost while plugged in)"
 fi
 
 if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
@@ -35,34 +44,28 @@ if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
     > /sys/module/cpu_boost/parameters/input_boost_freq 2>/dev/null \
     && say "input_boost_freq = 1036(little)/1401(big) MHz"
   w /sys/module/cpu_boost/parameters/input_boost_ms 40 && say "input_boost_ms = 40"
-  w /sys/module/cpu_boost/parameters/sched_boost_on_input 1 && say "sched_boost_on_input = 1"
+  w /sys/module/cpu_boost/parameters/sched_boost_on_input 0 && say "sched_boost_on_input = 0 (cool & smooth)"
 fi
 
-# 2. Schedutil governor responsiveness & CPU Floor (Zero video/UI stutter)
-for cpu in /sys/devices/system/cpu/cpu*/cpufreq; do
-  if [ -d "$cpu" ]; then
-    w "$cpu/scaling_min_freq" 652800
-  fi
-done
-say "CPU minimum frequency set to 652MHz (cool idle & zero thermal heating)"
-
+# 2. Schedutil Governor (Instant 1ms ramp, smooth 20ms pacing, allow full idle down to cool clocks)
 for cpu_sched in /sys/devices/system/cpu/cpu*/cpufreq/schedutil; do
   if [ -d "$cpu_sched" ]; then
-    w "$cpu_sched/up_rate_limit_us" 500
+    w "$cpu_sched/up_rate_limit_us" 1000
     w "$cpu_sched/down_rate_limit_us" 20000
   fi
 done
-say "schedutil rate limits configured (up: 500us instant ramp, down: 20000us for 60fps pacing)"
+say "schedutil rate limits configured (up: 1000us, down: 20000us)"
 
-# 3. Top-app & Foreground schedtune & CPUSets responsiveness (Zero video/UI jitter)
+# 3. Top-app & Foreground Schedtune & CPUSets
 if [ -e /dev/stune/top-app/schedtune.boost ]; then
-  w /dev/stune/top-app/schedtune.boost 10 && say "top-app schedtune.boost = 10"
+  w /dev/stune/top-app/schedtune.boost 1 && say "top-app schedtune.boost = 1"
   w /dev/stune/top-app/schedtune.prefer_idle 1 && say "top-app schedtune.prefer_idle = 1"
 fi
 if [ -e /dev/stune/foreground/schedtune.boost ]; then
-  w /dev/stune/foreground/schedtune.boost 10 && say "foreground schedtune.boost = 10"
+  w /dev/stune/foreground/schedtune.boost 0 && say "foreground schedtune.boost = 0"
   w /dev/stune/foreground/schedtune.prefer_idle 1 && say "foreground schedtune.prefer_idle = 1"
 fi
+
 for cg in /dev/cpuset; do
   [ -d "$cg/top-app" ] && w "$cg/top-app/cpus" 0-7
   [ -d "$cg/foreground" ] && w "$cg/foreground/cpus" 0-7
@@ -70,40 +73,29 @@ for cg in /dev/cpuset; do
   [ -d "$cg/system-background" ] && w "$cg/system-background/cpus" 0-3
   [ -d "$cg/restricted" ] && w "$cg/restricted/cpus" 0-3
 done
-say "CPUSets optimized (top-app & foreground on all 8 cores; background isolated to 0-3)"
+say "CPUSets optimized (top-app & foreground: 0-7, background: 0-3)"
 
-# 4. GPU & Display Anti-Lag (Butter smooth 60fps / 1080p / 2K / 4K video & gaming)
+# 4. GPU Scaling (Native Qualcomm msm-adreno-tz, dynamic 133-650MHz)
+w /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
 w /sys/module/adreno_idler/parameters/adreno_idler_active 1
 w /sys/class/kgsl/kgsl-3d0/devfreq/adreno_idler_active 1
-w /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
-w /sys/class/kgsl/kgsl-3d0/min_clock_mhz 133
-w /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 133300000
-w /sys/class/kgsl/kgsl-3d0/min_pwrlevel 6
-w /sys/class/kgsl/kgsl-3d0/idle_timer 64
-say "GPU governor = msm-adreno-tz (dynamic 133-650MHz scaling, cool & butter smooth)"
+say "GPU governor = msm-adreno-tz (cool & smooth)"
 
-# 5. Storage I/O Read-Ahead Optimization (Smooth 1080p/2K/4K high-bitrate video playback)
+# 5. Storage I/O Read-Ahead (Smooth 1080p/4K video playback without dropping frames)
 for q in /sys/block/mmcblk*/queue /sys/block/dm-*/queue; do
   if [ -d "$q" ]; then
-    w "$q/read_ahead_kb" 1024
+    w "$q/read_ahead_kb" 512
     w "$q/iostats" 0
   fi
 done
-say "Storage read_ahead_kb = 1024 (optimized for HD/4K playback)"
+say "Storage read_ahead_kb = 512 (smooth video buffering)"
 
-# 6. Disable UKSM/KSM completely (Eliminates background page scanning, CPU heating & video lag)
+# 6. Disable UKSM/KSM (Eliminates background CPU scanning, stops overheating)
 w /sys/kernel/mm/uksm/run 0
 w /sys/kernel/mm/ksm/run 0
-say "uksm/ksm = 0 (disabled to eliminate background CPU load & heating)"
+say "uksm/ksm = 0 (disabled to eliminate background CPU load)"
 
-# 7. Safe Fast Charge (1500mA target for Daisy 4000mAh: fast, cool, zero thermal throttling)
-if [ -e /sys/kernel/fast_charge/force_fast_charge ]; then
-  w /sys/kernel/fast_charge/fast_charge_current 1500
-  w /sys/kernel/fast_charge/force_fast_charge 1
-  say "force_fast_charge = 1 (1500mA cool & safe target)"
-fi
-
-# 8. zRAM & VM Tuning (Butter smooth multitasking, zero memory stalls, no screen freezes)
+# 7. zRAM & VM Tuning (Smooth multitasking, zero cache dropping, zero video stutter)
 if [ -b /dev/block/zram0 ]; then
   ALG=$(cat /sys/block/zram0/comp_algorithm 2>/dev/null | tr '\n' ' ')
   case "$ALG" in
@@ -125,170 +117,20 @@ if [ -b /dev/block/zram0 ]; then
   done
 fi
 
-w /proc/sys/vm/vfs_cache_pressure 100 && say "vfs_cache_pressure = 100 (balanced dentry/inode cache)"
+w /proc/sys/vm/vfs_cache_pressure 100 && say "vfs_cache_pressure = 100"
 w /proc/sys/vm/swappiness 60 && say "swappiness = 60"
-w /proc/sys/vm/dirty_ratio 20 && say "dirty_ratio = 20 (smooth buffering, no I/O stalls)"
+w /proc/sys/vm/dirty_ratio 20 && say "dirty_ratio = 20"
 w /proc/sys/vm/dirty_background_ratio 10 && say "dirty_background_ratio = 10"
 w /proc/sys/vm/dirty_expire_centisecs 200
 w /proc/sys/vm/dirty_writeback_centisecs 500
-w /proc/sys/vm/min_free_kbytes 8192 && say "min_free_kbytes = 8192 (smooth reclaim headroom)"
-w /proc/sys/vm/extra_free_kbytes 0 && say "extra_free_kbytes = 0 (prevents premature kswapd thrashing)"
-w /proc/sys/vm/watermark_scale_factor 10 && say "watermark_scale_factor = 10 (standard balanced watermarks)"
+w /proc/sys/vm/min_free_kbytes 8192 && say "min_free_kbytes = 8192"
+w /proc/sys/vm/extra_free_kbytes 0 && say "extra_free_kbytes = 0"
+w /proc/sys/vm/watermark_scale_factor 10 && say "watermark_scale_factor = 10"
 w /proc/sys/vm/page-cluster 0 && say "page-cluster = 0"
 
-# 9. Network Low Latency (Zero data/wifi lag)
-w /proc/sys/net/ipv4/tcp_congestion_control cubic
-say "Network TCP cubic configured (stable, zero data/wifi lag)"
+# 8. Network TCP Tuning (Smooth streaming for YouTube/Facebook/Browsing)
+w /proc/sys/net/ipv4/tcp_congestion_control westwood 2>/dev/null || w /proc/sys/net/ipv4/tcp_congestion_control cubic
+say "TCP congestion control configured"
 
 say "gov: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null)"
-say "DaisyForGaming boot tuning completed successfully"
-
-# ==============================================================================
-# Autonomous RAM & Application Junk Cleaner Daemon
-# Screen-Aware: NEVER touches memory while screen is ON (zero freezes / zero video lag).
-# Cleans filesystem junk and maintains RAM health silently when phone is asleep.
-# ==============================================================================
-RAM_CLEAN_PIDFILE=/data/local/tmp/dfg_ram_cleaner.pid
-if [ -f "$RAM_CLEAN_PIDFILE" ]; then
-  OLD_PID=$(cat "$RAM_CLEAN_PIDFILE" 2>/dev/null)
-  [ -n "$OLD_PID" ] && [ -d "/proc/$OLD_PID" ] && kill -9 "$OLD_PID" 2>/dev/null
-fi
-
-is_screen_on() {
-  # 1. Backlight brightness
-  bl=$(cat /sys/class/leds/lcd-backlight/brightness 2>/dev/null)
-  [ -n "$bl" ] && [ "$bl" -gt 0 ] && return 0
-
-  # 2. Framebuffer blank status (0 = ON / UNBLANK)
-  fb=$(cat /sys/class/graphics/fb0/blank 2>/dev/null)
-  [ "$fb" = "0" ] && return 0
-
-  # 3. DRM CRTC active
-  crtc=$(cat /sys/class/drm/card0/sde-crtc-0/active 2>/dev/null)
-  [ "$crtc" = "1" ] && return 0
-
-  return 1
-}
-
-dfg_ram_cleaner_daemon() {
-  while true; do
-    sleep 45
-
-    # Ensure UKSM/KSM remains disabled
-    [ -e /sys/kernel/mm/uksm/run ] && echo 0 > /sys/kernel/mm/uksm/run 2>/dev/null
-    [ -e /sys/kernel/mm/ksm/run ] && echo 0 > /sys/kernel/mm/ksm/run 2>/dev/null
-
-    # If user is actively using the phone (screen ON): DO NOT TOUCH MEMORY!
-    if is_screen_on; then
-      continue
-    fi
-
-    # User is NOT using phone (screen OFF / locked). Confirm screen stays off for 15s:
-    sleep 15
-    if is_screen_on; then
-      continue
-    fi
-
-    # Clean storage junk files silently
-    rm -rf /data/tombstones/* /data/system/dropbox/* /data/anr/* 2>/dev/null
-    rm -rf /data/local/tmp/kflash /data/local/tmp/ak3 /data/local/tmp/test 2>/dev/null
-    rm -f /data/local/tmp/*.log.bak 2>/dev/null
-
-    # Check free memory while screen is OFF
-    avail=$(awk '/MemAvailable:/ {print $2}' /proc/meminfo 2>/dev/null)
-    if [ -n "$avail" ] && [ "$avail" -lt 307200 ]; then
-      # Free dentries/inodes safely without evicting active app code
-      echo 2 > /proc/sys/vm/drop_caches 2>/dev/null
-      echo 1 > /proc/sys/vm/compact_memory 2>/dev/null
-      say "Screen-off maintenance: dentries trimmed & memory compacted (MemAvailable was ${avail}KB)"
-    fi
-  done
-}
-
-dfg_ram_cleaner_daemon &
-RAM_PID=$!
-echo "$RAM_PID" > "$RAM_CLEAN_PIDFILE"
-say "Autonomous Screen-Aware RAM & Junk Cleaner active (PID: $RAM_PID)"
-
-# ==============================================================================
-# Autonomous Free Fire Targeted Bypass Charging & Gaming Boost Daemon
-# Targets: com.dts.freefiremax and com.dts.freefireth
-# When running & plugged in: Bypass charging ON (Direct adapter power, 0 battery charge)
-# When unplugged or game closed: Normal charging & balanced profile restored.
-# ==============================================================================
-
-is_charger_connected() {
-  [ "$(cat /sys/class/power_supply/usb/present 2>/dev/null)" = "1" ] && return 0
-  [ "$(cat /sys/class/power_supply/usb/online 2>/dev/null)" = "1" ] && return 0
-  case "$(cat /sys/class/power_supply/battery/status 2>/dev/null)" in
-    "Charging"|"Full"|"Not charging") return 0 ;;
-  esac
-  return 1
-}
-
-is_ff_active() {
-  # Strict top-app check: ONLY active when Free Fire is on screen, not cached in background
-  for cg in /dev/cpuset/top-app/cgroup.procs /dev/stune/top-app/cgroup.procs; do
-    if [ -f "$cg" ]; then
-      for pid in $(cat "$cg" 2>/dev/null); do
-        cmd=$(tr '\0' ' ' < /proc/$pid/cmdline 2>/dev/null)
-        case "$cmd" in
-          *com.dts.freefiremax*|*com.dts.freefireth*) return 0 ;;
-        esac
-      done
-    fi
-  done
-  return 1
-}
-
-enable_bypass() {
-  w /sys/kernel/fast_charge/bypass_charging 1
-  w /sys/class/power_supply/battery/battery_charging_enabled 0
-  w /sys/class/power_supply/battery/charging_enabled 1
-  w /sys/class/power_supply/battery/constant_charge_current_max 0
-  w /sys/module/cpu_boost/parameters/boost_mode 1
-  w /dev/stune/top-app/schedtune.boost 10
-}
-
-disable_bypass() {
-  w /sys/kernel/fast_charge/bypass_charging 0
-  w /sys/class/power_supply/battery/battery_charging_enabled 1
-  w /sys/class/power_supply/battery/charging_enabled 1
-  w /sys/class/power_supply/battery/constant_charge_current_max 1500000 2>/dev/null || true
-  w /sys/module/cpu_boost/parameters/boost_mode 1
-  w /dev/stune/top-app/schedtune.boost 10
-}
-
-# Kill previous monitor instance if running
-if [ -f "$PIDFILE" ]; then
-  OLD_PID=$(cat "$PIDFILE" 2>/dev/null)
-  if [ -n "$OLD_PID" ] && [ -d "/proc/$OLD_PID" ]; then
-    kill -9 "$OLD_PID" 2>/dev/null
-  fi
-fi
-
-dfg_bypass_monitor_daemon() {
-  prev_state="init"
-
-  while true; do
-    sleep 2
-    if is_charger_connected && is_ff_active; then
-      if [ "$prev_state" != "bypass" ]; then
-        enable_bypass
-        prev_state="bypass"
-        say "Free Fire detected + charger plugged -> BYPASS CHARGING ACTIVE (Phone runs off AC adapter)"
-      fi
-    else
-      if [ "$prev_state" != "normal" ]; then
-        disable_bypass
-        prev_state="normal"
-        say "Free Fire inactive or charger unplugged -> Normal mode restored"
-      fi
-    fi
-  done
-}
-
-dfg_bypass_monitor_daemon &
-BYPASS_PID=$!
-echo "$BYPASS_PID" > "$PIDFILE"
-say "Free Fire targeted bypass monitor daemon started (PID: $BYPASS_PID)"
+say "DaisyForGaming boot tuning completed successfully (clean one-shot execution)"

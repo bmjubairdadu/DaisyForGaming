@@ -2,6 +2,56 @@
 
 All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (`daisy`) are documented here.
 
+## v1.0 Final (2026-10-21) — Hardware Thermal Governor, Zero-Disconnect Charging & Smooth 60FPS
+
+### ❄️ Hardware-Level Thermal Protection (Overheating Fix)
+- **`CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE=y`:** Replaced userspace default governor with standard Qualcomm in-kernel `step_wise` governor. The kernel actively and smoothly controls thermal throttling without depending on userspace `thermal-engine` daemons.
+- **Clean One-Shot Boot Tuning:** Removed background polling `while true` loops in `dfg_tune.sh`. CPU now enters hardware deep sleep normally when inactive, preventing idle drain and heat buildup.
+
+### ⚡ Safe Fast Charging & Zero Disconnects
+- **Calibrated 6-level thermal mitigation table:** Aligned with Xiaomi's stock `sakura-qrd.dtsi` mitigation table `<1500 1200 900 600 300 0>` to eliminate unexpected charger disconnects.
+- **Removed non-existent charger symbols:** Stripped alien SDM845/SM8150 symbols (`CONFIG_QPNP_SMB5`, `CONFIG_SMB1351`) from `daisy_defconfig`.
+
+### 🎮 Smooth 60FPS & Network Stability
+- **Schedutil rate limits:** `up_rate_limit_us=1000` (1ms instant response) and `down_rate_limit_us=20000` (20ms hold) for butter smooth video playback and responsive gaming touch.
+- **Adreno 506 GPU dynamic scaling:** Governed by `msm-adreno-tz` (133–650MHz) for cool operation during video streaming and responsive 60fps frame pacing.
+- **Network stability:** Standard `westwood` and `cubic` TCP congestion control for stable, low-ping gaming.
+
+## Driver 3.2.2 — RT ABI hotfix (2026-10-20)
+
+> **OTA module update only — the v1.0 kernel image and AnyKernel3 zip are
+> unchanged.** The `_modules/` copy and the OTA database both carry the
+> fixed RT binary.
+
+### 🛠️ Fixed
+- **RT `0x801`/`0x802` return convention restored.** 3.1/3.2.1 returned `0`
+  on a successful read/write and `-EIO` on failure — the exact inverse of
+  the legacy RT protocol used by the reference `kmem_337.c` and the
+  embedded 3.0-337 driver. The client treated every successful R/W as a
+  failure (driver loaded, node present, game did nothing). 3.2.2 returns
+  `-EIO` (userspace `-1`, `errno=5`) on success and `0` on failure.
+- **Modbase path buffer 256 → 1024 bytes**, so `d_path()` no longer fails
+  with `-ENAMETOOLONG` on deeply nested Android paths and silently returns
+  a zero base.
+- **Exact legacy RT ioctl surface.** RT implements only `0x801` read,
+  `0x802` write and `0x803` modbase; any other command returns `-EINVAL`,
+  matching the reference RT drivers. The QX `0x804/0x805` handshake is not
+  part of RT.
+- QX is unchanged: `0` success / `-1` failure, with the `0x804/0x805`
+  handshake. The RT and QX conventions are mutually exclusive; they remain
+  separate module variants.
+
+### ✅ Verified
+- **Live daisy phone** (kernel `4.9.337-DaisyForGaming #12`, Magisk root):
+  RT 3.2.2 insmod OK, `/dev/wanbai` 0666, `dmtest` v3 **15/15 PASS**.
+  The RT report exercises only `0x801`/`0x802`/`0x803`. Raw protocol proof:
+  `0x801` success `rc=-1 errno=5 (EIO)`, invalid address `rc=0`; modbase
+  init/libc/linker64/libm/libdl/libbase/libcutils + self/child PASS;
+  own/cross-process read/write and cross-page PASS.
+- **QEMU 4.14.264 ABI harness:** 14/14 + compat32 5/5 + 2500× stress clean.
+- Static: exact vermagic and 48/48 imported CRCs against this tree's
+  `out/Module.symvers`.
+
 ## v1.0 (2026-10-15) — True Hardware Bypass, Cool Charging, GPU Anti-Lag & Kernel Driver 3.2
 
 ### 🎮 True Hardware Bypass Charging (Free Fire & Free Fire Max)

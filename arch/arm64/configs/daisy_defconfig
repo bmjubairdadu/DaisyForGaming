@@ -734,10 +734,10 @@ CONFIG_TCP_CONG_WESTWOOD=y
 CONFIG_TCP_CONG_BBR=y
 # CONFIG_DEFAULT_BIC is not set
 # CONFIG_DEFAULT_CUBIC is not set
-# CONFIG_DEFAULT_WESTWOOD is not set
-CONFIG_DEFAULT_BBR=y
+CONFIG_DEFAULT_WESTWOOD=y
+# CONFIG_DEFAULT_BBR is not set
 # CONFIG_DEFAULT_RENO is not set
-CONFIG_DEFAULT_TCP_CONG="bbr"
+CONFIG_DEFAULT_TCP_CONG="westwood"
 # CONFIG_TCP_MD5SIG is not set
 CONFIG_IPV6=y
 CONFIG_IPV6_ROUTER_PREF=y
@@ -4926,10 +4926,10 @@ CONFIG_AUTO_KPROFILES_FB=y
 # CONFIG_NETHUNTER_SUPPORT is not set
 # ==== DaisyForGaming v1.0 overlay (by DaisyForGaming) ====
 CONFIG_LOCALVERSION="-DaisyForGaming"
+CONFIG_TCP_CONG_WESTWOOD=y
 CONFIG_TCP_CONG_BBR=y
-CONFIG_NET_SCH_FQ=y
-CONFIG_DEFAULT_BBR=y
-CONFIG_DEFAULT_TCP_CONG="bbr"
+CONFIG_DEFAULT_WESTWOOD=y
+CONFIG_DEFAULT_TCP_CONG="westwood"
 CONFIG_IOSCHED_DEADLINE=y
 CONFIG_DEFAULT_DEADLINE=y
 CONFIG_DEFAULT_IOSCHED="deadline"
@@ -5033,14 +5033,12 @@ CONFIG_FB_NOTIFY=y
 CONFIG_USB_CONFIGFS_F_FS=y
 CONFIG_DEVTMPFS=y
 
-# --- Thermal: keep the phone cool (no hard throttle while gaming) ---
-# thermald (userspace) is driven by CONFIG_THERMAL_GOV_USER_SPACE; writable
-# trips let it move limits live. Step-wise stays for the CPU sensors.
+# --- Thermal: keep the phone cool (kernel-level hardware thermal protection) ---
 CONFIG_THERMAL=y
 CONFIG_THERMAL_WRITABLE_TRIPS=y
 CONFIG_THERMAL_GOV_STEP_WISE=y
 CONFIG_THERMAL_GOV_USER_SPACE=y
-CONFIG_THERMAL_DEFAULT_GOV_USER_SPACE=y
+CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE=y
 CONFIG_THERMAL_GOV_LOW_LIMITS=y
 CONFIG_THERMAL_HWMON=y
 CONFIG_THERMAL_OF=y
@@ -5048,15 +5046,9 @@ CONFIG_THERMAL_QPNP=y
 CONFIG_THERMAL_QPNP_ADC_TM=y
 CONFIG_THERMAL_TSENS=y
 
-# --- Fast charging ---
-# SMB1351 USB charger (up to 4.5 A) on the SMB5 PMIC + QG fuel gauge.
-# Live limits are in /sys/class/power_supply/battery/ - see README.
-CONFIG_SMB1351_USB_CHARGER=y
-CONFIG_SMB135X_CHARGER=y
+# --- Fast charging (PMI8952 qpnp-smbcharger & fuel gauge) ---
 CONFIG_QPNP_SMBCHARGER_D1A=y
-CONFIG_QPNP_SMB5=y
 CONFIG_QPNP_FG_D1A=y
-CONFIG_QPNP_QG=y
 
 # --- Magisk / kernel-module host support ---
 # MODVERSIONS now ON (VINTF requirement, see the v1.2.1 overlay block above).
