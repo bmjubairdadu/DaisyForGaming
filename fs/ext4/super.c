@@ -5289,7 +5289,8 @@ static int ext4_statfs(struct dentry *dentry, struct kstatfs *buf)
 	buf->f_fsid = u64_to_fsid(fsid);
 
 #ifdef CONFIG_QUOTA
-	if (ext4_test_inode_flag(dentry->d_inode, EXT4_INODE_PROJINHERIT) &&
+	if (dentry->d_inode &&
+	    ext4_test_inode_flag(dentry->d_inode, EXT4_INODE_PROJINHERIT) &&
 	    sb_has_quota_limits_enabled(sb, PRJQUOTA))
 		ext4_statfs_project(sb, EXT4_I(dentry->d_inode)->i_projid, buf);
 #endif

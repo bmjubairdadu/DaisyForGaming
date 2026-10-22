@@ -50,7 +50,7 @@ static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
 {
 	int retval;
 
-	if (!dentry->d_sb->s_op->statfs)
+	if (!dentry || !dentry->d_sb || !dentry->d_sb->s_op || !dentry->d_sb->s_op->statfs)
 		return -ENOSYS;
 
 	memset(buf, 0, sizeof(*buf));

@@ -29,6 +29,8 @@ static inline bool fscrypt_should_be_processed_by_ice(const struct inode *inode)
 
 static inline int fscrypt_is_ice_capable(const struct super_block *sb)
 {
+	if (!sb || !sb->s_bdev || !sb->s_bdev->bd_disk)
+		return 0;
 	return blk_queue_inlinecrypt(bdev_get_queue(sb->s_bdev));
 }
 

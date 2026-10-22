@@ -58,7 +58,7 @@ say "schedutil rate limits configured (up: 1000us, down: 20000us)"
 
 # 3. Top-app & Foreground Schedtune & CPUSets
 if [ -e /dev/stune/top-app/schedtune.boost ]; then
-  w /dev/stune/top-app/schedtune.boost 1 && say "top-app schedtune.boost = 1"
+  w /dev/stune/top-app/schedtune.boost 5 && say "top-app schedtune.boost = 5 (responsive game task placement)"
   w /dev/stune/top-app/schedtune.prefer_idle 1 && say "top-app schedtune.prefer_idle = 1"
 fi
 if [ -e /dev/stune/foreground/schedtune.boost ]; then
@@ -77,9 +77,9 @@ say "CPUSets optimized (top-app & foreground: 0-7, background: 0-3)"
 
 # 4. GPU Scaling (Native Qualcomm msm-adreno-tz, dynamic 133-650MHz)
 w /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
-w /sys/module/adreno_idler/parameters/adreno_idler_active 1
-w /sys/class/kgsl/kgsl-3d0/devfreq/adreno_idler_active 1
-say "GPU governor = msm-adreno-tz (cool & smooth)"
+w /sys/module/adreno_idler/parameters/adreno_idler_active 0
+w /sys/class/kgsl/kgsl-3d0/devfreq/adreno_idler_active 0
+say "GPU governor = msm-adreno-tz (adreno_idler off: butter smooth 60fps in games)"
 
 # 5. Storage I/O Read-Ahead (Smooth 1080p/4K video playback without dropping frames)
 for q in /sys/block/mmcblk*/queue /sys/block/dm-*/queue; do
