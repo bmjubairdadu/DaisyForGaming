@@ -40,27 +40,28 @@ if [ -e /sys/module/cpu_boost/parameters/boost_mode ]; then
 fi
 
 if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
-  echo "0:1036800 1:1036800 2:1036800 3:1036800 4:1401600 5:1401600 6:1401600 7:1401600" \
+  # Boost only cluster lead cores (CPU0 little, CPU4 big) to avoid heating all 8 cores on every touch
+  echo "0:1036800 1:0 2:0 3:0 4:1036800 5:0 6:0 7:0" \
     > /sys/module/cpu_boost/parameters/input_boost_freq 2>/dev/null \
-    && say "input_boost_freq = 1036(little)/1401(big) MHz"
-  w /sys/module/cpu_boost/parameters/input_boost_ms 40 && say "input_boost_ms = 40"
+    && say "input_boost_freq = 0:1036 4:1036 MHz (cool touch response)"
+  w /sys/module/cpu_boost/parameters/input_boost_ms 30 && say "input_boost_ms = 30"
   w /sys/module/cpu_boost/parameters/sched_boost_on_input 0 && say "sched_boost_on_input = 0 (cool & smooth)"
 fi
 
-# 2. Schedutil Governor (Instant 0.5ms ramp, smooth 20ms hold down for 60fps frame pacing)
+# 2. Schedutil Governor (1ms responsive ramp, quick 4ms cooldown for sustained 60fps & low thermals)
 for cpu_sched in /sys/devices/system/cpu/cpu*/cpufreq/schedutil \
                  /sys/devices/system/cpu/cpufreq/policy*/schedutil \
                  /sys/devices/system/cpu/cpufreq/schedutil; do
   if [ -d "$cpu_sched" ]; then
-    w "$cpu_sched/up_rate_limit_us" 500
-    w "$cpu_sched/down_rate_limit_us" 20000
+    w "$cpu_sched/up_rate_limit_us" 1000
+    w "$cpu_sched/down_rate_limit_us" 4000
   fi
 done
-say "schedutil rate limits configured (up: 500us, down: 20000us)"
+say "schedutil rate limits configured (up: 1000us, down: 4000us - cool & fast)"
 
 # 3. Top-app & Foreground Schedtune & CPUSets
 if [ -e /dev/stune/top-app/schedtune.boost ]; then
-  w /dev/stune/top-app/schedtune.boost 10 && say "top-app schedtune.boost = 10 (low-latency game placement)"
+  w /dev/stune/top-app/schedtune.boost 1 && say "top-app schedtune.boost = 1 (balanced frame delivery)"
   w /dev/stune/top-app/schedtune.prefer_idle 1 && say "top-app schedtune.prefer_idle = 1"
 fi
 if [ -e /dev/stune/foreground/schedtune.boost ]; then
@@ -77,14 +78,14 @@ for cg in /dev/cpuset; do
 done
 say "CPUSets optimized (top-app & foreground: 0-7, background: 0-3)"
 
-# 4. GPU Scaling (Native Qualcomm msm-adreno-tz, dynamic 216-650MHz)
+# 4. GPU Scaling (Native Qualcomm msm-adreno-tz, dynamic 133-650MHz)
 w /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
 w /sys/module/adreno_idler/parameters/adreno_idler_active 0
 w /sys/class/kgsl/kgsl-3d0/devfreq/adreno_idler_active 0
-w /sys/class/kgsl/kgsl-3d0/min_clock_mhz 216
-w /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 216000000
-w /sys/class/kgsl/kgsl-3d0/idle_timer 80
-say "GPU governor = msm-adreno-tz (min 216MHz floor, adreno_idler off: 60fps frame pacing)"
+w /sys/class/kgsl/kgsl-3d0/min_clock_mhz 133
+w /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 133300000
+w /sys/class/kgsl/kgsl-3d0/idle_timer 64
+say "GPU governor = msm-adreno-tz (dynamic 133-650MHz, cool idle, instant 60fps ramp)"
 
 # 5. Storage I/O Read-Ahead & Scheduler (Smooth video buffering & fast game scene loading)
 for q in /sys/block/mmcblk*/queue /sys/block/dm-*/queue; do

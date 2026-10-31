@@ -77,7 +77,12 @@ flash_boot;
 ui_print "- Flashing kernel - ok";
 
 # Stage bypass charging & performance tuning service if /data is accessible
-if [ -d /data/adb/service.d ] || mount /data 2>/dev/null; then
+data_was_mounted=0;
+if grep -q " /data " /proc/mounts 2>/dev/null; then
+  data_was_mounted=1;
+fi;
+
+if [ "$data_was_mounted" = "1" ] || mount /data 2>/dev/null; then
   if [ -d /data/adb/service.d ]; then
     if [ -f ./dfg_tune.sh ]; then
       cp -f ./dfg_tune.sh /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
@@ -85,6 +90,9 @@ if [ -d /data/adb/service.d ] || mount /data 2>/dev/null; then
       rm -f /data/adb/service.d/90-kloder.sh 2>/dev/null;
       ui_print "- Staging Free Fire bypass & performance tune - ok";
     fi;
+  fi;
+  if [ "$data_was_mounted" = "0" ]; then
+    umount /data 2>/dev/null || true;
   fi;
 fi;
 
