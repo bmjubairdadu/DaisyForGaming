@@ -30,13 +30,13 @@ done
 
 say "DaisyForGaming autonomous tuning start"
 
-# 1. CPU Boost Profile & Touch Boost (Balanced & Cool)
+# 1. CPU Boost Profile & Touch Boost (Balanced, Cool & Responsive)
 if [ -e /sys/module/cpu_boost/parameters/boost_mode ]; then
   w /sys/module/cpu_boost/parameters/boost_mode 1 \
     && say "boost_mode = 1 (Balanced)"
-  # Disable touch boost while charging to prevent device overheating on charger
-  w /sys/module/cpu_boost/parameters/boost_on_charging 0 \
-    && say "boost_on_charging = 0 (cool charging: no CPU boost while plugged in)"
+  # Enable touch boost while charging so touch latency doesn't lag while playing plugged in
+  w /sys/module/cpu_boost/parameters/boost_on_charging 1 \
+    && say "boost_on_charging = 1 (touch responsive while plugged in)"
 fi
 
 if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
@@ -47,18 +47,20 @@ if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
   w /sys/module/cpu_boost/parameters/sched_boost_on_input 0 && say "sched_boost_on_input = 0 (cool & smooth)"
 fi
 
-# 2. Schedutil Governor (Instant 1ms ramp, smooth 20ms pacing, allow full idle down to cool clocks)
-for cpu_sched in /sys/devices/system/cpu/cpu*/cpufreq/schedutil; do
+# 2. Schedutil Governor (Instant 0.5ms ramp, smooth 20ms hold down for 60fps frame pacing)
+for cpu_sched in /sys/devices/system/cpu/cpu*/cpufreq/schedutil \
+                 /sys/devices/system/cpu/cpufreq/policy*/schedutil \
+                 /sys/devices/system/cpu/cpufreq/schedutil; do
   if [ -d "$cpu_sched" ]; then
-    w "$cpu_sched/up_rate_limit_us" 1000
+    w "$cpu_sched/up_rate_limit_us" 500
     w "$cpu_sched/down_rate_limit_us" 20000
   fi
 done
-say "schedutil rate limits configured (up: 1000us, down: 20000us)"
+say "schedutil rate limits configured (up: 500us, down: 20000us)"
 
 # 3. Top-app & Foreground Schedtune & CPUSets
 if [ -e /dev/stune/top-app/schedtune.boost ]; then
-  w /dev/stune/top-app/schedtune.boost 5 && say "top-app schedtune.boost = 5 (responsive game task placement)"
+  w /dev/stune/top-app/schedtune.boost 10 && say "top-app schedtune.boost = 10 (low-latency game placement)"
   w /dev/stune/top-app/schedtune.prefer_idle 1 && say "top-app schedtune.prefer_idle = 1"
 fi
 if [ -e /dev/stune/foreground/schedtune.boost ]; then
@@ -75,27 +77,38 @@ for cg in /dev/cpuset; do
 done
 say "CPUSets optimized (top-app & foreground: 0-7, background: 0-3)"
 
-# 4. GPU Scaling (Native Qualcomm msm-adreno-tz, dynamic 133-650MHz)
+# 4. GPU Scaling (Native Qualcomm msm-adreno-tz, dynamic 216-650MHz)
 w /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
 w /sys/module/adreno_idler/parameters/adreno_idler_active 0
 w /sys/class/kgsl/kgsl-3d0/devfreq/adreno_idler_active 0
-say "GPU governor = msm-adreno-tz (adreno_idler off: butter smooth 60fps in games)"
+w /sys/class/kgsl/kgsl-3d0/min_clock_mhz 216
+w /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 216000000
+w /sys/class/kgsl/kgsl-3d0/idle_timer 80
+say "GPU governor = msm-adreno-tz (min 216MHz floor, adreno_idler off: 60fps frame pacing)"
 
-# 5. Storage I/O Read-Ahead (Smooth 1080p/4K video playback without dropping frames)
+# 5. Storage I/O Read-Ahead & Scheduler (Smooth video buffering & fast game scene loading)
 for q in /sys/block/mmcblk*/queue /sys/block/dm-*/queue; do
   if [ -d "$q" ]; then
     w "$q/read_ahead_kb" 512
     w "$q/iostats" 0
+    [ -f "$q/scheduler" ] && w "$q/scheduler" deadline
   fi
 done
-say "Storage read_ahead_kb = 512 (smooth video buffering)"
+say "Storage read_ahead_kb = 512 & deadline scheduler applied"
 
 # 6. Disable UKSM/KSM (Eliminates background CPU scanning, stops overheating)
 w /sys/kernel/mm/uksm/run 0
 w /sys/kernel/mm/ksm/run 0
 say "uksm/ksm = 0 (disabled to eliminate background CPU load)"
 
-# 7. zRAM & VM Tuning (Smooth multitasking, zero cache dropping, zero video stutter)
+# 7. Fast Charging (1500mA cool sweet spot for Snapdragon 625 / PMI8952)
+if [ -e /sys/kernel/fast_charge/force_fast_charge ]; then
+  w /sys/kernel/fast_charge/force_fast_charge 1
+  w /sys/kernel/fast_charge/fast_charge_current 1500
+  say "force_fast_charge = 1 (1500mA cool charge current)"
+fi
+
+# 8. zRAM & VM Tuning (Smooth multitasking, asynchronous kswapd reclaim, zero frame drops)
 if [ -b /dev/block/zram0 ]; then
   ALG=$(cat /sys/block/zram0/comp_algorithm 2>/dev/null | tr '\n' ' ')
   case "$ALG" in
@@ -123,14 +136,17 @@ w /proc/sys/vm/dirty_ratio 20 && say "dirty_ratio = 20"
 w /proc/sys/vm/dirty_background_ratio 10 && say "dirty_background_ratio = 10"
 w /proc/sys/vm/dirty_expire_centisecs 200
 w /proc/sys/vm/dirty_writeback_centisecs 500
-w /proc/sys/vm/min_free_kbytes 8192 && say "min_free_kbytes = 8192"
-w /proc/sys/vm/extra_free_kbytes 0 && say "extra_free_kbytes = 0"
-w /proc/sys/vm/watermark_scale_factor 10 && say "watermark_scale_factor = 10"
+w /proc/sys/vm/min_free_kbytes 16384 && say "min_free_kbytes = 16384 (eliminates direct reclaim frame drops)"
+w /proc/sys/vm/extra_free_kbytes 16384 && say "extra_free_kbytes = 16384"
+w /proc/sys/vm/watermark_scale_factor 150 && say "watermark_scale_factor = 150"
 w /proc/sys/vm/page-cluster 0 && say "page-cluster = 0"
 
-# 8. Network TCP Tuning (Smooth streaming for YouTube/Facebook/Browsing)
-w /proc/sys/net/ipv4/tcp_congestion_control westwood 2>/dev/null || w /proc/sys/net/ipv4/tcp_congestion_control cubic
-say "TCP congestion control configured"
+# 9. Network TCP Tuning (Low-latency BBR/FQ for online gaming & video streaming)
+w /proc/sys/net/core/default_qdisc fq 2>/dev/null
+w /proc/sys/net/ipv4/tcp_congestion_control bbr 2>/dev/null || \
+w /proc/sys/net/ipv4/tcp_congestion_control westwood 2>/dev/null || \
+w /proc/sys/net/ipv4/tcp_congestion_control cubic 2>/dev/null
+say "TCP congestion control configured (BBR/FQ low-jitter gaming pacing)"
 
 say "gov: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null)"
 say "DaisyForGaming boot tuning completed successfully (clean one-shot execution)"
