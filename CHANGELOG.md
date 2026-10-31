@@ -2,30 +2,31 @@
 
 All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (`daisy`) are documented here.
 
-## v1.1 (2026-10-31) — Sound Boost, Recovery Power-Off Fix, Zero Core-Isolation & 60FPS Video/App Anti-Lag
+## v1.1 (2026-10-31) — Recovery Decrypt Fix, Thermal Optimization, Sound Boost & 60FPS Anti-Lag
 
 ### 🔓 Recovery Decryption & Critical Power-Off Fix
-- **Root Cause of Recovery Auto-Shutdown:** In `msm8953-thermal.dtsi`, `modem_trip2` on sensor `pm8953_vadc 0x13` (`case_therm`) was erroneously configured with `type = "critical"` at 75°C (75000 m°C). During recovery data decryption (where crypto threads run across all 8 CPU cores at 2.0 GHz), the thermistor reached 75°C, triggering `orderly_poweroff(true)` in Linux `thermal_core.c` and instantly shutting down the phone.
-- **Trip Point Reclassification:** Reclassified `modem_trip2` to `type = "passive"` at 80°C (mitigating modem PA & modem processor), and created a separate genuine emergency hardware trip `case_crit` at 95°C (95000 m°C). Recovery data decryption now completes cleanly without powering off!
-- **Qualcomm Hardware Entropy (`/dev/hw_random` & `/dev/msm-rng`):** Enabled `CONFIG_HW_RANDOM=y` and `CONFIG_HW_RANDOM_MSM_LEGACY=y` in `daisy_defconfig`. Keymaster HAL (`android.hardware.keymaster@3.0/4.0-service`) now initializes hardware entropy with Qualcomm TrustZone properly in recovery (TWRP/OrangeFox), completely fixing Keymaster SIGABRT crashes and preventing automatic recovery reboot loops into system.
-- **Modern Storage Crypto Checkpoints:** Enabled `CONFIG_DM_BOW=y` (Backup on Write) and `CONFIG_CRYPTO_TWOFISH=y` for Android FBE storage decryption checkpoints.
+- **Fixed Recovery Auto-Shutdown on Decryption:** In `msm8953-thermal.dtsi`, trip point `modem_trip2` on sensor `pm8953_vadc 0x13` (`case_therm`) was incorrectly marked as `type = "critical"` at 75°C (75000 m°C). During storage decryption in recovery (TWRP/OrangeFox), CPU crypto bursts across all 8 cores spiked the case thermistor to 75°C, causing Linux `thermal_core.c` to trigger `orderly_poweroff(true)` and immediately shut down the phone.
+  - Reclassified `modem_trip2` to `type = "passive"` at 80°C to throttle the modem processor and PA without shutting down the phone.
+  - Added a genuine emergency hardware critical trip `case_crit` at 95°C (95000 m°C). Recovery storage decryption now completes smoothly without powering off.
+- **Enabled Qualcomm Hardware Entropy (`/dev/hw_random` & `/dev/msm-rng`):** Enabled `CONFIG_HW_RANDOM=y` and `CONFIG_HW_RANDOM_MSM_LEGACY=y` in `daisy_defconfig`. Keymaster HAL (`android.hardware.keymaster@3.0/4.0-service`) now initializes hardware entropy with Qualcomm TrustZone properly in recovery, fixing Keymaster SIGABRT crashes and preventing automatic recovery reboot loops into system.
+- **Added Modern Storage Crypto Checkpoints:** Enabled `CONFIG_DM_BOW=y` (Backup on Write) and `CONFIG_CRYPTO_TWOFISH=y` for Android FBE storage decryption checkpoints.
 - **Safe `/data` Mount Tracking:** Updated AnyKernel3 ramdisk installer (`dfg_zip.sh`) to track `/data` mount state and safely unmount it if mounted during service staging.
 
-### ⚡ Zero Core-Isolation & Anti-Lag Performance (Fix Overheating & Video Stutter)
-- **Eliminated CPU Core Isolation (`cpu_cooling.c`):** Disabled `sched_isolate_cpu()` core-killing mechanism. All 8 CPU cores now remain unconditionally online under heavy thermal load; the kernel clamps frequencies gracefully to 1.68 GHz / 1.4 GHz floors instead of dropping cores to 652 MHz or taking them offline.
-- **Smooth 60FPS Video & Gaming Frame Pacing (`dfg_tune.sh`):**
-  - Schedutil: Instant `up_rate_limit_us 500` (0.5ms ramp up) and `down_rate_limit_us 20000` (20ms hold down). The 20ms hold down guarantees that 16.6ms video and game frame deadlines are never missed due to premature governor downclocking.
-  - SchedTune: Set `top-app/schedtune.boost 10` and `prefer_idle 1` for instant, stutter-free application launches.
-  - Input Boost: Boosts all 8 cores to 1401 MHz for 60ms with `sched_boost_on_input 1` for instantaneous touch response.
-  - Adreno 506 GPU: Established a 216 MHz minimum clock floor with an 80ms idle timer and disabled `adreno_idler` to ensure smooth 60fps video playback without stutter.
+### ⚡ Anti-Lag Performance & Thermal Overheating Fix
+- **Zero Core-Isolation (All 8 Cores Stay Online):** Disabled `sched_isolate_cpu()` core-killing mechanism in `cpu_cooling.c`. Replaced with graceful frequency clamping to 1.68 GHz / 1.4 GHz floors. Big cluster cores (CPU4–CPU7) never shut down or drop to 652 MHz during thermal load.
+- **Smooth 60FPS Video & App Launching (`dfg_tune.sh`):**
+  - **Schedutil Rate Limits:** `up_rate_limit_us 500` (0.5ms instant ramp) and `down_rate_limit_us 20000` (20ms hold down), guaranteeing smooth 60fps frame pacing and eliminating video/gaming micro-stutters.
+  - **SchedTune:** `top-app/schedtune.boost 10` with `prefer_idle 1` for instantaneous, zero-lag application launches.
+  - **Input Touch Boost:** Boosts all 8 cores to 1401 MHz for 60ms with `sched_boost_on_input 1` for immediate UI touch response.
+  - **Adreno 506 GPU Floor:** Set to 216 MHz minimum floor with an 80ms idle timer and disabled `adreno_idler` for rock-solid 60fps video playback and gaming.
 
-### 🔊 Audio Quality & Volume Boost (Fix Low / Muffled Sound)
-- **Restored ALSA Digital Volume Controls:** Removed `#ifndef CONFIG_SOUND_CONTROL` block in `msm-digital-cdc-legacy.c`. `RX1 Digital Volume`, `RX2 Digital Volume`, `RX3 Digital Volume` (headphones & loudspeaker) and `DEC1 Volume`, `DEC2 Volume` (microphone) are now properly exposed to ALSA mixer. Android's Audio HAL (`audio.primary.msm8953.so` / `mixer_paths.xml`) can now seamlessly adjust digital volume across the full dynamic range.
+### 🔊 Audio Quality & Volume Boost
+- **Restored ALSA Digital Volume Controls:** Removed `#ifndef CONFIG_SOUND_CONTROL` block in `msm-digital-cdc-legacy.c`. `RX1`, `RX2`, `RX3 Digital Volume` and `DEC1`, `DEC2 Volume` are now properly exposed to ALSA mixer. Android's Audio HAL (`audio.primary.msm8953.so` / `mixer_paths.xml`) can now seamlessly adjust digital volume across the full dynamic range.
 - **Autonomous Sysfs Sound Boost (`dfg_tune.sh`):**
-  - Headphone Gain: `+4dB` (L/R) for punchy, clear bass and treble without distortion.
-  - Speaker Gain: `+4dB` for louder, clear media and ringtone playback without speaker rattling.
-  - Mic Gain: `+2dB` for crisp voice pickup during in-game calls (Free Fire, PUBG, Discord) and cellular calls.
-  - Earpiece Gain: `+3dB` for loud, clear phone call audio.
+  - **Headphone Gain:** `+4dB` (L/R) for punchy, clear bass and treble without distortion.
+  - **Speaker Gain:** `+4dB` for louder, clear media and ringtone playback without speaker rattling.
+  - **Mic Gain:** `+2dB` for crisp voice pickup during in-game calls (Free Fire, PUBG, Discord) and cellular calls.
+  - **Earpiece Gain:** `+3dB` for loud, clear phone call audio.
 
 ## v1.0.1 (2026-10-22) — Anti-Lag Gaming, Thermal Optimization & Zero-Overhead Kernel Driver
 
