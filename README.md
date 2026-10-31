@@ -20,13 +20,13 @@
 | Base tree | TogoFire r54 (Linux 4.9.337) |
 | ROM | Android 11 (tested on Lineage-based ROM) |
 
-## ⬇️ Downloads (v1.0 — the final line)
+## ⬇️ Downloads (v1.1)
 
 Grab the zip from the repo root or the [releases page](https://github.com/bmjubairdadu/DaisyForGaming/releases):
 
 | Flashable zip | Root stack | Kernel build |
 |---|---|---|
-| **`DaisyForGaming-v1.0-Gaming-<date>.zip`** | FolkPatch (patch boot) **or** Magisk | vanilla — **no in-kernel root, KernelSU removed** |
+| **`DaisyForGaming-v1.1-Gaming-<date>.zip`** | FolkPatch (patch boot) **or** Magisk | vanilla — **no in-kernel root, KernelSU removed** |
 
 One kernel, one zip. The old KSU + Vanilla dual-release split is gone: KernelSU and SusFS have
 been pulled out of the kernel tree completely (driver, syscall hooks, configs), so the kernel is a

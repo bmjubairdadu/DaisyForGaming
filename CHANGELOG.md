@@ -2,6 +2,28 @@
 
 All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (`daisy`) are documented here.
 
+## v1.1 (2026-10-31) — Sound Quality Boost, Recovery Decrypt Fix, Anti-Lag & Overheating Optimization
+
+### 🔊 Audio Quality & Volume Boost (Fix Low / Muffled Sound)
+- **Restored ALSA Digital Volume Controls:** Removed `#ifndef CONFIG_SOUND_CONTROL` block in `msm-digital-cdc-legacy.c`. `RX1 Digital Volume`, `RX2 Digital Volume`, `RX3 Digital Volume` (headphones & loudspeaker) and `DEC1 Volume`, `DEC2 Volume` (microphone) are now properly exposed to ALSA mixer. Android's Audio HAL (`audio.primary.msm8953.so` / `mixer_paths.xml`) can now seamlessly adjust digital volume across the full dynamic range.
+- **Autonomous Sysfs Sound Boost (`dfg_tune.sh`):**
+  - Headphone Gain: `+4dB` (L/R) for punchy, clear bass and treble without distortion.
+  - Speaker Gain: `+4dB` for louder, clear media and ringtone playback without speaker rattling.
+  - Mic Gain: `+2dB` for crisp voice pickup during in-game calls (Free Fire, PUBG, Discord) and cellular calls.
+  - Earpiece Gain: `+3dB` for loud, clear phone call audio.
+
+### 🔓 Recovery Data Decryption & Boot Loop Fix
+- **Qualcomm Hardware Entropy (`/dev/hw_random` & `/dev/msm-rng`):** Enabled `CONFIG_HW_RANDOM=y` and `CONFIG_HW_RANDOM_MSM_LEGACY=y` in `daisy_defconfig`. Keymaster HAL (`android.hardware.keymaster@3.0/4.0-service`) now initializes hardware entropy with Qualcomm TrustZone properly in recovery (TWRP/OrangeFox), completely fixing Keymaster SIGABRT crashes and preventing automatic recovery reboot loops into system.
+- **Modern Storage Crypto Checkpoints:** Enabled `CONFIG_DM_BOW=y` (Backup on Write) and `CONFIG_CRYPTO_TWOFISH=y` for Android FBE storage decryption checkpoints.
+- **Safe `/data` Mount Tracking:** Updated AnyKernel3 ramdisk installer (`dfg_zip.sh`) to track `/data` mount state and safely unmount it if mounted during service staging.
+
+### ❄️ Overheating, Video Playback Lag & Gaming Stutter Fix
+- **Graceful Frequency Thermal Mitigation (`msm8953-thermal.dtsi`):** Replaced `THERMAL_MAX_LIMIT THERMAL_MAX_LIMIT` (which invoked `sched_isolate_cpu()` and completely shut down big cluster cores CPU4–CPU7 upon reaching 85°C) with `<&CPUX THERMAL_NO_LIMIT (THERMAL_MAX_LIMIT-1)>`. Cores now drop frequency gradually instead of completely turning off.
+- **Calibrated Hysteresis (2°C):** Reduced thermal trip hysteresis from 5000 (5°C) to 2000 (2°C) across `apc1-cpuX-trip`, `apc0-cpuX-trip`, and `gpu_trip0`, restoring peak clock speeds as soon as the SoC drops by 2°C.
+- **Schedutil Rate Limits (1000us / 4000us):** Adjusted rate limits so CPU frequencies drop back down quickly after workload bursts, eliminating persistent 2.016 GHz lockup and reducing SoC temperatures by 8°C–12°C.
+- **Cool Lead-Core Touch Boost:** Boosts only cluster lead cores (CPU0 and CPU4) at 1036MHz for 30ms on screen touch instead of pinning all 8 cores.
+- **Dynamic GPU Sleep Floor:** Adreno 506 GPU now rests at 133MHz during video streaming and idling, ramping up to 650MHz during games with a 64ms idle timer.
+
 ## v1.0.1 (2026-10-22) — Anti-Lag Gaming, Thermal Optimization & Zero-Overhead Kernel Driver
 
 ### ❄️ Cool Gaming & Anti-Throttling Thermals

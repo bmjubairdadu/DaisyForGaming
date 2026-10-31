@@ -149,5 +149,18 @@ w /proc/sys/net/ipv4/tcp_congestion_control westwood 2>/dev/null || \
 w /proc/sys/net/ipv4/tcp_congestion_control cubic 2>/dev/null
 say "TCP congestion control configured (BBR/FQ low-jitter gaming pacing)"
 
+# 10. Sound Quality & Loudness Boost (Crisp, loud & distortion-free audio)
+if [ -d /sys/kernel/sound_control ]; then
+  # Headphone digital gain (+4dB left & right - punchy, clear bass & treble)
+  w /sys/kernel/sound_control/headphone_gain "4 4"
+  # Speaker digital gain (+4dB - boosted media & ringtone loudness without rattle)
+  w /sys/kernel/sound_control/speaker_gain 4
+  # Mic gain (+2dB - clear voice pickup in Free Fire, PUBG, Discord, Calls)
+  w /sys/kernel/sound_control/mic_gain 2
+  # Earpiece gain (+3dB - crisp call volume)
+  w /sys/kernel/sound_control/earpiece_gain 3
+  say "sound_control boost applied: HP +4dB, SPK +4dB, MIC +2dB, EAR +3dB"
+fi
+
 say "gov: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null)"
 say "DaisyForGaming boot tuning completed successfully (clean one-shot execution)"

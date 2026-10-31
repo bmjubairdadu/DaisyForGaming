@@ -1943,14 +1943,12 @@ static const struct soc_enum cf_dec4_enum =
 	SOC_ENUM_SINGLE(MSM89XX_CDC_CORE_TX4_MUX_CTL, 4, 3, cf_text);
 
 static const struct snd_kcontrol_new msm_dig_snd_controls[] = {
-#ifndef CONFIG_SOUND_CONTROL
 	SOC_SINGLE_SX_TLV("DEC1 Volume",
 		MSM89XX_CDC_CORE_TX1_VOL_CTL_GAIN,
 		0, -84, 40, digital_gain),
 	SOC_SINGLE_SX_TLV("DEC2 Volume",
 		  MSM89XX_CDC_CORE_TX2_VOL_CTL_GAIN,
 		0, -84, 40, digital_gain),
-#endif
 	SOC_SINGLE_SX_TLV("DEC3 Volume",
 		  MSM89XX_CDC_CORE_TX3_VOL_CTL_GAIN,
 		0, -84, 40, digital_gain),
@@ -1974,7 +1972,6 @@ static const struct snd_kcontrol_new msm_dig_snd_controls[] = {
 			  MSM89XX_CDC_CORE_IIR2_GAIN_B1_CTL,
 			0,  -84, 40, digital_gain),
 
-#ifndef CONFIG_SOUND_CONTROL
 	SOC_SINGLE_SX_TLV("RX1 Digital Volume",
 		MSM89XX_CDC_CORE_RX1_VOL_CTL_B2_CTL,
 		0, -84, 40, digital_gain),
@@ -1984,7 +1981,6 @@ static const struct snd_kcontrol_new msm_dig_snd_controls[] = {
 	SOC_SINGLE_SX_TLV("RX3 Digital Volume",
 		MSM89XX_CDC_CORE_RX3_VOL_CTL_B2_CTL,
 		0, -84, 40, digital_gain),
-#endif
 
 	SOC_SINGLE_EXT("IIR1 Enable Band1", IIR1, BAND1, 1, 0,
 		msm_dig_cdc_get_iir_enable_audio_mixer,
