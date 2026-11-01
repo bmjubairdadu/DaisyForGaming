@@ -14,67 +14,41 @@ WORK="$SRC/_zipwork/final"
 BASE="$SRC/_ak3base"
 rm -rf "$WORK"; mkdir -p "$WORK"; cd "$WORK"
 cp -r "$BASE"/. .
-rm -f Image.gz-dtb anykernel.sh README.md
+rm -rf .git .github Image.gz-dtb anykernel.sh README.md
 cp "$SRC/$IMAGE" Image.gz-dtb
 echo "[zip] image staged: $(stat -c %s Image.gz-dtb) bytes"
 
 {
 cat <<'AKEOF'
 # AnyKernel3 Ramdisk Mod Script
-## DaisyForGaming by JUBAIR HOSEN (Linux 4.9.337)
+# DaisyForGaming by JUBAIR HOSEN (Linux 4.9.337)
+
 properties() { '
 kernel.string=DaisyForGaming v1.0
-do.devicecheck=0
+do.devicecheck=1
 do.modules=0
 do.systemless=1
 do.cleanup=1
 do.cleanuponabort=0
 device.name1=daisy
 device.name2=daisy_sprout
-supported.versions=9-16
+device.name3=sakura
+device.name4=sakura_india
+supported.versions=
 '; }
 
-BLOCK=/dev/block/bootdevice/by-name/boot;
+# boot shell variables
+BLOCK=boot;
 IS_SLOT_DEVICE=auto;
 RAMDISK_COMPRESSION=auto;
 PATCH_VBMETA_FLAG=auto;
 
+# import functions/variables and setup patching
 . tools/ak3-core.sh;
 
-# Device check
-DEV_MODEL=$(getprop ro.product.device 2>/dev/null);
-DEV_BUILD=$(getprop ro.build.product 2>/dev/null);
-case "$DEV_MODEL $DEV_BUILD" in
-  *daisy*)
-    ui_print "- Checking device - ok";
-    ;;
-  *)
-    case "$(getprop ro.product.vendor.device 2>/dev/null) $(getprop ro.vendor.product.device 2>/dev/null)" in
-      *daisy*)
-        ui_print "- Checking device - ok";
-        ;;
-      *)
-        ui_print "- Checking device - ok";
-        ;;
-    esac;
-    ;;
-esac;
-
-# Android version check
-ROM_VER=$(grep -m1 "^ro.build.version.release=" /system/build.prop 2>/dev/null | cut -d= -f2-);
-[ -z "$ROM_VER" ] && ROM_VER=$(getprop ro.build.version.release 2>/dev/null);
-ui_print "- Checking Android version - ok";
-
-# Boot slot check
-SLOT_SUFFIX=$(getprop ro.boot.slot_suffix 2>/dev/null);
-ui_print "- Checking boot slot - ok";
-
-# Flash kernel while preserving recovery ramdisk, SELinux labels, and crypto intact
-split_boot;
-ui_print "- Splitting boot image - ok";
-
-flash_boot;
-ui_print "- Flashing kernel - ok";
+# boot install
+dump_boot;
+write_boot;
 
 # Stage bypass charging & performance tuning service if /data is accessible
 data_was_mounted=0;
@@ -84,11 +58,12 @@ fi;
 
 if [ "$data_was_mounted" = "1" ] || mount /data 2>/dev/null; then
   if [ -d /data/adb/service.d ]; then
-    if [ -f ./dfg_tune.sh ]; then
-      cp -f ./dfg_tune.sh /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
+    if [ -f "$AKHOME/dfg_tune.sh" ]; then
+      cp -f "$AKHOME/dfg_tune.sh" /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
       chmod 755 /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
       rm -f /data/adb/service.d/90-kloder.sh 2>/dev/null;
-      ui_print "- Staging Free Fire bypass & performance tune - ok";
+      ui_print " ";
+      ui_print "- Free Fire bypass and gaming tune staged: ok";
     fi;
   fi;
   if [ "$data_was_mounted" = "0" ]; then
@@ -97,7 +72,7 @@ if [ "$data_was_mounted" = "1" ] || mount /data 2>/dev/null; then
 fi;
 
 ui_print " ";
-ui_print "- Flashing Done - ok";
+ui_print "- Installation completed successfully!";
 AKEOF
 } > anykernel.sh
 echo "[zip] anykernel.sh: $(wc -l < anykernel.sh) lines"
@@ -113,6 +88,10 @@ cat > banner <<'BAN'
               Developer: JUBAIR HOSEN
 ==================================================
 BAN
+
+# Ensure strict UNIX LF line endings across all text files and scripts
+find . -type f \( -name "*.sh" -o -name "banner" -o -name "update-binary" -o -name "updater-script" \) -exec sed -i 's/\r$//' {} + 2>/dev/null || true
+chmod -R 755 tools META-INF anykernel.sh dfg_tune.sh
 
 rm -f "$OUT"
 zip -q -r -9 "$OUT" .

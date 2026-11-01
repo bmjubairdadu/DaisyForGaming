@@ -66,7 +66,7 @@
 
 | Package | Size | SHA256 Checksum |
 |:---|:---|:---|
-| **`DaisyForGaming-v1.0-Gaming-11-01-2026.zip`** | 18.3 MB (18,307,175 bytes) | `ecfeb0ca2124655c68c3c47a523591a64d1a268bde81ee6a8f662f0ba9ac6121` |
+| **`DaisyForGaming-v1.0-Gaming-11-01-2026.zip`** | 15.2 MB (15,194,378 bytes) | `9955743854bf4adf9b1fd4ca263940aa9e4cc05dc38c54541f29562a96fe20cc` |
 
 Release assets can be downloaded directly from the [GitHub Releases](https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/v1.0) section.
 
