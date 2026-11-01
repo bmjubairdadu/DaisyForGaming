@@ -33,7 +33,8 @@ grep -q '^CONFIG_MODVERSIONS=y' arch/arm64/configs/daisy_defconfig \
   && echo MODVERSIONS_OK || { echo "FATAL: MODVERSIONS off (VINTF)"; exit 1; }
 echo DEFCONFIG_OK
 
-make O=out ARCH=arm64 daisy_defconfig 2>&1 | tail -3
+make O=out ARCH=arm64 daisy_defconfig
+make O=out ARCH=arm64 olddefconfig
 
 echo "=== sanity (must be vanilla-shaped for FolkPatch/Magisk) ==="
 grep -E '^CONFIG_LOCALVERSION=' out/.config
@@ -43,7 +44,13 @@ grep -E '^CONFIG_KALLSYMS=|^CONFIG_KALLSYMS_ALL=|^CONFIG_KPROBES=|^CONFIG_MODVER
 grep -E '^CONFIG_CPU_BOOST=|^CONFIG_INPUT_BOOST_FREQ=|^CONFIG_INPUT_BOOST_FREQ_BIG=|^CONFIG_INPUT_BOOST_DURATION_MS=|^CONFIG_INPUT_BOOST_SCHED=|^CONFIG_ZRAM_DEFAULT_COMP_ALGORITHM=' out/.config
 
 echo "=== build (this takes a while) ==="
-make O=out ARCH=arm64 -j$(nproc) 2>&1 | tee -a "$LOG" | grep -E 'error:|Error [0-9]|Kernel panic' | head -20
+rm -f out/arch/arm64/boot/Image* out/arch/arm64/boot/Image.gz-dtb
+make O=out ARCH=arm64 -j$(nproc) 2>&1 | tee "$LOG" | tail -25
+if [ ! -f out/arch/arm64/boot/Image.gz-dtb ]; then
+  echo "FATAL: Image.gz-dtb build failed!"
+  grep -E 'error:|Error [0-9]|fatal error:' "$LOG" | head -20
+  exit 1
+fi
 echo "--- warnings count: $(grep -c 'warning:' "$LOG" 2>/dev/null) ---"
 
 ls -l out/arch/arm64/boot/Image.gz-dtb && echo IMAGE_OK

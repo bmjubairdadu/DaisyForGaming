@@ -45,12 +45,12 @@ Official release of the **DaisyForGaming** custom kernel for the **Xiaomi Mi A2 
 
 | Package | Size | SHA256 Checksum |
 |:---|:---|:---|
-| **`DaisyForGaming-v1.0-Gaming-11-01-2026.zip`** | 15.2 MB (15,194,636 bytes) | `cd6ed676ce7f9503baee3aa33c7da5b4bf9db1f1e5f903bcb9b2bef3ebf347ce` |
+| **`DaisyForGaming-v1.0-Gaming-11-02-2026.zip`** | 17.3 MB (17,342,687 bytes) | `25d4c15d5e6ab3e403373a74ff8222b84efbdfa24ea82a5bb348f1d959ed9534` |
 
 ### Installation Instructions
-1. Download `DaisyForGaming-v1.0-Gaming-11-01-2026.zip` to device storage.
+1. Download `DaisyForGaming-v1.0-Gaming-11-02-2026.zip` to device storage.
 2. Boot into custom recovery (TWRP or OrangeFox).
 3. Recommended: Back up current `boot` partition.
-4. Flash `DaisyForGaming-v1.0-Gaming-11-01-2026.zip`.
+4. Flash `DaisyForGaming-v1.0-Gaming-11-02-2026.zip`.
 5. Optional: Flash Magisk or patch the boot partition with FolkPatch if root is desired.
 6. Reboot to System.

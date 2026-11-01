@@ -66,7 +66,7 @@
 
 | Package | Size | SHA256 Checksum |
 |:---|:---|:---|
-| **`DaisyForGaming-v1.0-Gaming-11-01-2026.zip`** | 15.2 MB (15,194,636 bytes) | `cd6ed676ce7f9503baee3aa33c7da5b4bf9db1f1e5f903bcb9b2bef3ebf347ce` |
+| **`DaisyForGaming-v1.0-Gaming-11-02-2026.zip`** | 17.3 MB (17,342,687 bytes) | `25d4c15d5e6ab3e403373a74ff8222b84efbdfa24ea82a5bb348f1d959ed9534` |
 
 Release assets can be downloaded directly from the [GitHub Releases](https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/v1.0) section.
 
@@ -75,7 +75,7 @@ Release assets can be downloaded directly from the [GitHub Releases](https://git
 ## Installation
 
 ### Custom Recovery (TWRP / OrangeFox)
-1. Download **`DaisyForGaming-v1.0-Gaming-11-01-2026.zip`** to internal storage or an SD card.
+1. Download **`DaisyForGaming-v1.0-Gaming-11-02-2026.zip`** to internal storage or an SD card.
 2. Reboot into recovery mode.
 3. Recommended: Create a backup of your active `boot` partition.
 4. Navigate to **Install**, select the zip archive, and confirm flash.
