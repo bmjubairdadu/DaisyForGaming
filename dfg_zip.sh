@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-VER="1.1"
+VER="1.0"
 DATESTAMP="$(date +%m-%d-%Y)"
 SRC=/mnt/d/DaisyForGaming
 cd "$SRC"
@@ -23,7 +23,7 @@ cat <<'AKEOF'
 # AnyKernel3 Ramdisk Mod Script
 ## DaisyForGaming by JUBAIR HOSEN (Linux 4.9.337)
 properties() { '
-kernel.string=DaisyForGaming v1.1
+kernel.string=DaisyForGaming v1.0
 do.devicecheck=0
 do.modules=0
 do.systemless=1
@@ -108,7 +108,7 @@ grep -q 'DaisyForGaming autonomous tuning start' dfg_tune.sh || { echo "FATAL: b
 
 cat > banner <<'BAN'
 ==================================================
-        DaisyForGaming Kernel v1.1 (Gaming)
+        DaisyForGaming Kernel v1.0 (Gaming)
            Xiaomi Mi A2 Lite (daisy)
               Developer: JUBAIR HOSEN
 ==================================================

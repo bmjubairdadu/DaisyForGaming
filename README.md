@@ -1,162 +1,113 @@
-# DaisyForGaming 🎮
+# DaisyForGaming Kernel 🎮
 
-![Kernel](https://img.shields.io/badge/Linux-4.9.337-orange)
-![Platform](https://img.shields.io/badge/SoC-Snapdragon_625_(MSM8953)-green)
-![Root](https://img.shields.io/badge/root-FolkPatch_/_Magisk-purple)
-![License](https://img.shields.io/badge/license-GPL--2.0-red)
+![Kernel](https://img.shields.io/badge/Linux-4.9.337--DaisyForGaming-orange.svg)
+![Platform](https://img.shields.io/badge/SoC-Snapdragon_625_(MSM8953)-green.svg)
+![Version](https://img.shields.io/badge/Release-v1.0_Official-blue.svg)
+![Developer](https://img.shields.io/badge/Developer-JUBAIR_HOSEN-brightgreen.svg)
+![Root](https://img.shields.io/badge/Root-Magisk_/_FolkPatch-purple.svg)
+![License](https://img.shields.io/badge/License-GPL--2.0-red.svg)
 
-> A performance-tuned custom kernel for the **Xiaomi Mi A2 Lite (daisy)** — built for gaming,
-> one zip, no built-in root: patch it with **FolkPatch** or root it with **Magisk** after flashing.
+> **DaisyForGaming** is a high-performance, gaming-optimized custom kernel specifically crafted for the **Xiaomi Mi A2 Lite (`daisy` / `daisy_sprout`)**. Built on Linux 4.9.337 with Clang 14 and LLD, it features sustained 8-core CPU performance, hardware bypass charging, ALSA digital audio boost, recovery storage decryption fixes, and a 100% anti-cheat safe vanilla kernel structure.
 
 ---
 
-## 📱 Device
+## 📱 Device Specifications
 
-| | |
+| Specification | Details |
 |---|---|
-| Device | Xiaomi Mi A2 Lite (`daisy` / `daisy_sprout`) |
-| SoC | Snapdragon 625 (MSM8953, 8× Cortex-A53) |
-| GPU | Adreno 506 (650 MHz) |
-| Base tree | Linux 4.9.337 (DaisyForGaming) |
-| ROM | Android 11 (tested on Lineage-based ROM) |
+| **Device Model** | Xiaomi Mi A2 Lite (`daisy` / `daisy_sprout`) |
+| **SoC** | Qualcomm Snapdragon 625 (MSM8953, 8× Cortex-A53 up to 2.0 GHz) |
+| **GPU** | Qualcomm Adreno 506 (650 MHz) |
+| **Kernel Version** | Linux 4.9.337-DaisyForGaming |
+| **Compiler** | Clang 14.0.0 (LLVM + LLD Linker) |
+| **Architecture** | ARM64 (`aarch64`) |
+| **Developer** | **JUBAIR HOSEN** |
 
-## ⬇️ Downloads (v1.1)
+---
 
-Grab the zip from the repo root or the [releases page](https://github.com/bmjubairdadu/DaisyForGaming/releases):
+## ⚡ Key Highlights & Features
 
-| Flashable zip | Root stack | Kernel build |
-|---|---|---|
-| **`DaisyForGaming-v1.1-Gaming-<date>.zip`** | FolkPatch (patch boot) **or** Magisk | vanilla — **no in-kernel root, KernelSU removed** |
+### 🔓 1. Recovery Decryption & Stability Fix
+* **Fixed Recovery Auto-Shutdown:** Reclassified the motherboard thermistor trip (`modem_trip2` at 75°C) to passive in `msm8953-thermal.dtsi` and moved critical power-off to 95°C. Storage decryption in TWRP / OrangeFox completes smoothly with zero shutdowns.
+* **Qualcomm Hardware Entropy (`/dev/hw_random` & `/dev/msm-rng`):** Enabled `CONFIG_HW_RANDOM=y` and `CONFIG_HW_RANDOM_MSM_LEGACY=y` in defconfig. Ensures Android Keymaster HAL can communicate with Qualcomm TrustZone during recovery decryption, preventing SIGABRT crashes and reboot loops.
+* **Storage Checkpoints:** Enabled `CONFIG_DM_BOW=y` and `CONFIG_CRYPTO_TWOFISH=y` for Android FBE decryption checkpoints.
 
-One kernel, one zip. The old KSU + Vanilla dual-release split is gone: KernelSU and SusFS have
-been pulled out of the kernel tree completely (driver, syscall hooks, configs), so the kernel is a
-clean vanilla shape that FolkPatch/KernelPatch can patch without any hook conflicts. Magisk keeps
-working as always — root is applied **after** flashing, never in-kernel.
-
-## 🎮 Gaming & Performance Features
-
-- **True Hardware Bypass Charging (Free Fire & Free Fire Max):**
-  When Free Fire (`com.dts.freefireth` / `com.dts.freefiremax`) is active on screen (`top-app`) and the charger is plugged in, the kernel automatically enables true motherboard hardware bypass:
-  - Charger connection remains continuously active (`charging_enabled = 1`) — no disconnect/reconnect loops or vibration chimes.
+### 🎮 2. Sustained 8-Core Performance & Cool Thermals
+* **Zero Core-Isolation:** Completely disabled `sched_isolate_cpu()` core-killing mechanism. All 8 Cortex-A53 cores stay online unconditionally under heavy thermal load, preventing micro-stutters and sudden FPS drops.
+* **True Hardware Bypass Charging (Free Fire & Free Fire Max):** When Free Fire (`com.dts.freefireth` / `com.dts.freefiremax`) is focused in `top-app` and the charger is plugged in:
+  - Phone runs directly on AC adapter power (`charging_enabled = 1`).
   - Battery charging is completely inhibited (`battery_charging_enabled = 0`, `constant_charge_current_max = 0`).
-  - The phone runs 100% on AC adapter power: 0% battery charge, 0% battery drain, and zero battery heating while gaming!
-  - When the game is closed or minimized, normal charging and balanced profile are instantly restored.
+  - 0% battery charge, 0% battery drain, and **zero battery heat** while gaming!
+* **Optimized Fast Charging (1500mA):** Charges rapidly while keeping battery temperature below 38°C–40°C on micro-USB.
 
-- **Cool Charging & Thermal Protection (Zero Video Lag / No Throttling):**
-  - **`boost_on_charging = 0` (Default):** Disables CPU boost during charging, keeping the CPU cool and eliminating thermal throttling.
-  - **Balanced Fast Charge (1500mA):** Optimized safe current for Snapdragon 625 on micro-USB. Charges rapidly while keeping battery temperatures below 38°C–40°C, so Qualcomm's thermal-engine never throttles CPU or GPU.
-  - **Input Boost Duration (40 ms):** Snappy 60fps touch responsiveness without wasteful battery drain or heat.
+### 🔊 3. Audio Loudness & Quality Boost
+* **Restored ALSA Digital Volume Controls:** Exposed `RX1/RX2/RX3 Digital Volume` and `DEC1/DEC2 Volume` mixer controls to the Android Audio HAL (`msm-digital-cdc-legacy.c`).
+* **Sysfs Sound Boost (`dfg_tune.sh`):**
+  - **Speaker Gain:** `+4dB` for louder, crystal-clear media playback without distortion.
+  - **Headphone Gain:** `+4dB` (L/R) for punchy bass and clean highs.
+  - **Mic Gain:** `+2dB` for crisp in-game voice chat (Discord, Free Fire, PUBG).
+  - **Earpiece Gain:** `+3dB` for clear voice call audio.
 
-- **GPU & Display Anti-Lag (Butter Smooth 60 FPS):**
-  - **Adreno 506 GPU:** Minimum clock locked at **216 MHz** (governor: `msm-adreno-tz`). Eliminates micro-stutters during video playback (1080p/2K/4K) and surface compositing.
-  - **Adreno Idler:** Disabled to prevent erratic frequency drops during gaming and video playback.
-  - **Schedutil Rate Limits:** 500 µs (up) and 20,000 µs (down) for rock-solid frame pacing.
-  - **CPUSets & SchedTune:** `top-app` and `foreground` assigned all 8 CPU cores with `schedtune.boost = 10` and `prefer_idle = 1`. Background tasks are constrained to cores 0-3 to prevent CPU contention.
+### 🎬 4. Butter Smooth 60 FPS UI & Video
+* **Schedutil Frame Pacing:** `up_rate_limit_us 500` (0.5ms instant ramp) and `down_rate_limit_us 20000` (20ms hold down) eliminates video playback and UI scrolling micro-stutters.
+* **Adreno 506 GPU Floor:** Minimum clock locked at **216 MHz** (governor: `msm-adreno-tz`) with `adreno_idler` disabled for zero frame drops in 1080p/2K/4K video streaming and 3D games.
+* **Low Ping Network:** Default **TCP BBR** congestion control + **FQ** packet scheduling for stable, jitter-free ping.
 
-- **Low-Latency Online Gaming Networking:**
-  - **TCP BBR** congestion control + **FQ (Fair Queueing)** packet pacing enabled by default for lower, jitter-free in-game ping.
+### 🛡️ 5. 100% Anti-Cheat Safe (No Account Bans)
+* **Pure Vanilla Architecture:** Zero in-kernel root hooks, zero KSU modifications, and zero SusFS strings in `vmlinux`.
+* **Zero Ban Risk:** Modern game anti-cheat scanners (Free Fire, Mobile Legends, PUBG Mobile) detect absolutely nothing at the kernel level.
+* **Root Flexibility:** Compatible with standard **Magisk** or **FolkPatch / KernelPatch** (patch boot image after flash).
 
-- **Autonomous Screen-Aware RAM & Junk Cleaner:**
-  - Screen-aware daemon: NEVER touches memory while the screen is ON.
-  - When screen is turned off and locked, trims dead dentries/inodes, compacts RAM, and cleans temporary junk silently without causing UI micro-freezes.
+---
 
-- **Storage & Memory:**
-  - **zRAM lz4** (lowest CPU overhead) + balanced VM swappiness (60) and vfs_cache_pressure (100).
-  - Storage I/O read-ahead: 1024 KB for instantaneous video streaming and app loading.
-  - UKSM/KSM completely disabled to eliminate background CPU load and heating.
+## ⬇️ Download & Verification (v1.0 Official)
 
-## 🔓 Root (FolkPatch / Magisk — never in-kernel)
+| Flashable Zip | Size | SHA256 Checksum |
+|---|---|---|
+| **`DaisyForGaming-v1.0-Gaming-11-01-2026.zip`** | 18.3 MB (18,307,175 bytes) | `ecfeb0ca2124655c68c3c47a523591a64d1a268bde81ee6a8f662f0ba9ac6121` |
 
-- The kernel ships with **no root inside**: `KALLSYMS` + `KALLSYMS_ALL` = y, KASLR/KPTI off,
-  `MODVERSIONS` on — all KernelPatch/FolkPatch requirements met, so KernelPatch can patch the
-  flashed boot cleanly.
-- **FolkPatch flow:** flash the zip → dump the new boot → patch it in
-  [FolkPatch Manager](https://github.com/LyraVoid/FolkPatch/releases) → flash the patched boot.
-- **Magisk flow:** flash the zip, install/keep Magisk — the ramdisk is preserved untouched.
+Grab the latest zip from the [Releases Page](https://github.com/bmjubairdadu/DaisyForGaming/releases).
 
-> ⚠️ **KernelPatch on 4.9 must be ≥ 0.13.8** (FolkPatch V6 Sol = KP 0.13.9 ✅). Older kpimg builds
-> hang the kernel in `setup_arch` at the boot logo — this is a documented upstream 4.9 bug fixed
-> in 0.13.8.
+---
 
-> 💡 Safe test without flashing: `adb reboot bootloader` → `fastboot boot patched_boot.img` —
-> boots once from RAM; force-restart returns to the bootloader.
+## 📲 Installation Guide
 
-## 🧩 Kernel modules
+### Via Custom Recovery (TWRP / OrangeFox):
+1. Download **`DaisyForGaming-v1.0-Gaming-11-01-2026.zip`** and place it on your device storage or SD card.
+2. Boot into recovery (TWRP or OrangeFox).
+3. *(Recommended)* Back up your current `boot` partition.
+4. Go to **Install**, select the zip file, and swipe to flash.
+5. *(Optional)* If you want root access, flash **Magisk** zip now or patch the boot partition with **FolkPatch**.
+6. Reboot to System and enjoy butter smooth 60 FPS performance!
 
-- `CONFIG_MODULES=y` with **`MODVERSIONS`** (VINTF requires it — keeps the Android-11
-  "system inconsistent" dialog away) and **no signature enforcement**
-  (`CONFIG_MODULE_SIG` off): unsigned `.ko` modules load without any crypto check on the load
-  path, and there are no KernelSU hooks left on the read/execve/input syscall paths.
-- Modules must be built from **this exact tree** (`MODVERSIONS` symbols) — rebuild your `.ko`
-  files for every kernel you flash; old modules from a previous build will refuse to load.
-- Load them the normal way: `insmod /path/xxx.ko` or `modprobe` with the module in
-  `/vendor_dlkm`/`/system/lib/modules`. If a module misbehaves, `rmmod` it — the module loader
-  itself adds no overhead beyond the module's own init.
+---
 
-## 📲 Flashing
+## 🛠️ Building From Source
 
-### Recovery (recommended)
-1. Reboot to TWRP / OrangeFox (or `adb reboot recovery`).
-2. Install the zip — or **Advanced → ADB Sideload** then `adb sideload DaisyForGaming-v1.0-Gaming-*.zip`.
-3. Reboot. The zip auto-detects `daisy`, gates on Android 11, and stages the boot-time tuning
-   script (`99-dfg-tune.sh`) into Magisk `service.d`.
-
-### Root setup
-- **FolkPatch** → flash the zip first, then dump the new boot, patch it in FolkPatch Manager and
-  flash the patched boot.
-- **Magisk** → works as-is without patching.
-
-## 🔧 Runtime tuning (all optional — defaults are already applied)
-
-| Node | Value |
-|---|---|
-| `/sys/module/cpu_boost/parameters/boost_mode` | `3` (auto-detect) — `0` battery, `1` balanced, `2` gaming |
-| `/sys/module/cpu_boost/parameters/boost_mode_effective` | read-only: profile auto applied now |
-| `/sys/module/cpu_boost/parameters/auto_gpu_busy` | `50` (% GPU busy counted as "game running") |
-| `/sys/module/cpu_boost/parameters/input_boost_freq` | `0:1036800 … 4:1401600` |
-| `/sys/module/cpu_boost/parameters/input_boost_ms` | `150` |
-| `/sys/module/cpu_boost/parameters/sched_boost_on_input` | `0` |
-| `/sys/module/cpu_boost/parameters/boost_on_charging` | `0` (set `1` to boost while charging) |
-| `/sys/module/cpu_boost/parameters/bypass_on_gaming` | `1` — charging pauses while gaming on the charger |
-| `/sys/class/power_supply/battery/charging_enabled` | read it: `0` = bypass active, `1` = normal charging |
-| `/sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us` | `5000` |
-| `/sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us` | `20000` |
-| `/dev/stune/top-app/schedtune.boost` | `10` |
-| `/sys/module/sync/parameters/fsync_enabled` | `Y` (toggle for faster loading) |
-| `/proc/sys/vm/{swappiness,vfs_cache_pressure,page-cluster,dirty_background_ratio}` | `30 / 50 / 0 / 5` |
-
-Tuning log: `/data/local/tmp/dfg_tune.log` (written by `99-dfg-tune.sh` every boot).
-
-## 🛠️ Building
-
-WSL (Ubuntu 22.04) + clang 14, `LLVM=1 LLVM_IAS=1`:
+Built on Ubuntu 22.04 (WSL2 / Linux) with Clang 14.0.0 and LLVM:
 
 ```bash
-bash dfg_build.sh    # kernel -> out/arch/arm64/boot/Image.gz-dtb
-bash dfg_zip.sh      # -> DaisyForGaming-v1.0-Gaming-<date>.zip
+# Clone the repository
+git clone https://github.com/bmjubairdadu/DaisyForGaming.git
+cd DaisyForGaming
+
+# Build kernel image
+bash dfg_build.sh
+
+# Package flashable AnyKernel3 zip
+bash dfg_zip.sh
 ```
 
-`dfg_boot_rebuild.py` swaps a boot image's kernel blob while keeping the header + ramdisk
-byte-identical (handy for kpatch testing).
-
-## 🐞 Troubleshooting
-
-| Symptom | Cause / fix |
-|---|---|
-| KernelPatch-patched boot hangs at logo | kpimg < 0.13.8 — use FolkPatch V6 Sol (KP 0.13.9) or newer |
-| Old `.ko` module refuses to load | `MODVERSIONS` symbols changed — rebuild the module from this tree |
-| `vm.swappiness` permission denied | fixed (sysctl mode 0644) |
-| Boot warning dialog on Android 11 | keep `MODVERSIONS` on (it is enabled by default) |
-| "zram swapon FAILED" in tune log | harmless ROM race (script retries and confirms swap state) |
+---
 
 ## 🙏 Credits
 
-- **JUBAIR HOSEN** — developer & maintainer
-- **AnyKernel3** (osm0sis) — flashable packaging
-- **FolkPatch** (LyraVoid) / **KernelPatch** (bmax121) — boot-patch root
-- Everyone in the daisy community
+- **JUBAIR HOSEN** — Lead Developer & Maintainer
+- **AnyKernel3** by osm0sis — Universal Ramdisk Flasher
+- The Xiaomi daisy open-source community
 
-## 📄 License & disclaimer
+---
 
-GPL-2.0 — see [COPYING](COPYING). Flash at your own risk; keep a backup of your boot image.
-A/B device: the zip writes to the **active slot's** boot partition.
+## 📄 License
+
+This project is licensed under the **GNU General Public License v2.0 (GPL-2.0)**.
