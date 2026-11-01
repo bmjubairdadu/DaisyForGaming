@@ -80,7 +80,7 @@ dump_boot;
 ui_print "- Flashing kernel - ok";
 write_boot;
 
-# Stage bypass charging & performance tuning service if /data is accessible
+# Stage performance tuning service if /data is accessible
 data_was_mounted=0;
 if grep -q " /data " /proc/mounts 2>/dev/null; then
   data_was_mounted=1;
@@ -92,16 +92,16 @@ if [ "$data_was_mounted" = "1" ] || mount /data 2>/dev/null; then
       cp -f "$AKHOME/dfg_tune.sh" /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
       chmod 755 /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
       rm -f /data/adb/service.d/90-kloder.sh 2>/dev/null;
-      ui_print "- Staging Free Fire bypass & performance tune - ok";
+      ui_print "- Staging gaming performance & sound tune - ok";
     fi;
   else
-    ui_print "- Staging Free Fire bypass & performance tune - ok";
+    ui_print "- Staging gaming performance & sound tune - ok";
   fi;
   if [ "$data_was_mounted" = "0" ]; then
     umount /data 2>/dev/null || true;
   fi;
 else
-  ui_print "- Staging Free Fire bypass & performance tune - ok";
+  ui_print "- Staging gaming performance & sound tune - ok";
 fi;
 
 ui_print " ";
