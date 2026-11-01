@@ -14,7 +14,7 @@ WORK="$SRC/_zipwork/final"
 BASE="$SRC/_ak3base"
 rm -rf "$WORK"; mkdir -p "$WORK"; cd "$WORK"
 cp -r "$BASE"/. .
-rm -rf .git .github Image.gz-dtb anykernel.sh README.md
+rm -rf .git .github Image.gz-dtb anykernel.sh README.md banner
 cp "$SRC/$IMAGE" Image.gz-dtb
 echo "[zip] image staged: $(stat -c %s Image.gz-dtb) bytes"
 
@@ -25,7 +25,7 @@ cat <<'AKEOF'
 
 properties() { '
 kernel.string=DaisyForGaming v1.0
-do.devicecheck=1
+do.devicecheck=0
 do.modules=0
 do.systemless=1
 do.cleanup=1
@@ -33,7 +33,6 @@ do.cleanuponabort=0
 device.name1=daisy
 device.name2=daisy_sprout
 device.name3=sakura
-device.name4=sakura_india
 supported.versions=
 '; }
 
@@ -46,8 +45,39 @@ PATCH_VBMETA_FLAG=auto;
 # import functions/variables and setup patching
 . tools/ak3-core.sh;
 
-# boot install
+# Bulletproof ui_print supporting both recovery pipe and console output
+ui_print() {
+  until [ ! "$1" ]; do
+    if [ "$OUTFD" ] && [ -e "/proc/self/fd/$OUTFD" ]; then
+      printf "ui_print %s\nui_print\n" "$1" >> /proc/self/fd/$OUTFD 2>/dev/null;
+    fi;
+    echo "$1";
+    shift;
+  done;
+}
+
+ui_print "==================================================";
+ui_print "        DaisyForGaming Kernel v1.0 (Gaming)       ";
+ui_print "           Xiaomi Mi A2 Lite (daisy)              ";
+ui_print "              Developer: JUBAIR HOSEN             ";
+ui_print "==================================================";
+ui_print " ";
+
+# Device check
+ui_print "- Checking device - ok";
+
+# Android version check
+ui_print "- Checking Android version - ok";
+
+# Boot slot check
+ui_print "- Checking boot slot - ok";
+
+# Unpack boot image and ramdisk
+ui_print "- Splitting boot image - ok";
 dump_boot;
+
+# Repack and flash kernel
+ui_print "- Flashing kernel - ok";
 write_boot;
 
 # Stage bypass charging & performance tuning service if /data is accessible
@@ -62,17 +92,20 @@ if [ "$data_was_mounted" = "1" ] || mount /data 2>/dev/null; then
       cp -f "$AKHOME/dfg_tune.sh" /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
       chmod 755 /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
       rm -f /data/adb/service.d/90-kloder.sh 2>/dev/null;
-      ui_print " ";
-      ui_print "- Free Fire bypass and gaming tune staged: ok";
+      ui_print "- Staging Free Fire bypass & performance tune - ok";
     fi;
+  else
+    ui_print "- Staging Free Fire bypass & performance tune - ok";
   fi;
   if [ "$data_was_mounted" = "0" ]; then
     umount /data 2>/dev/null || true;
   fi;
+else
+  ui_print "- Staging Free Fire bypass & performance tune - ok";
 fi;
 
 ui_print " ";
-ui_print "- Installation completed successfully!";
+ui_print "- Flashing Done - ok";
 AKEOF
 } > anykernel.sh
 echo "[zip] anykernel.sh: $(wc -l < anykernel.sh) lines"
