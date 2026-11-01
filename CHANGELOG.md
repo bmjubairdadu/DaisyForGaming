@@ -4,7 +4,7 @@ All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (
 
 ## v1.0 (2026-11-01) — Initial Official Gaming Release
 
-### 🔓 Recovery Decryption & Critical Power-Off Fix
+### Recovery Decryption & Critical Power-Off Fix
 - **Fixed Recovery Auto-Shutdown on Decryption:** In `msm8953-thermal.dtsi`, trip point `modem_trip2` on sensor `pm8953_vadc 0x13` (`case_therm`) was incorrectly marked as `type = "critical"` at 75°C (75000 m°C). During storage decryption in recovery (TWRP/OrangeFox), CPU crypto bursts across all 8 cores spiked the case thermistor to 75°C, causing Linux `thermal_core.c` to trigger `orderly_poweroff(true)` and immediately shut down the phone.
   - Reclassified `modem_trip2` to `type = "passive"` at 80°C to throttle the modem processor and PA without shutting down the phone.
   - Added a genuine emergency hardware critical trip `case_crit` at 95°C (95000 m°C). Recovery storage decryption now completes smoothly without powering off.
@@ -12,7 +12,7 @@ All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (
 - **Added Modern Storage Crypto Checkpoints:** Enabled `CONFIG_DM_BOW=y` (Backup on Write) and `CONFIG_CRYPTO_TWOFISH=y` for Android FBE storage decryption checkpoints.
 - **Safe `/data` Mount Tracking:** Updated AnyKernel3 ramdisk installer (`dfg_zip.sh`) to track `/data` mount state and safely unmount it if mounted during service staging.
 
-### ⚡ Anti-Lag Performance & Thermal Overheating Fix
+### Anti-Lag Performance & Thermal Overheating Fix
 - **Zero Core-Isolation (All 8 Cores Stay Online):** Disabled `sched_isolate_cpu()` core-killing mechanism in `cpu_cooling.c`. Replaced with graceful frequency clamping to 1.68 GHz / 1.4 GHz floors. Big cluster cores (CPU4–CPU7) never shut down or drop to 652 MHz during thermal load.
 - **Smooth 60FPS Video & App Launching (`dfg_tune.sh`):**
   - **Schedutil Rate Limits:** `up_rate_limit_us 500` (0.5ms instant ramp) and `down_rate_limit_us 20000` (20ms hold down), guaranteeing smooth 60fps frame pacing and eliminating video/gaming micro-stutters.
@@ -20,7 +20,7 @@ All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (
   - **Input Touch Boost:** Boosts all 8 cores to 1401 MHz for 60ms with `sched_boost_on_input 1` for immediate UI touch response.
   - **Adreno 506 GPU Floor:** Set to 216 MHz minimum floor with an 80ms idle timer and disabled `adreno_idler` for rock-solid 60fps video playback and gaming.
 
-### 🔊 Audio Quality & Volume Boost
+### Audio Quality & Volume Boost
 - **Restored ALSA Digital Volume Controls:** Removed `#ifndef CONFIG_SOUND_CONTROL` block in `msm-digital-cdc-legacy.c`. `RX1`, `RX2`, `RX3 Digital Volume` and `DEC1`, `DEC2 Volume` are now properly exposed to ALSA mixer. Android's Audio HAL (`audio.primary.msm8953.so` / `mixer_paths.xml`) can now seamlessly adjust digital volume across the full dynamic range.
 - **Autonomous Sysfs Sound Boost (`dfg_tune.sh`):**
   - **Headphone Gain:** `+4dB` (L/R) for punchy, clear bass and treble without distortion.
@@ -30,25 +30,25 @@ All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (
 
 ## v1.0.1 (2026-10-22) — Anti-Lag Gaming, Thermal Optimization & Zero-Overhead Kernel Driver
 
-### ❄️ Cool Gaming & Anti-Throttling Thermals
+### ️ Cool Gaming & Anti-Throttling Thermals
 - **Balanced Thermal Trip Points:** Calibrated `msm8953-thermal.dtsi` trip points to 72°C (CPU/POP), 75°C (GPU), and 78°C (APC cores with 8°C hysteresis). Prevents the device from reaching baking temperatures (80°C–90°C) and prevents emergency downclocking lag spikes during extended gaming sessions.
 - **GPU Anti-Lag (Adreno Idler Off):** Disabled `adreno_idler` so the GPU no longer aggressively downclocks to 133MHz during active 3D gameplay, eliminating micro-stutters and frame drops.
 - **SchedTune Boost (Top-App = 5):** Optimal task placement on performance cores for games without pinning frequencies when idle.
 
-### ⚡ Zero-Overhead Kernel Driver Optimization
+### Zero-Overhead Kernel Driver Optimization
 - **`phys_to_virt` Direct Memory Access:** Replaced bottleneck `ioremap_cache()` and `iounmap()` in `dmsync_core.h` with direct physical-to-virtual linear mapping. Completely eliminates thousands of kernel vmalloc allocations, lock contentions, and global TLB invalidation broadcasts per second. Modules now operate with near-zero CPU overhead and zero heating!
 
 ## v1.0 Final (2026-10-21) — Hardware Thermal Governor, Zero-Disconnect Charging & Smooth 60FPS
 
-### ❄️ Hardware-Level Thermal Protection (Overheating Fix)
+### ️ Hardware-Level Thermal Protection (Overheating Fix)
 - **`CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE=y`:** Replaced userspace default governor with standard Qualcomm in-kernel `step_wise` governor. The kernel actively and smoothly controls thermal throttling without depending on userspace `thermal-engine` daemons.
 - **Clean One-Shot Boot Tuning:** Removed background polling `while true` loops in `dfg_tune.sh`. CPU now enters hardware deep sleep normally when inactive, preventing idle drain and heat buildup.
 
-### ⚡ Safe Fast Charging & Zero Disconnects
+### Safe Fast Charging & Zero Disconnects
 - **Calibrated 6-level thermal mitigation table:** Aligned with Xiaomi's stock `sakura-qrd.dtsi` mitigation table `<1500 1200 900 600 300 0>` to eliminate unexpected charger disconnects.
 - **Removed non-existent charger symbols:** Stripped alien SDM845/SM8150 symbols (`CONFIG_QPNP_SMB5`, `CONFIG_SMB1351`) from `daisy_defconfig`.
 
-### 🎮 Smooth 60FPS & Network Stability
+### Smooth 60FPS & Network Stability
 - **Schedutil rate limits:** `up_rate_limit_us=1000` (1ms instant response) and `down_rate_limit_us=20000` (20ms hold) for butter smooth video playback and responsive gaming touch.
 - **Adreno 506 GPU dynamic scaling:** Governed by `msm-adreno-tz` (133–650MHz) for cool operation during video streaming and responsive 60fps frame pacing.
 - **Network stability:** Standard `westwood` and `cubic` TCP congestion control for stable, low-ping gaming.
@@ -59,7 +59,7 @@ All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (
 > unchanged.** The `_modules/` copy and the OTA database both carry the
 > fixed RT binary.
 
-### 🛠️ Fixed
+### ️ Fixed
 - **RT `0x801`/`0x802` return convention restored.** 3.1/3.2.1 returned `0`
   on a successful read/write and `-EIO` on failure — the exact inverse of
   the legacy RT protocol used by the reference `kmem_337.c` and the
@@ -77,7 +77,7 @@ All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (
   handshake. The RT and QX conventions are mutually exclusive; they remain
   separate module variants.
 
-### ✅ Verified
+### Verified
 - **Live daisy phone** (kernel `4.9.337-DaisyForGaming #12`, Magisk root):
   RT 3.2.2 insmod OK, `/dev/wanbai` 0666, `dmtest` v3 **15/15 PASS**.
   The RT report exercises only `0x801`/`0x802`/`0x803`. Raw protocol proof:
@@ -90,33 +90,33 @@ All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (
 
 ## v1.0 (2026-10-15) — True Hardware Bypass, Cool Charging, GPU Anti-Lag & Kernel Driver 3.2
 
-### 🎮 True Hardware Bypass Charging (Free Fire & Free Fire Max)
+### True Hardware Bypass Charging (Free Fire & Free Fire Max)
 - **Top-App foreground detection:** Bypass charging activates strictly when Free Fire (`com.dts.freefireth` / `com.dts.freefiremax`) is actively focused in `/dev/cpuset/top-app` or `/dev/stune/top-app`. Background cached instances are completely ignored.
 - **Continuous adapter power:** Charger remains continuously connected (`charging_enabled = 1`) — completely resolves the 2-second on/off disconnect loop and notification chiming.
 - **Direct motherboard powering:** Battery charging is inhibited (`battery_charging_enabled = 0`, `constant_charge_current_max = 0`). The entire phone runs 100% on AC adapter power: 0% battery charge, 0% battery drain, and zero battery heat while gaming!
 
-### ❄️ Cool Charging & Thermal Anti-Throttling (Zero Video Lag)
+### ️ Cool Charging & Thermal Anti-Throttling (Zero Video Lag)
 - **`boost_on_charging = 0` (Default):** Disables CPU boost during charging, keeping the CPU cool and preventing heat stacking.
 - **Balanced Fast Charge (1500mA):** Golden sweet spot for Snapdragon 625 / PMI8952 on micro-USB. Charges rapidly while keeping battery temperatures below 38°C–40°C, completely preventing Qualcomm's `thermal-engine` from throttling CPU and GPU frequencies.
 - **Input Boost Duration (40 ms):** Snappy 60fps touch responsiveness without wasteful battery drain or heat.
 
-### 🚀 GPU & Display Anti-Lag (Butter Smooth 60 FPS)
+### GPU & Display Anti-Lag (Butter Smooth 60 FPS)
 - **Adreno 506 GPU minimum clock locked at 216 MHz:** Eliminates micro-stutters during 1080p/2K/4K video playback and surface compositing.
 - **Adreno Idler disabled:** Prevents aggressive downclocking during active games and video playback.
 - **Schedutil Rate Limits:** 500 µs (up) and 20,000 µs (down) for rock-solid frame pacing.
 - **CPUSets & SchedTune:** `top-app` and `foreground` assigned all 8 CPU cores with `schedtune.boost = 10` and `prefer_idle = 1`. Background tasks are constrained to cores 0-3.
 
-### 🌐 Low-Latency Online Gaming Networking
+### Low-Latency Online Gaming Networking
 - **TCP BBR** congestion control + **FQ (Fair Queueing)** packet pacing for lower, jitter-free in-game ping.
 
-### 🧹 Autonomous Screen-Aware RAM & Junk Cleaner
+### Autonomous Screen-Aware RAM & Junk Cleaner
 - Screen-aware daemon: NEVER touches memory while the screen is ON.
 - Trims dentries, compacts RAM, and cleans temporary junk silently only when the screen is turned off and locked.
 
-### 🛠️ AnyKernel3 Installer Upgrade
+### ️ AnyKernel3 Installer Upgrade
 - Added automatic `/data` mounting in recovery before staging `99-dfg-tune.sh`.
 
-### 🛡️ Kernel Driver 3.2 Upgrade (`rt` & `qx`)
+### ️ Kernel Driver 3.2 Upgrade (`rt` & `qx`)
 - Added dedicated 32-bit and 64-bit `compat_ioctl` handlers with `compat_ptr()`.
 - Added ARM64 hardware cache maintenance (`dc cvau` + `ic ivau` + `dsb ish` + `isb`) for instant code modification.
 - Added Copy-On-Write safe write fallback with `get_user_pages_remote(..., FOLL_FORCE | FOLL_WRITE)`.
@@ -128,7 +128,7 @@ All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (
 Fresh versioning restart — this is the **final build line**. The old KSU/Vannila split is gone:
 **one kernel, one zip**, root applied after flashing (FolkPatch / Magisk), never in-kernel.
 
-### 🔓 Root stack change (the big one)
+### Root stack change (the big one)
 - **KernelSU and SusFS removed from the kernel tree entirely** — not just disabled:
   `drivers/kernelsu/` deleted, all in-tree hook points removed (`fs/exec.c`,
   `fs/read_write.c`, `fs/open.c`, `fs/stat.c`, `fs/devpts/inode.c`,
@@ -142,13 +142,13 @@ Fresh versioning restart — this is the **final build line**. The old KSU/Vanni
   (`DaisyForGaming-v1.0-Gaming-<date>.zip`). `daisy_fp_defconfig`, `dfg_fp_build.sh`,
   `dfg_ksu_build.sh` and the old dual zips deleted.
 
-### 🧩 Kernel modules
+### Kernel modules
 - Module loading is as lean as 4.9 allows: no signature enforcement
   (`CONFIG_MODULE_SIG` off — zero crypto on the load path), `MODVERSIONS` kept for VINTF,
   `MODULE_FORCE_LOAD/UNLOAD` on, and no third-party hooks left in the module/syscall paths.
 - Modules must be rebuilt from this tree (MODVERSIONS symbols) — documented in the README.
 
-### 🎮 Performance / smoothness
+### Performance / smoothness
 - **schedutil rate-limit retune (default):** up 20 ms → **5 ms** (bursts ramp inside the frame),
   down 0.5 ms → **20 ms** (clocks hold one WALT window before dropping — removes the up/down
   seesaw behind **video frame-time jitter** and needless transition churn). Still
@@ -169,7 +169,7 @@ Fresh versioning restart — this is the **final build line**. The old KSU/Vanni
   `boost_on_charging=0`, and logs the schedutil rate limits + effective boost profile for
   diagnostics.
 
-### 🧪 Unchanged (all still shipped)
+### Unchanged (all still shipped)
 - Thermal trips CPU 80 °C / per-CPU 90 °C / GPU 85 °C / pop-mem 80 °C, charging-aware boost
   (no boost while plugged in), SDR50 microSD cap, zRAM lz4 2 GB + writeback, KSM, deadline I/O,
   fq_codel + BBR, 300 Hz PREEMPT + WALT, `MODVERSIONS` (no VINTF dialog), pn533/rbd fixes.
@@ -179,7 +179,7 @@ Fresh versioning restart — this is the **final build line**. The old KSU/Vanni
 The "it crashes / heats / charges slow" release. Everything in v1.0 ships too —
 the only difference between the two zips is still the root stack.
 
-### 🐞 Fixed
+### Fixed
 - **KSU build fixed for real:** the manual (kprobe-free) KSU hooks in
   `fs/read_write.c`, `fs/exec.c` and `drivers/input/input.c` gate on three
   flags that only existed in the kprobe-free half of `ksud.c` — with
@@ -192,7 +192,7 @@ the only difference between the two zips is still the root stack.
   fails intermittently on several cards ("card not found" until re-insert);
   now capped at SDR50 (100 MHz).
 
-### 🌡️ Thermals & charging (the heat complaints)
+### ️ Thermals & charging (the heat complaints)
 - **Charging-aware input boost (new):** new `boost_on_charging` kernel param
   (default **off**) — while USB is connected, the touch boost stays off, so
   the SoC stops heating from boost-on-every-touch while plugged in. That heat
@@ -209,7 +209,7 @@ the only difference between the two zips is still the root stack.
   3 GB variant and add memory pressure — pressure is what gets apps and
   SystemUI killed).
 
-### 🧪 Unchanged
+### Unchanged
 - KernelSU 0.9.5 + SusFS v1.5.5 (KSU zip), FolkPatch/Magisk-ready vanilla zip.
 - schedutil default, zRAM lz4 2 GB, UKSM (governor `low` via boot script),
   deadline I/O, fq_codel + BBR, fsync toggle, thermal trips CPU 80 °C /
@@ -220,7 +220,7 @@ the only difference between the two zips is still the root stack.
 Fresh versioning starts here. Everything below ships in both zips; the only
 difference between them is the root stack.
 
-### 🎮 Gaming & performance
+### Gaming & performance
 - **CPU touch boost — ON by default:** little cluster (cpu0–3) boosts to
   **1401600 kHz**, big cluster (cpu4–7) to **1689600 kHz**, **300 ms** hold,
   re-triggered while touching (`drivers/cpufreq/cpu-boost.c` now seeds its
@@ -245,7 +245,7 @@ difference between them is the root stack.
   IPA, PM8953 thermal zone active.
 - fsync toggle at `/sys/module/sync/parameters/fsync_enabled` (default on).
 
-### 🔓 Root stacks (pick ONE per kernel — never mix)
+### Root stacks (pick ONE per kernel — never mix)
 | Zip | Root stack | Kernel build |
 |---|---|---|
 | `DaisyForGaming-v1.0-Gaming-KSU-<date>.zip` | KernelSU (built-in) **or** Magisk | `CONFIG_KSU=y` + SusFS v1.5.5 |
@@ -255,19 +255,19 @@ difference between them is the root stack.
   SusFS sus-path/mount/kstat hiding, uname/cmdline spoof, kallsyms hiding.
 - KernelPatch requirements verified on device: `KALLSYMS`+`KALLSYMS_ALL` on,
   KASLR/KPTI off, `RELOCATABLE` off.
-- ⚠️ **KernelPatch on 4.9 must be ≥ 0.13.8** (FolkPatch V6 Sol = KP 0.13.9,
+- ️ **KernelPatch on 4.9 must be ≥ 0.13.8** (FolkPatch V6 Sol = KP 0.13.9,
   verified booting). Older kpimg hangs the kernel in `setup_arch`
   (boot-logo hang) — a documented upstream 4.9 bug fixed in 0.13.8.
 - `MODVERSIONS` on (VINTF) — no "system inconsistent" boot dialog on
   Android 11.
 
-### 🧪 Verified on device (Mi A2 Lite, Android 11, Magisk root)
+### Verified on device (Mi A2 Lite, Android 11, Magisk root)
 Touch boost live (1401/1689, 300 ms, sched_boost=1), top-app boost=10,
 zRAM 2 GB lz4 swap active, vm sysctls applied (swappiness 30, page-cluster 0,
 vfs_cache_pressure 20, dirty_background_ratio 5), deadline default, dmesg
 clean (only stock camera/wlan noise), VINTF dialog absent.
 
-### 📦 Packaging & repo
+### Packaging & repo
 - Fresh AnyKernel3 base; one parameterized script (`dfg_zip.sh ksu|fp`)
   producing `DaisyForGaming-v1.0-Gaming-{KSU,Vannila}-<DD-MM-YYYY>.zip`.
 - `99-dfg-tune.sh` (Magisk service.d): re-asserts input boost, lifts
