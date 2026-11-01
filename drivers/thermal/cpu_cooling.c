@@ -740,9 +740,10 @@ static int cpufreq_set_cur_state(struct thermal_cooling_device *cdev,
 	prev_state = cpufreq_device->cpufreq_state;
 	cpufreq_device->cpufreq_state = state;
 	mutex_unlock(&core_isolate_lock);
-	/* DaisyForGaming: Never isolate CPU cores on thermal mitigation!
-	 * Isolating cores drops Android performance into severe lag and frame drops.
-	 * Instead, clamp to the lowest operating frequency so all 8 cores stay active.
+	/* DaisyForGaming: Never isolate CPU cores under thermal mitigation.
+	 * Isolating cores drops performance and forces remaining cores to 100%,
+	 * causing extreme stuttering and overheating. Keep all 8 cores online
+	 * and clamp state to max_level - 1.
 	 */
 	if (state >= cpufreq_device->max_level)
 		state = cpufreq_device->max_level - 1;
@@ -750,6 +751,12 @@ static int cpufreq_set_cur_state(struct thermal_cooling_device *cdev,
 	if (cpumask_test_and_clear_cpu(cpu, &cpus_isolated_by_thermal))
 		sched_unisolate_cpu(cpu);
 
+	if (cpumask_test_and_clear_cpu(cpu, &cpus_pending_online)) {
+		cpu_dev = get_cpu_device(cpu);
+		ret = device_online(cpu_dev);
+		if (ret)
+			pr_err("CPU:%d online error:%d\n", cpu, ret);
+	}
 	clip_freq = cpufreq_device->freq_table[state];
 	cpufreq_device->clipped_freq = clip_freq;
 

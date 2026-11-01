@@ -12,6 +12,10 @@ root_check_run_with_sudo "$@"
 # - go look in parameters.sh to see which setting are avail
 # - required param is the interface "-i" stored in $DEV
 source ${basedir}/parameters.sh
+
+# Trap EXIT first
+trap_exit
+
 #
 # Set some default params, if they didn't get set
 if [ -z "$DEST_IP" ]; then
@@ -22,7 +26,6 @@ fi
 [ -z "$DST_MAC" ] && usage && err 2 "Must specify -m dst_mac"
 
 # Base Config
-DELAY="0"        # Zero means max speed
 COUNT="100000"   # Zero means indefinitely
 
 # Flow variation random source port between min and max
@@ -31,11 +34,11 @@ UDP_MAX=109
 
 # General cleanup everything since last run
 # (especially important if other threads were configured by other scripts)
-pg_ctrl "reset"
+[ -z "$APPEND" ] && pg_ctrl "reset"
 
 # Add remove all other devices and add_device $DEV to thread 0
 thread=0
-pg_thread $thread "rem_device_all"
+[ -z "$APPEND" ] && pg_thread $thread "rem_device_all"
 pg_thread $thread "add_device" $DEV
 
 # How many packets to send (zero means indefinitely)
@@ -58,16 +61,29 @@ pg_set $DEV "flag NO_TIMESTAMP"
 pg_set $DEV "dst_mac $DST_MAC"
 pg_set $DEV "dst$IP6 $DEST_IP"
 
+[ ! -z "$UDP_CSUM" ] && pg_set $dev "flag UDPCSUM"
+
 # Setup random UDP port src range
 pg_set $DEV "flag UDPSRC_RND"
 pg_set $DEV "udp_src_min $UDP_MIN"
 pg_set $DEV "udp_src_max $UDP_MAX"
 
-# start_run
-echo "Running... ctrl^C to stop" >&2
-pg_ctrl "start"
-echo "Done" >&2
+# Run if user hits control-c
+function print_result() {
+    # Print results
+    echo "Result device: $DEV"
+    cat /proc/net/pktgen/$DEV
+}
+# trap keyboard interrupt (Ctrl-C)
+trap true SIGINT
 
-# Print results
-echo "Result device: $DEV"
-cat /proc/net/pktgen/$DEV
+if [ -z "$APPEND" ]; then
+    # start_run
+    echo "Running... ctrl^C to stop" >&2
+    pg_ctrl "start"
+    echo "Done" >&2
+
+    print_result
+else
+    echo "Append mode: config done. Do more or use 'pg_ctrl start' to run"
+fi

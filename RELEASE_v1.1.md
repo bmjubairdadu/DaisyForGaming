@@ -49,11 +49,11 @@ A major stability, thermal, and audio update for the **Xiaomi Mi A2 Lite (`daisy
 
 | File | Size | SHA256 Checksum |
 |---|---|---|
-| **`DaisyForGaming-v1.1-Gaming-10-31-2026.zip`** | 18.7 MB (18,752,634 bytes) | `7ecec5db99fa891a0440d21ea6c3720722c09f196a28ced5c30c033021c8a686` |
+| **`DaisyForGaming-v1.1-Gaming-11-01-2026.zip`** | 18.3 MB (18,306,798 bytes) | `2f5a4cf220c3ef97050b4e2e8b091ddef3e3a9fe60711d91cc0f2fc6ee614018` |
 
 ### 🛠️ Installation Instructions:
 1. Boot device into custom recovery (TWRP or OrangeFox).
 2. Take a backup of your current `boot` partition (recommended).
-3. Flash `DaisyForGaming-v1.1-Gaming-10-31-2026.zip`.
+3. Flash `DaisyForGaming-v1.1-Gaming-11-01-2026.zip`.
 4. (Optional) If rooted with Magisk, flash Magisk zip or patch boot via FolkPatch / KernelPatch.
 5. Reboot to System and enjoy butter smooth 60fps gaming and crystal-clear audio!

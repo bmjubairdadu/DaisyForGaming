@@ -9,18 +9,21 @@ function usage() {
     echo "  -s : (\$PKT_SIZE)  packet size"
     echo "  -d : (\$DEST_IP)   destination IP"
     echo "  -m : (\$DST_MAC)   destination MAC-addr"
+    echo "  -k : (\$UDP_CSUM)  enable UDP tx checksum"
     echo "  -t : (\$THREADS)   threads to start"
     echo "  -c : (\$SKB_CLONE) SKB clones send before alloc new SKB"
     echo "  -b : (\$BURST)     HW level bursting of SKBs"
     echo "  -v : (\$VERBOSE)   verbose"
     echo "  -x : (\$DEBUG)     debug"
     echo "  -6 : (\$IP6)       IPv6"
+    echo "  -w : (\$DELAY)     Tx Delay value (ns)"
+    echo "  -a : (\$APPEND)    Script will not reset generator's state, but will append its config"
     echo ""
 }
 
 ##  --- Parse command line arguments / parameters ---
 ## echo "Commandline options:"
-while getopts "s:i:d:m:t:c:b:vxh6" option; do
+while getopts "s:i:d:m:t:c:b:w:vxh6ak" option; do
     case $option in
         i) # interface
           export DEV=$OPTARG
@@ -52,6 +55,10 @@ while getopts "s:i:d:m:t:c:b:vxh6" option; do
 	  export BURST=$OPTARG
 	  info "SKB bursting: BURST=$BURST"
           ;;
+        w)
+	  export DELAY=$OPTARG
+	  info "DELAY=$DELAY"
+          ;;
         v)
           export VERBOSE=yes
           info "Verbose mode: VERBOSE=$VERBOSE"
@@ -64,6 +71,14 @@ while getopts "s:i:d:m:t:c:b:vxh6" option; do
 	  export IP6=6
 	  info "IP6: IP6=$IP6"
 	  ;;
+        a)
+          export APPEND=yes
+          info "Append mode: APPEND=$APPEND"
+          ;;
+        k)
+          export UDP_CSUM=yes
+          info "UDP tx checksum: UDP_CSUM=$UDP_CSUM"
+          ;;
         h|?|*)
           usage;
           err 2 "[ERROR] Unknown parameters!!!"
@@ -82,6 +97,9 @@ if [ -z "$THREADS" ]; then
     export CPU_THREADS=0
     export THREADS=1
 fi
+
+# default DELAY
+[ -z "$DELAY" ] && export DELAY=0 # Zero means max speed
 
 if [ -z "$DEV" ]; then
     usage

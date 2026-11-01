@@ -1015,7 +1015,6 @@ static inline int may_follow_link(struct nameidata *nd)
 	const struct inode *parent;
 	kuid_t puid;
 
-
 	if (!sysctl_protected_symlinks)
 		return 0;
 
@@ -1092,7 +1091,6 @@ static int may_linkat(struct path *link)
 {
 	struct inode *inode;
 
-
 	if (!sysctl_protected_hardlinks)
 		return 0;
 
@@ -1132,7 +1130,6 @@ static int may_linkat(struct path *link)
 static int may_create_in_sticky(umode_t dir_mode, kuid_t dir_uid,
 				struct inode * const inode)
 {
-
 	if ((!sysctl_protected_fifos && S_ISFIFO(inode->i_mode)) ||
 	    (!sysctl_protected_regular && S_ISREG(inode->i_mode)) ||
 	    likely(!(dir_mode & S_ISVTX)) ||
@@ -2691,7 +2688,7 @@ int path_pts(struct path *path)
 	this.name = "pts";
 	this.len = 3;
 	child = d_hash_and_lookup(parent, &this);
-	if (!child)
+	if (IS_ERR_OR_NULL(child))
 		return -ENOENT;
 
 	path->dentry = child;
@@ -2934,7 +2931,6 @@ static int may_delete(struct vfsmount *mnt, struct inode *dir, struct dentry *vi
 	if (IS_APPEND(dir))
 		return -EPERM;
 
-
 	if (check_sticky(dir, inode) || IS_APPEND(inode) ||
 	    IS_IMMUTABLE(inode) || IS_SWAPFILE(inode) || HAS_UNMAPPED_ID(inode))
 		return -EPERM;
@@ -3068,7 +3064,6 @@ static int may_open(struct path *path, int acc_mode, int flag)
 
 	if (!inode)
 		return -ENOENT;
-
 
 	switch (inode->i_mode & S_IFMT) {
 	case S_IFLNK:
@@ -3700,7 +3695,6 @@ out2:
 	}
 	return file;
 }
-
 
 struct file *do_filp_open(int dfd, struct filename *pathname,
 		const struct open_flags *op)

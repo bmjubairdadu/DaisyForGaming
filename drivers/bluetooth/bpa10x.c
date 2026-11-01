@@ -117,7 +117,7 @@ static void bpa10x_rx_complete(struct urb *urb)
 						bpa10x_recv_pkts,
 						ARRAY_SIZE(bpa10x_recv_pkts));
 		if (IS_ERR(data->rx_skb[idx])) {
-			bt_dev_err(hdev, "corrupted event packet");
+			BT_ERR("%s corrupted event packet", hdev->name);
 			hdev->stat.err_rx++;
 			data->rx_skb[idx] = NULL;
 		}
@@ -127,7 +127,8 @@ static void bpa10x_rx_complete(struct urb *urb)
 
 	err = usb_submit_urb(urb, GFP_ATOMIC);
 	if (err < 0) {
-		bt_dev_err(hdev, "urb %p failed to resubmit (%d)", urb, -err);
+		BT_ERR("%s urb %p failed to resubmit (%d)",
+						hdev->name, urb, -err);
 		usb_unanchor_urb(urb);
 	}
 }
@@ -163,7 +164,8 @@ static inline int bpa10x_submit_intr_urb(struct hci_dev *hdev)
 
 	err = usb_submit_urb(urb, GFP_KERNEL);
 	if (err < 0) {
-		bt_dev_err(hdev, "urb %p submission failed (%d)", urb, -err);
+		BT_ERR("%s urb %p submission failed (%d)",
+						hdev->name, urb, -err);
 		usb_unanchor_urb(urb);
 	}
 
@@ -203,7 +205,8 @@ static inline int bpa10x_submit_bulk_urb(struct hci_dev *hdev)
 
 	err = usb_submit_urb(urb, GFP_KERNEL);
 	if (err < 0) {
-		bt_dev_err(hdev, "urb %p submission failed (%d)", urb, -err);
+		BT_ERR("%s urb %p submission failed (%d)",
+						hdev->name, urb, -err);
 		usb_unanchor_urb(urb);
 	}
 
@@ -269,7 +272,7 @@ static int bpa10x_setup(struct hci_dev *hdev)
 	if (IS_ERR(skb))
 		return PTR_ERR(skb);
 
-	bt_dev_info(hdev, "%s", (char *)(skb->data + 1));
+	BT_INFO("%s: %s", hdev->name, (char *)(skb->data + 1));
 
 	hci_set_fw_info(hdev, "%s", skb->data + 1);
 
@@ -345,7 +348,7 @@ static int bpa10x_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
 
 	err = usb_submit_urb(urb, GFP_ATOMIC);
 	if (err < 0) {
-		bt_dev_err(hdev, "urb %p submission failed", urb);
+		BT_ERR("%s urb %p submission failed", hdev->name, urb);
 		kfree(urb->setup_packet);
 		usb_unanchor_urb(urb);
 	}

@@ -123,7 +123,7 @@ static int msm_digcdc_clock_control(bool flag)
 	if (flag) {
 		mutex_lock(&pdata->cdc_int_mclk0_mutex);
 		if (atomic_read(&pdata->int_mclk0_enabled) == false) {
-			if (msm_dig_cdc->regmap->cache_only == true)
+			if (msm_dig_cdc->cache_only == true)
 				return ret;
 			if (pdata->native_clk_set)
 				pdata->digital_cdc_core_clk.clk_freq_in_hz =
@@ -142,7 +142,8 @@ static int msm_digcdc_clock_control(bool flag)
 				 * Avoid access to lpass register
 				 * as clock enable failed during SSR/PDR.
 				 */
-				msm_dig_cdc->regmap->cache_only = true;
+				regcache_cache_only(msm_dig_cdc->regmap, true);
+				msm_dig_cdc->cache_only = true;
 				return ret;
 			}
 			pr_debug("enabled digital codec core clk\n");
@@ -1158,12 +1159,14 @@ static int msm_dig_cdc_event_notify(struct notifier_block *block,
 		break;
 	case DIG_CDC_EVENT_SSR_DOWN:
 		regcache_cache_only(msm_dig_cdc->regmap, true);
+		msm_dig_cdc->cache_only = true;
 		mutex_lock(&pdata->cdc_int_mclk0_mutex);
 		atomic_set(&pdata->int_mclk0_enabled, false);
 		mutex_unlock(&pdata->cdc_int_mclk0_mutex);
 		break;
 	case DIG_CDC_EVENT_SSR_UP:
 		regcache_cache_only(msm_dig_cdc->regmap, false);
+		msm_dig_cdc->cache_only = false;
 		regcache_mark_dirty(msm_dig_cdc->regmap);
 
 		mutex_lock(&pdata->cdc_int_mclk0_mutex);

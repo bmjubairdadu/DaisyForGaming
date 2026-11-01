@@ -21,7 +21,6 @@
 
 #include <asm/uaccess.h>
 
-
 int iterate_dir(struct file *file, struct dir_context *ctx)
 {
 	struct inode *inode = file_inode(file);

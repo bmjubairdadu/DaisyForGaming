@@ -137,22 +137,10 @@ clang-trb/
 clang-weebx/
 environment/
 gcc/
+gcc-eva/
+gcc64/
 out/
-
-# DaisyForGaming build & packaging
-out-*/
-_zipwork/
 _ak3base/
-_folkpatch_tools/
-_modules/
-.dfg_build*
-*.log
-/.scmversion.tmp
-# flashable zips & binaries ship on GitHub Releases only
-releases/
-/*.zip
-*.apk
-*.img
-gh_sync.py
-run_flash.sh
-
+_zipwork/
+*.zip
+.dfg_build.log

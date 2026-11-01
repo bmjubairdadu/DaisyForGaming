@@ -481,7 +481,7 @@ static int erofs_managed_cache_releasepage(struct page *page, gfp_t gfp_mask)
 	DBG_BUGON(mapping->a_ops != &managed_cache_aops);
 
 	if (PagePrivate(page))
-		ret = erofs_try_to_free_cached_page(mapping, page);
+		ret = erofs_try_to_free_cached_page(page);
 
 	return ret;
 }
@@ -571,7 +571,6 @@ static int erofs_fill_super(struct super_block *sb, void *data, int silent)
 
 #ifdef CONFIG_EROFS_FS_ZIP
 	INIT_RADIX_TREE(&sbi->workstn_tree, GFP_ATOMIC);
-	spin_lock_init(&sbi->tree_lock);
 #endif
 
 	/* get the root inode */
@@ -591,7 +590,7 @@ static int erofs_fill_super(struct super_block *sb, void *data, int silent)
 		return -ENOMEM;
 
 	erofs_shrinker_register(sb);
-	/* sb->s_umount is already locked, SB_ACTIVE and SB_BORN are not set */
+	/* sb->s_umount is already locked, MS_ACTIVE and MS_BORN are not set */
 	err = erofs_init_managed_cache(sb);
 	if (err)
 		return err;
@@ -757,7 +756,7 @@ static int erofs_remount(struct super_block *sb, int *flags, char *data)
 	unsigned int org_mnt_opt = sbi->mount_opt;
 	int err;
 
-	DBG_BUGON(!(sb->s_flags & MS_RDONLY));
+	DBG_BUGON(!sb_rdonly(sb));
 	err = erofs_parse_options(sb, data);
 	if (err)
 		goto out;

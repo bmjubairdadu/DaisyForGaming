@@ -186,7 +186,6 @@ void ovl_path_lower(struct dentry *dentry, struct path *path)
 	*path = oe->numlower ? oe->lowerstack[0] : (struct path) { NULL, NULL };
 }
 
-
 int ovl_want_write(struct dentry *dentry)
 {
 	struct ovl_fs *ofs = dentry->d_sb->s_fs_info;
@@ -654,7 +653,6 @@ static int ovl_statfs(struct dentry *dentry, struct kstatfs *buf)
 	struct dentry *root_dentry = dentry->d_sb->s_root;
 	struct path path;
 	int err;
-
 
 	ovl_path_real(root_dentry, &path);
 

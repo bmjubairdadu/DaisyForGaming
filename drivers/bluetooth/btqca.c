@@ -30,7 +30,7 @@
 #define MAX_PATCH_FILE_SIZE (100*1024)
 #define MAX_NVM_FILE_SIZE   (10*1024)
 
-int qca_read_soc_version(struct hci_dev *hdev, u32 *soc_version)
+static int rome_patch_ver_req(struct hci_dev *hdev, u32 *rome_version)
 {
 	struct sk_buff *skb;
 	struct edl_event_hdr *edl;
@@ -38,35 +38,36 @@ int qca_read_soc_version(struct hci_dev *hdev, u32 *soc_version)
 	char cmd;
 	int err = 0;
 
-	bt_dev_dbg(hdev, "QCA Version Request");
+	BT_DBG("%s: ROME Patch Version Request", hdev->name);
 
 	cmd = EDL_PATCH_VER_REQ_CMD;
 	skb = __hci_cmd_sync_ev(hdev, EDL_PATCH_CMD_OPCODE, EDL_PATCH_CMD_LEN,
 				&cmd, HCI_EV_VENDOR, HCI_INIT_TIMEOUT);
 	if (IS_ERR(skb)) {
 		err = PTR_ERR(skb);
-		bt_dev_err(hdev, "Reading QCA version information failed (%d)",
-			   err);
+		BT_ERR("%s: Failed to read version of ROME (%d)", hdev->name,
+		       err);
 		return err;
 	}
 
 	if (skb->len != sizeof(*edl) + sizeof(*ver)) {
-		bt_dev_err(hdev, "QCA Version size mismatch len %d", skb->len);
+		BT_ERR("%s: Version size mismatch len %d", hdev->name,
+		       skb->len);
 		err = -EILSEQ;
 		goto out;
 	}
 
 	edl = (struct edl_event_hdr *)(skb->data);
 	if (!edl) {
-		bt_dev_err(hdev, "QCA TLV with no header");
+		BT_ERR("%s: TLV with no header", hdev->name);
 		err = -EILSEQ;
 		goto out;
 	}
 
 	if (edl->cresp != EDL_CMD_REQ_RES_EVT ||
 	    edl->rtype != EDL_APP_VER_RES_EVT) {
-		bt_dev_err(hdev, "QCA Wrong packet received %d %d", edl->cresp,
-			   edl->rtype);
+		BT_ERR("%s: Wrong packet received %d %d", hdev->name,
+		       edl->cresp, edl->rtype);
 		err = -EIO;
 		goto out;
 	}
@@ -78,35 +79,30 @@ int qca_read_soc_version(struct hci_dev *hdev, u32 *soc_version)
 	BT_DBG("%s: ROM    :0x%08x", hdev->name, le16_to_cpu(ver->rome_ver));
 	BT_DBG("%s: SOC    :0x%08x", hdev->name, le32_to_cpu(ver->soc_id));
 
-	/* QCA chipset version can be decided by patch and SoC
+	/* ROME chipset version can be decided by patch and SoC
 	 * version, combination with upper 2 bytes from SoC
 	 * and lower 2 bytes from patch will be used.
 	 */
-	*soc_version = (le32_to_cpu(ver->soc_id) << 16) |
+	*rome_version = (le32_to_cpu(ver->soc_id) << 16) |
 			(le16_to_cpu(ver->rome_ver) & 0x0000ffff);
-	if (*soc_version == 0)
-		err = -EILSEQ;
 
 out:
 	kfree_skb(skb);
-	if (err)
-		bt_dev_err(hdev, "QCA Failed to get version (%d)", err);
 
 	return err;
 }
-EXPORT_SYMBOL_GPL(qca_read_soc_version);
 
-static int qca_send_reset(struct hci_dev *hdev)
+static int rome_reset(struct hci_dev *hdev)
 {
 	struct sk_buff *skb;
 	int err;
 
-	bt_dev_dbg(hdev, "QCA HCI_RESET");
+	BT_DBG("%s: ROME HCI_RESET", hdev->name);
 
 	skb = __hci_cmd_sync(hdev, HCI_OP_RESET, 0, NULL, HCI_INIT_TIMEOUT);
 	if (IS_ERR(skb)) {
 		err = PTR_ERR(skb);
-		bt_dev_err(hdev, "QCA Reset failed (%d)", err);
+		BT_ERR("%s: Reset failed (%d)", hdev->name, err);
 		return err;
 	}
 
@@ -115,8 +111,8 @@ static int qca_send_reset(struct hci_dev *hdev)
 	return 0;
 }
 
-static void qca_tlv_check_data(struct rome_config *config,
-				u8 *fw_data)
+static void rome_tlv_check_data(struct rome_config *config,
+				const struct firmware *fw)
 {
 	const u8 *data;
 	u32 type_len;
@@ -126,7 +122,7 @@ static void qca_tlv_check_data(struct rome_config *config,
 	struct tlv_type_patch *tlv_patch;
 	struct tlv_type_nvm *tlv_nvm;
 
-	tlv = (struct tlv_type_hdr *)fw_data;
+	tlv = (struct tlv_type_hdr *)fw->data;
 
 	type_len = le32_to_cpu(tlv->type_len);
 	length = (type_len >> 8) & 0x00ffffff;
@@ -214,7 +210,7 @@ static void qca_tlv_check_data(struct rome_config *config,
 	}
 }
 
-static int qca_tlv_send_segment(struct hci_dev *hdev, int seg_size,
+static int rome_tlv_send_segment(struct hci_dev *hdev, int seg_size,
 				 const u8 *data, enum rome_tlv_dnld_mode mode)
 {
 	struct sk_buff *skb;
@@ -235,19 +231,19 @@ static int qca_tlv_send_segment(struct hci_dev *hdev, int seg_size,
 				HCI_EV_VENDOR, HCI_INIT_TIMEOUT);
 	if (IS_ERR(skb)) {
 		err = PTR_ERR(skb);
-		bt_dev_err(hdev, "QCA Failed to send TLV segment (%d)", err);
+		BT_ERR("%s: Failed to send TLV segment (%d)", hdev->name, err);
 		return err;
 	}
 
 	if (skb->len != sizeof(*edl) + sizeof(*tlv_resp)) {
-		bt_dev_err(hdev, "QCA TLV response size mismatch");
+		BT_ERR("%s: TLV response size mismatch", hdev->name);
 		err = -EILSEQ;
 		goto out;
 	}
 
 	edl = (struct edl_event_hdr *)(skb->data);
 	if (!edl) {
-		bt_dev_err(hdev, "TLV with no header");
+		BT_ERR("%s: TLV with no header", hdev->name);
 		err = -EILSEQ;
 		goto out;
 	}
@@ -256,8 +252,8 @@ static int qca_tlv_send_segment(struct hci_dev *hdev, int seg_size,
 
 	if (edl->cresp != EDL_CMD_REQ_RES_EVT ||
 	    edl->rtype != EDL_TVL_DNLD_RES_EVT || tlv_resp->result != 0x00) {
-		bt_dev_err(hdev, "QCA TLV with error stat 0x%x rtype 0x%x (0x%x)",
-			   edl->cresp, edl->rtype, tlv_resp->result);
+		BT_ERR("%s: TLV with error stat 0x%x rtype 0x%x (0x%x)",
+		       hdev->name, edl->cresp, edl->rtype, tlv_resp->result);
 		err = -EIO;
 	}
 
@@ -267,59 +263,46 @@ out:
 	return err;
 }
 
-static int qca_download_firmware(struct hci_dev *hdev,
+static int rome_download_firmware(struct hci_dev *hdev,
 				  struct rome_config *config)
 {
 	const struct firmware *fw;
 	u32 type_len, length;
 	struct tlv_type_hdr *tlv;
-	u8 *data;
 	const u8 *segment;
-	int ret, size, remain, i = 0;
+	int ret, remain, i = 0;
 
-	bt_dev_info(hdev, "ROME Downloading %s", config->fwname);
+	BT_INFO("%s: ROME Downloading file: %s", hdev->name, config->fwname);
 	ret = request_firmware(&fw, config->fwname, &hdev->dev);
 
 	if (ret || !fw || !fw->data || fw->size <= 0) {
-		bt_dev_err(hdev, "QCA Failed to request file = (%d)", ret);
+		BT_ERR("Failed to request file: err = (%d)", ret);
 		ret = ret ? ret : -EINVAL;
 		return ret;
 	}
 
-	size = fw->size;
-	data = vmalloc(fw->size);
-	if (!data) {
-		bt_dev_err(hdev, "QCA Failed to allocate memory for file: %s",
-			   config->fwname);
-		release_firmware(fw);
-		return -ENOMEM;
-	}
-
-	memcpy(data, fw->data, size);
-	release_firmware(fw);
-
 	if (config->type != TLV_TYPE_NVM &&
 		config->type != TLV_TYPE_PATCH) {
 		ret = -EINVAL;
-		bt_dev_err(hdev, "TLV_NVM dload: wrong config type selected");
+		BT_ERR("TLV_NVM dload: wrong config type selected");
 		goto exit;
 	}
 
 	if (config->type == TLV_TYPE_PATCH &&
 		(fw->size > MAX_PATCH_FILE_SIZE)) {
 		ret = -EINVAL;
-		bt_dev_err(hdev, "TLV_PATCH dload: wrong patch file sizes");
+		BT_ERR("TLV_PATCH dload: wrong patch file sizes");
 		goto exit;
 	} else if (config->type == TLV_TYPE_NVM &&
 		(fw->size > MAX_NVM_FILE_SIZE)) {
 		ret = -EINVAL;
-		bt_dev_err(hdev, "TLV_NVM dload: wrong NVM file sizes");
+		BT_ERR("TLV_NVM dload: wrong NVM file sizes");
 		goto exit;
 	}
 
 	if (fw->size < sizeof(struct tlv_type_hdr)) {
 		ret = -EINVAL;
-		bt_dev_err(hdev, "Firware size smaller to fit minimum value");
+		BT_ERR("Firware size smaller to fit minimum value");
 		goto exit;
 	}
 
@@ -329,19 +312,14 @@ static int qca_download_firmware(struct hci_dev *hdev,
 
 	if (fw->size - 4 != length) {
 		ret = -EINVAL;
-		bt_dev_err(hdev, "Requested size not matching size in header");
+		BT_ERR("Requested size not matching size in header");
 		goto exit;
 	}
 
 	rome_tlv_check_data(config, fw);
 
-	memcpy(data, fw->data, size);
-	release_firmware(fw);
-
-	qca_tlv_check_data(config, data);
-
-	segment = data;
-	remain = size;
+	segment = fw->data;
+	remain = fw->size;
 	while (remain > 0) {
 		int segsize = min(MAX_SIZE_PER_TLV_SEGMENT, remain);
 
@@ -352,7 +330,7 @@ static int qca_download_firmware(struct hci_dev *hdev,
 		if (!remain || segsize < MAX_SIZE_PER_TLV_SEGMENT)
 			config->dnld_mode = ROME_SKIP_EVT_NONE;
 
-		ret = qca_tlv_send_segment(hdev, segsize, segment,
+		ret = rome_tlv_send_segment(hdev, segsize, segment,
 					    config->dnld_mode);
 		if (ret)
 			break;
@@ -361,8 +339,7 @@ static int qca_download_firmware(struct hci_dev *hdev,
 	}
 
 exit:
-	vfree(data);
-
+	release_firmware(fw);
 	return ret;
 }
 
@@ -381,7 +358,8 @@ int qca_set_bdaddr_rome(struct hci_dev *hdev, const bdaddr_t *bdaddr)
 				HCI_EV_VENDOR, HCI_INIT_TIMEOUT);
 	if (IS_ERR(skb)) {
 		err = PTR_ERR(skb);
-		bt_dev_err(hdev, "QCA Change address command failed (%d)", err);
+		BT_ERR("%s: Change address command failed (%d)",
+		       hdev->name, err);
 		return err;
 	}
 
@@ -391,16 +369,25 @@ int qca_set_bdaddr_rome(struct hci_dev *hdev, const bdaddr_t *bdaddr)
 }
 EXPORT_SYMBOL_GPL(qca_set_bdaddr_rome);
 
-int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
-		   enum qca_btsoc_type soc_type, u32 soc_ver)
+int qca_uart_setup_rome(struct hci_dev *hdev, uint8_t baudrate)
 {
+	u32 rome_ver = 0;
 	struct rome_config config;
 	int err;
 	u8 rom_ver;
 
-	bt_dev_dbg(hdev, "QCA setup on UART");
+	BT_DBG("%s: ROME setup on UART", hdev->name);
 
 	config.user_baud_rate = baudrate;
+
+	/* Get ROME version information */
+	err = rome_patch_ver_req(hdev, &rome_ver);
+	if (err < 0 || rome_ver == 0) {
+		BT_ERR("%s: Failed to get version 0x%x", hdev->name, err);
+		return err;
+	}
+
+	BT_INFO("%s: ROME controller version 0x%08x", hdev->name, rome_ver);
 
 	/* Download rampatch file */
 	config.type = TLV_TYPE_PATCH;
@@ -417,9 +404,9 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
 			 "qca/rampatch_%08x.bin", soc_ver);
 	}
 
-	err = qca_download_firmware(hdev, &config);
+	err = rome_download_firmware(hdev, &config);
 	if (err < 0) {
-		bt_dev_err(hdev, "QCA Failed to download patch (%d)", err);
+		BT_ERR("%s: Failed to download patch (%d)", hdev->name, err);
 		return err;
 	}
 
@@ -435,24 +422,24 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
 		snprintf(config.fwname, sizeof(config.fwname),
 			 "qca/nvm_%08x.bin", soc_ver);
 
-	err = qca_download_firmware(hdev, &config);
+	err = rome_download_firmware(hdev, &config);
 	if (err < 0) {
-		bt_dev_err(hdev, "QCA Failed to download NVM (%d)", err);
+		BT_ERR("%s: Failed to download NVM (%d)", hdev->name, err);
 		return err;
 	}
 
 	/* Perform HCI reset */
-	err = qca_send_reset(hdev);
+	err = rome_reset(hdev);
 	if (err < 0) {
-		bt_dev_err(hdev, "QCA Failed to run HCI_RESET (%d)", err);
+		BT_ERR("%s: Failed to run HCI_RESET (%d)", hdev->name, err);
 		return err;
 	}
 
-	bt_dev_info(hdev, "QCA setup on UART is completed");
+	BT_INFO("%s: ROME setup on UART is completed", hdev->name);
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(qca_uart_setup);
+EXPORT_SYMBOL_GPL(qca_uart_setup_rome);
 
 MODULE_AUTHOR("Ben Young Tae Kim <ytkim@qca.qualcomm.com>");
 MODULE_DESCRIPTION("Bluetooth support for Qualcomm Atheros family ver " VERSION);

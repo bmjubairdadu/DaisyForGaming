@@ -1336,5 +1336,5 @@ done:
 
 gmu_only:
 	complete_all(&snapshot->dump_gate);
-	WARN_ON(device->force_panic);
+	BUG_ON(device->force_panic);
 }

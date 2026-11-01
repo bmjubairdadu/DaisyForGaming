@@ -54,7 +54,7 @@
 #define MAX_HW_FIFO_SIZE (MAX_HW_FIFO_DEPTH * 4) /* FIFO is 32 bits wide  */
 
 #define RETRY_MAX_CNT		20	/* max retry times to read register */
-#define RETRY_DELAY_INTERVAL	440	/* retry delay interval in us */
+#define RETRY_DELAY_INTERVAL	6	/* retry delay interval in us */
 
 struct msm_rng_device {
 	struct platform_device *pdev;
@@ -183,7 +183,7 @@ static int msm_rng_read(struct hwrng *rng, void *data, size_t max, bool wait)
 static struct hwrng msm_rng = {
 	.name = DRIVER_NAME,
 	.read = msm_rng_read,
-	.quality = 700,
+	.quality = 1024,
 };
 
 static int msm_rng_enable_hw(struct msm_rng_device *msm_rng_dev)

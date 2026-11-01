@@ -4,9 +4,10 @@ cd "$SRC" || exit 1
 
 export ARCH=arm64
 export CROSS_COMPILE=aarch64-linux-gnu-
+export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
 export PATH=$PATH:/usr/lib/ccache
 export LLVM=1 LLVM_IAS=1
-export KBUILD_BUILD_USER=daisy KBUILD_BUILD_HOST=daisy
+export KBUILD_BUILD_USER=JUBAIR_HOSEN KBUILD_BUILD_HOST=DaisyForGaming
 export KBUILD_BUILD_VERSION=12
 export KBUILD_BUILD_TIMESTAMP="Wed Oct 14 21:17:31 +06 2026"
 
@@ -42,7 +43,7 @@ grep -E '^CONFIG_KALLSYMS=|^CONFIG_KALLSYMS_ALL=|^CONFIG_KPROBES=|^CONFIG_MODVER
 grep -E '^CONFIG_CPU_BOOST=|^CONFIG_INPUT_BOOST_FREQ=|^CONFIG_INPUT_BOOST_FREQ_BIG=|^CONFIG_INPUT_BOOST_DURATION_MS=|^CONFIG_INPUT_BOOST_SCHED=|^CONFIG_ZRAM_DEFAULT_COMP_ALGORITHM=' out/.config
 
 echo "=== build (this takes a while) ==="
-make O=out ARCH=arm64 -j8 2>&1 | tee -a "$LOG" | grep -E 'error:|Error [0-9]|Kernel panic' | head -20
+make O=out ARCH=arm64 -j$(nproc) 2>&1 | tee -a "$LOG" | grep -E 'error:|Error [0-9]|Kernel panic' | head -20
 echo "--- warnings count: $(grep -c 'warning:' "$LOG" 2>/dev/null) ---"
 
 ls -l out/arch/arm64/boot/Image.gz-dtb && echo IMAGE_OK

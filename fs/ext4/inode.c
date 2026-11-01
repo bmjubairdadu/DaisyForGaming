@@ -625,16 +625,6 @@ found:
 			 */
 			ext4_clear_inode_state(inode, EXT4_STATE_EXT_MIGRATE);
 		}
-
-		/*
-		 * Update reserved blocks/metadata blocks after successful
-		 * block allocation which had been deferred till now. We don't
-		 * support fallocate for non extent files. So we can update
-		 * reserve space here.
-		 */
-		if ((retval > 0) &&
-			(flags & EXT4_GET_BLOCKS_DELALLOC_RESERVE))
-			ext4_da_update_reserve_space(inode, retval, 1);
 	}
 
 	if (retval > 0) {
@@ -3992,14 +3982,8 @@ static int __ext4_block_zero_page_range(handle_t *handle,
 			goto unlock;
 		if (decrypt) {
 			/* We expect the key to be set. */
-			if (WARN_ON_ONCE(!fscrypt_has_encryption_key(inode))) {
-				err = -ENOKEY;
-				goto unlock;
-			}
-			if (WARN_ON_ONCE(blocksize != PAGE_SIZE)) {
-				err = -EINVAL;
-				goto unlock;
-			}
+			BUG_ON(!fscrypt_has_encryption_key(inode));
+			BUG_ON(blocksize != PAGE_SIZE);
 			WARN_ON_ONCE(fscrypt_decrypt_pagecache_blocks(
 						page, PAGE_SIZE, 0));
 		}

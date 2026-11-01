@@ -33,7 +33,6 @@ static const char * const backends[] = {
 #endif
 #if IS_ENABLED(CONFIG_CRYPTO_LZO)
 	"lzo",
-	"lzo-rle",
 #endif
 	NULL
 };

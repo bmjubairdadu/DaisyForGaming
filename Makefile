@@ -363,12 +363,7 @@ CPP		= $(CC) -E
 ifneq ($(LLVM),)
 CC		= clang
 LD		= ld.lld
-# CONFIG_LD_LLD=y in .config makes line ~697 run `LD := $(LDLLD)`. If LDLLD
-# were undefined here that would blank LD, and the second arch/$(SRCARCH)
-# include would turn it into a bare "-EL", so every module link would exec a
-# command literally named -EL -> "sh: 1: -EL: not found" (Error 127).
 LDLLD		= ld.lld
-AS		= llvm-as
 AR		= llvm-ar
 NM		= llvm-nm
 OBJCOPY	= llvm-objcopy
@@ -493,7 +488,7 @@ PHONY += outputmakefile
 # output directory.
 outputmakefile:
 ifneq ($(KBUILD_SRC),)
-	$(Q)rm -f source && ln -fsn $(srctree) source
+	$(Q)ln -fsn $(srctree) source
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/mkmakefile \
 	    $(srctree) $(objtree) $(VERSION) $(PATCHLEVEL)
 endif
@@ -565,7 +560,7 @@ CLANG_FLAGS	+= -Werror=unknown-warning-option
 CLANG_FLAGS	+= $(call cc-option, -Wno-misleading-indentation)
 CLANG_FLAGS	+= $(call cc-option, -Wno-bool-operation)
 KBUILD_CFLAGS	+= $(CLANG_FLAGS)
-KBUILD_AFLAGS	+= $(CLANG_FLAGS) -no-integrated-as
+KBUILD_AFLAGS	+= $(CLANG_FLAGS)
 ifeq ($(ld-name),lld)
 KBUILD_CFLAGS	+= -fuse-ld=lld
 endif
@@ -697,7 +692,7 @@ LDFINAL_vmlinux := $(LD)
 LD		:= $(LDGOLD)
 endif
 ifdef CONFIG_LD_LLD
-LD		:= $(LDLLD)
+LD		:= $(if $(LDLLD),$(LDLLD),ld.lld)
 endif
 
 ifdef CONFIG_LTO_CLANG
@@ -866,10 +861,12 @@ ifdef CONFIG_CC_WERROR
 KBUILD_CFLAGS	+= -Werror
 endif
 
-# This doesn't need 835769/843419 erratum fixes.
+# This doesn't need 843419 erratum fixes.
 # Some toolchains enable those fixes automatically, so opt-out.
-KBUILD_CFLAGS	+= $(call cc-option, -mno-fix-cortex-a53-835769)
 KBUILD_CFLAGS	+= $(call cc-option, -mno-fix-cortex-a53-843419)
+
+# Enable erratum 835769
+KBUILD_CFLAGS	+= $(call cc-option, -mfix-cortex-a53-835769)
 
 # Tell gcc to never replace conditional load with a non-conditional one
 KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)

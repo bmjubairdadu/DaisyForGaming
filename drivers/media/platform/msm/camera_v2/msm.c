@@ -228,14 +228,20 @@ static void msm_pm_qos_add_request(void)
 static void msm_pm_qos_remove_request(void)
 {
 	pr_info("%s: remove request\n", __func__);
+	if (!atomic_cmpxchg(&qos_add_request_done, 1, 0))
+		return;
 	pm_qos_remove_request(&msm_v4l2_pm_qos_request);
 }
 
 void msm_pm_qos_update_request(int val)
 {
+	/* Update just before creating the first session
+	 * or after destroying the last session.
+	 */
+	if (msm_session_q && msm_session_q->len == 0) {
 	pr_info("%s: update request %d\n", __func__, val);
-	if (pm_qos_request_active(&msm_v4l2_pm_qos_request))
-		pm_qos_update_request(&msm_v4l2_pm_qos_request, val);
+	pm_qos_update_request(&msm_v4l2_pm_qos_request, val);
+	}
 }
 
 struct msm_session *msm_session_find(unsigned int session_id)
@@ -1305,6 +1311,9 @@ static int msm_probe(struct platform_device *pdev)
 	struct msm_video_device *pvdev = NULL;
 	static struct dentry *cam_debugfs_root;
 	int rc = 0;
+
+	if (!msm_bus_scale_driver_ready())
+		return -EPROBE_DEFER;
 
 	msm_v4l2_dev = kzalloc(sizeof(*msm_v4l2_dev),
 		GFP_KERNEL);

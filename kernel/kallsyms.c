@@ -616,7 +616,6 @@ static int s_show(struct seq_file *m, void *p)
 	} else
 		seq_printf(m, "%pK %c %s\n", (void *)iter->value,
 			   iter->type, iter->name);
-
 	return 0;
 }
 

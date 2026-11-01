@@ -2045,13 +2045,10 @@ static int binder_inc_ref_for_node(struct binder_proc *proc,
 static void binder_pop_transaction_ilocked(struct binder_thread *target_thread,
 					   struct binder_transaction *t)
 {
-	if (WARN_ON(!target_thread))
-		return;
+	BUG_ON(!target_thread);
 	assert_spin_locked(&target_thread->proc->inner_lock);
-	if (WARN_ON(target_thread->transaction_stack != t))
-		return;
-	if (WARN_ON(target_thread->transaction_stack->from != target_thread))
-		return;
+	BUG_ON(target_thread->transaction_stack != t);
+	BUG_ON(target_thread->transaction_stack->from != target_thread);
 	target_thread->transaction_stack =
 		target_thread->transaction_stack->from_parent;
 	t->from = NULL;
@@ -6289,6 +6286,7 @@ err_init_binder_device_failed:
 
 err_alloc_device_names_failed:
 	debugfs_remove_recursive(binder_debugfs_dir_entry_root);
+	binder_alloc_shrinker_exit();
 	binder_destroy_pools();
 
 	return ret;

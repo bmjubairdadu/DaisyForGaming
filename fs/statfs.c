@@ -50,7 +50,7 @@ static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
 {
 	int retval;
 
-	if (!dentry || !dentry->d_sb || !dentry->d_sb->s_op || !dentry->d_sb->s_op->statfs)
+	if (!dentry->d_sb->s_op->statfs)
 		return -ENOSYS;
 
 	memset(buf, 0, sizeof(*buf));
@@ -66,6 +66,7 @@ static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
 int vfs_statfs(struct path *path, struct kstatfs *buf)
 {
 	int error;
+
 	error = statfs_by_dentry(path->dentry, buf);
 	if (!error)
 		buf->f_flags = calculate_f_flags(path->mnt);

@@ -958,7 +958,7 @@ int msm_pcm_routing_get_stream_app_type_cfg(
 		ret = -EINVAL;
 		goto done;
 	} else if (!is_mm_lsm_fe_id(fedai_id)) {
-		pr_err("%s: Invalid FE ID %d\n", __func__, fedai_id);
+		pr_debug("%s: Invalid FE ID %d\n", __func__, fedai_id);
 		ret = -EINVAL;
 		goto done;
 	} else if (session_type != SESSION_TYPE_RX &&
@@ -1054,6 +1054,9 @@ static int msm_routing_find_topology_on_index(int session_type, int app_type,
 	int topology = -EINVAL;
 	struct cal_block_data *cal_block = NULL;
 
+	if (cal_data[idx] == NULL)
+		return topology;
+
 	mutex_lock(&cal_data[idx]->lock);
 	cal_block = msm_routing_find_topology(session_type, app_type,
 					      acdb_dev_id, idx, exact);
@@ -1079,9 +1082,6 @@ static int msm_routing_get_adm_topology(int fedai_id, int session_type,
 	pr_debug("%s: fedai_id %d, session_type %d, be_id %d\n",
 	       __func__, fedai_id, session_type, be_id);
 
-	if (cal_data == NULL)
-		goto done;
-
 	app_type = fe_dai_app_type_cfg[fedai_id][session_type][be_id].app_type;
 	acdb_dev_id =
 		fe_dai_app_type_cfg[fedai_id][session_type][be_id].acdb_dev_id;
@@ -1101,7 +1101,7 @@ static int msm_routing_get_adm_topology(int fedai_id, int session_type,
 		if (topology < 0)
 			topology = NULL_COPP_TOPOLOGY;
 	}
-done:
+
 	pr_debug("%s: Using topology %d\n", __func__, topology);
 	return topology;
 }
@@ -1429,7 +1429,7 @@ static int msm_pcm_routing_channel_mixer(int fe_id, bool perf_mode,
 	char *ch_map = NULL;
 
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
-		pr_err("%s: invalid FE %d\n", __func__, fe_id);
+		pr_debug("%s: invalid FE %d\n", __func__, fe_id);
 		return 0;
 	}
 
@@ -2959,7 +2959,7 @@ static int msm_pcm_get_channel_rule_index(struct snd_kcontrol *kcontrol,
 	fe_id = ((struct soc_mixer_control *)
 			kcontrol->private_value)->shift;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
-		pr_err("%s: invalid FE %d\n", __func__, fe_id);
+		pr_debug("%s: invalid FE %d\n", __func__, fe_id);
 		return -EINVAL;
 	}
 
@@ -2976,7 +2976,7 @@ static int msm_pcm_put_channel_rule_index(struct snd_kcontrol *kcontrol,
 	fe_id = ((struct soc_mixer_control *)
 			kcontrol->private_value)->shift;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
-		pr_err("%s: invalid FE %d\n", __func__, fe_id);
+		pr_debug("%s: invalid FE %d\n", __func__, fe_id);
 		return -EINVAL;
 	}
 
@@ -2993,7 +2993,7 @@ static int msm_pcm_get_out_chs(struct snd_kcontrol *kcontrol,
 	fe_id = ((struct soc_multi_mixer_control *)
 			kcontrol->private_value)->shift;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
-		pr_err("%s: invalid FE %d\n", __func__, fe_id);
+		pr_debug("%s: invalid FE %d\n", __func__, fe_id);
 		return -EINVAL;
 	}
 
@@ -3010,7 +3010,7 @@ static int msm_pcm_put_out_chs(struct snd_kcontrol *kcontrol,
 			kcontrol->private_value)->shift;
 	out_ch = ucontrol->value.integer.value[0];
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
-		pr_err("%s: invalid FE %d\n", __func__, fe_id);
+		pr_debug("%s: invalid FE %d\n", __func__, fe_id);
 		return -EINVAL;
 	}
 
@@ -3140,7 +3140,7 @@ static int msm_pcm_channel_mixer_get(struct snd_kcontrol *kcontrol,
 	fe_id = ((struct soc_enum *)
 			kcontrol->private_value)->shift_l;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
-		pr_err("%s: invalid FE %d\n", __func__, fe_id);
+		pr_debug("%s: invalid FE %d\n", __func__, fe_id);
 		return -EINVAL;
 	}
 
@@ -3159,7 +3159,7 @@ static int msm_pcm_channel_mixer_put(struct snd_kcontrol *kcontrol,
 	fe_id = ((struct soc_enum *)
 			kcontrol->private_value)->shift_l;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
-		pr_err("%s: invalid FE %d\n", __func__, fe_id);
+		pr_debug("%s: invalid FE %d\n", __func__, fe_id);
 		return -EINVAL;
 	}
 
@@ -3193,11 +3193,11 @@ static int msm_pcm_channel_input_be_put(struct snd_kcontrol *kcontrol,
 	fe_id = e->shift_l;
 	in_ch = e->shift_r;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
-		pr_err("%s: invalid FE %d\n", __func__, fe_id);
+		pr_debug("%s: invalid FE %d\n", __func__, fe_id);
 		return -EINVAL;
 	}
 	if (in_ch >= ADM_MAX_CHANNELS) {
-		pr_err("%s: invalid input channel %d\n", __func__, in_ch);
+		pr_debug("%s: invalid input channel %d\n", __func__, in_ch);
 		return -EINVAL;
 	}
 
@@ -3214,7 +3214,7 @@ static int msm_pcm_channel_input_be_get(struct snd_kcontrol *kcontrol,
 	fe_id = e->shift_l;
 	in_ch = e->shift_r;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
-		pr_err("%s: invalid FE %d\n", __func__, fe_id);
+		pr_debug("%s: invalid FE %d\n", __func__, fe_id);
 		return -EINVAL;
 	}
 	if (in_ch >= ADM_MAX_CHANNELS) {
@@ -3249,7 +3249,7 @@ static int msm_pcm_channel_weight_put(struct snd_kcontrol *kcontrol,
 	out_ch = ((struct soc_multi_mixer_control *)
 			kcontrol->private_value)->rshift;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
-		pr_err("%s: invalid FE %d\n", __func__, fe_id);
+		pr_debug("%s: invalid FE %d\n", __func__, fe_id);
 		return -EINVAL;
 	}
 	if (out_ch >= ADM_MAX_CHANNELS) {
@@ -3290,7 +3290,7 @@ static int msm_pcm_channel_weight_get(struct snd_kcontrol *kcontrol,
 	out_ch = ((struct soc_multi_mixer_control *)
 			kcontrol->private_value)->rshift;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
-		pr_err("%s: invalid FE %d\n", __func__, fe_id);
+		pr_debug("%s: invalid FE %d\n", __func__, fe_id);
 		return -EINVAL;
 	}
 	if (out_ch >= ADM_MAX_CHANNELS) {
@@ -9881,6 +9881,10 @@ static const struct snd_kcontrol_new mmul8_mixer_controls[] = {
 	MSM_BACKEND_DAI_SLIMBUS_7_TX,
 	MSM_FRONTEND_DAI_MULTIMEDIA8, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("SLIM_8_TX", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_SLIMBUS_8_TX,
+	MSM_FRONTEND_DAI_MULTIMEDIA8, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 	SOC_DOUBLE_EXT("USB_AUDIO_TX", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_USB_TX,
 	MSM_FRONTEND_DAI_MULTIMEDIA8, 1, 0, msm_routing_get_audio_mixer,
@@ -12469,10 +12473,6 @@ static const struct snd_kcontrol_new quin_mi2s_rx_port_mixer_controls[] = {
 	MSM_BACKEND_DAI_QUINARY_MI2S_RX,
 	MSM_BACKEND_DAI_TERTIARY_MI2S_TX, 1, 0, msm_routing_get_port_mixer,
 	msm_routing_put_port_mixer),
-	SOC_DOUBLE_EXT("INTERNAL_FM_TX", SND_SOC_NOPM,
-	MSM_BACKEND_DAI_QUINARY_MI2S_RX,
-	MSM_BACKEND_DAI_INT_FM_TX, 1, 0, msm_routing_get_port_mixer,
-	msm_routing_put_port_mixer),
 	SOC_SINGLE_EXT("AUX_PCM_UL_TX", MSM_BACKEND_DAI_QUINARY_MI2S_RX,
 	MSM_BACKEND_DAI_AUXPCM_TX, 1, 0, msm_routing_get_port_mixer,
 	msm_routing_put_port_mixer),
@@ -12485,6 +12485,10 @@ static const struct snd_kcontrol_new quin_mi2s_rx_port_mixer_controls[] = {
 	msm_routing_put_port_mixer),
 	SOC_SINGLE_EXT("QUIN_MI2S_TX", MSM_BACKEND_DAI_QUINARY_MI2S_RX,
 	MSM_BACKEND_DAI_QUINARY_MI2S_TX, 1, 0, msm_routing_get_port_mixer,
+	msm_routing_put_port_mixer),
+	SOC_DOUBLE_EXT("INTERNAL_FM_TX", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUINARY_MI2S_RX,
+	MSM_BACKEND_DAI_INT_FM_TX, 1, 0, msm_routing_get_port_mixer,
 	msm_routing_put_port_mixer),
 };
 
@@ -15579,7 +15583,7 @@ static int msm_voice_sound_focus_put(struct snd_kcontrol *kcontrol,
 		sizeof(struct sound_focus_param));
 	ret = voc_set_sound_focus(soundFocusData);
 	if (ret) {
-		pr_err("%s: Error setting Sound Focus Params, err=%d\n",
+		pr_debug("%s: Error setting Sound Focus Params, err=%d\n",
 			  __func__, ret);
 
 		ret = -EINVAL;
@@ -15598,7 +15602,7 @@ static int msm_voice_sound_focus_get(struct snd_kcontrol *kcontrol,
 
 	ret = voc_get_sound_focus(&soundFocusData);
 	if (ret) {
-		pr_err("%s: Error getting Sound Focus Params, err=%d\n",
+		pr_debug("%s: Error getting Sound Focus Params, err=%d\n",
 			  __func__, ret);
 
 		ret = -EINVAL;
@@ -15630,7 +15634,7 @@ static int msm_voice_source_tracking_get(struct snd_kcontrol *kcontrol,
 
 	ret = voc_get_source_tracking(&sourceTrackingData);
 	if (ret) {
-		pr_err("%s: Error getting Source Tracking Params, err=%d\n",
+		pr_debug("%s: Error getting Source Tracking Params, err=%d\n",
 			  __func__, ret);
 
 		ret = -EINVAL;
@@ -15686,7 +15690,7 @@ static int msm_audio_get_copp_idx_from_port_id(int port_id, int session_type,
 			break;
 	}
 	if (i >= MSM_FRONTEND_DAI_MM_SIZE) {
-		pr_err("%s: Invalid FE, exiting\n", __func__);
+		pr_debug("%s: Invalid FE, exiting\n", __func__);
 
 		ret = -EINVAL;
 		goto done;
@@ -15756,7 +15760,7 @@ static int msm_audio_sound_focus_put(struct snd_kcontrol *kcontrol,
 	ret = msm_audio_get_copp_idx_from_port_id(port_id, SESSION_TYPE_TX,
 					    &copp_idx);
 	if (ret) {
-		pr_err("%s: Could not get copp idx for port_id=%d\n",
+		pr_debug("%s: Could not get copp idx for port_id=%d\n",
 			__func__, port_id);
 
 		ret = -EINVAL;
@@ -15768,7 +15772,7 @@ static int msm_audio_sound_focus_put(struct snd_kcontrol *kcontrol,
 
 	ret = adm_set_sound_focus(port_id, copp_idx, soundFocusData);
 	if (ret) {
-		pr_err("%s: Error setting Sound Focus Params, err=%d\n",
+		pr_debug("%s: Error setting Sound Focus Params, err=%d\n",
 			  __func__, ret);
 
 		ret = -EINVAL;
@@ -15799,7 +15803,7 @@ static int msm_audio_sound_focus_get(struct snd_kcontrol *kcontrol,
 	ret = msm_audio_get_copp_idx_from_port_id(port_id, SESSION_TYPE_TX,
 					    &copp_idx);
 	if (ret) {
-		pr_err("%s: Could not get copp idx for port_id=%d\n",
+		pr_debug("%s: Could not get copp idx for port_id=%d\n",
 			__func__, port_id);
 
 		ret = -EINVAL;
@@ -15808,7 +15812,7 @@ static int msm_audio_sound_focus_get(struct snd_kcontrol *kcontrol,
 
 	ret = adm_get_sound_focus(port_id, copp_idx, &soundFocusData);
 	if (ret) {
-		pr_err("%s: Error getting Sound Focus Params, err=%d\n",
+		pr_debug("%s: Error getting Sound Focus Params, err=%d\n",
 			  __func__, ret);
 
 		ret = -EINVAL;
@@ -15842,7 +15846,7 @@ static int msm_audio_source_tracking_get(struct snd_kcontrol *kcontrol,
 	ret = msm_audio_get_copp_idx_from_port_id(port_id, SESSION_TYPE_TX,
 					    &copp_idx);
 	if (ret) {
-		pr_err("%s: Could not get copp idx for port_id=%d\n",
+		pr_debug("%s: Could not get copp idx for port_id=%d\n",
 			__func__, port_id);
 
 		ret = -EINVAL;
@@ -15851,7 +15855,7 @@ static int msm_audio_source_tracking_get(struct snd_kcontrol *kcontrol,
 
 	ret = adm_get_source_tracking(port_id, copp_idx, &sourceTrackingData);
 	if (ret) {
-		pr_err("%s: Error getting Source Tracking Params, err=%d\n",
+		pr_debug("%s: Error getting Source Tracking Params, err=%d\n",
 			  __func__, ret);
 
 		ret = -EINVAL;
@@ -17702,6 +17706,8 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"MultiMedia1 Mixer", "SLIM_8_TX", "SLIMBUS_8_TX"},
 	{"MultiMedia8 Mixer", "SLIM_6_TX", "SLIMBUS_6_TX"},
 	{"MultiMedia8 Mixer", "SLIM_7_TX", "SLIMBUS_7_TX"},
+	{"MultiMedia8 Mixer", "SLIM_8_TX", "SLIMBUS_8_TX"},
+	{"MultiMedia8 Mixer", "SLIM_9_TX", "SLIMBUS_9_TX"},
 	{"MultiMedia4 Mixer", "SLIM_0_TX", "SLIMBUS_0_TX"},
 	{"MultiMedia17 Mixer", "SLIM_0_TX", "SLIMBUS_0_TX"},
 	{"MultiMedia18 Mixer", "SLIM_0_TX", "SLIMBUS_0_TX"},
@@ -20424,6 +20430,8 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"QUIN_MI2S_RX Port Mixer", "SLIM_0_TX", "SLIM_0_TX"},
 	{"QUIN_MI2S_RX Port Mixer", "SEC_MI2S_TX", "SEC_MI2S_TX"},
 	{"QUIN_MI2S_RX Port Mixer", "QUIN_MI2S_TX", "QUIN_MI2S_TX"},
+	{"QUIN_MI2S_RX Port Mixer", "SLIM_0_TX", "SLIMBUS_0_TX"},
+	{"QUIN_MI2S_RX Port Mixer", "SLIM_8_TX", "SLIMBUS_8_TX"},
 	{"QUIN_MI2S_RX", NULL, "QUIN_MI2S_RX Port Mixer"},
 
 	/* Backend Enablement */

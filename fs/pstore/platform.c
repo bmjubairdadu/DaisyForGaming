@@ -267,7 +267,7 @@ static void free_zlib(void)
 	big_oops_buf_sz = 0;
 }
 
-static struct pstore_zbackend backend_zlib = {
+static const struct pstore_zbackend backend_zlib = {
 	.compress	= compress_zlib,
 	.decompress	= decompress_zlib,
 	.allocate	= allocate_zlib,
@@ -328,7 +328,7 @@ static void free_lzo(void)
 	big_oops_buf_sz = 0;
 }
 
-static struct pstore_zbackend backend_lzo = {
+static const struct pstore_zbackend backend_lzo = {
 	.compress	= compress_lzo,
 	.decompress	= decompress_lzo,
 	.allocate	= allocate_lzo,
@@ -389,7 +389,7 @@ static void free_lz4(void)
 	big_oops_buf_sz = 0;
 }
 
-static struct pstore_zbackend backend_lz4 = {
+static const struct pstore_zbackend backend_lz4 = {
 	.compress	= compress_lz4,
 	.decompress	= decompress_lz4,
 	.allocate	= allocate_lz4,
@@ -398,7 +398,7 @@ static struct pstore_zbackend backend_lz4 = {
 };
 #endif
 
-static struct pstore_zbackend *zbackend =
+static const struct pstore_zbackend *zbackend =
 #if defined(CONFIG_PSTORE_ZLIB_COMPRESS)
 	&backend_zlib;
 #elif defined(CONFIG_PSTORE_LZO_COMPRESS)
@@ -668,11 +668,15 @@ int pstore_register(struct pstore_info *psi)
 {
 	struct module *owner = psi->owner;
 
-	if (backend && strcmp(backend, psi->name))
+	if (backend && strcmp(backend, psi->name)) {
+		pr_warn("ignoring unexpected backend '%s'\n", psi->name);
 		return -EPERM;
+	}
 
 	spin_lock(&pstore_lock);
 	if (psinfo) {
+		pr_warn("backend '%s' already loaded: ignoring '%s'\n",
+			psinfo->name, psi->name);
 		spin_unlock(&pstore_lock);
 		return -EBUSY;
 	}
@@ -717,9 +721,9 @@ int pstore_register(struct pstore_info *psi)
 	 */
 	backend = psi->name;
 
-	module_put(owner);
-
 	pr_info("Registered %s as persistent store backend\n", psi->name);
+
+	module_put(owner);
 
 	return 0;
 }
@@ -748,6 +752,53 @@ void pstore_unregister(struct pstore_info *psi)
 }
 EXPORT_SYMBOL_GPL(pstore_unregister);
 
+static void decompress_record(struct pstore_record *record)
+{
+	int unzipped_len;
+	char *decompressed;
+
+	if (!record->compressed)
+		return;
+
+	/* Only PSTORE_TYPE_DMESG support compression. */
+	if (record->type != PSTORE_TYPE_DMESG) {
+		pr_warn("ignored compressed record type %d\n", record->type);
+		return;
+	}
+
+	/* No compression method has created the common buffer. */
+	if (!big_oops_buf) {
+		pr_warn("no decompression buffer allocated\n");
+		return;
+	}
+
+	unzipped_len = pstore_decompress(record->buf, big_oops_buf,
+					 record->size, big_oops_buf_sz);
+	if (unzipped_len <= 0) {
+		pr_err("decompression failed: %d\n", unzipped_len);
+		return;
+	}
+
+	/* Build new buffer for decompressed contents. */
+	decompressed = kmalloc(unzipped_len + record->ecc_notice_size,
+			       GFP_KERNEL);
+	if (!decompressed) {
+		pr_err("decompression ran out of memory\n");
+		return;
+	}
+	memcpy(decompressed, big_oops_buf, unzipped_len);
+
+	/* Append ECC notice to decompressed buffer. */
+	memcpy(decompressed + unzipped_len, record->buf + record->size,
+	       record->ecc_notice_size);
+
+	/* Swap out compresed contents with decompressed contents. */
+	kfree(record->buf);
+	record->buf = decompressed;
+	record->size = unzipped_len;
+	record->compressed = false;
+}
+
 /*
  * Read all the records from the persistent store. Create
  * files in our filesystem.  Don't warn about -EEXIST errors
@@ -757,16 +808,8 @@ EXPORT_SYMBOL_GPL(pstore_unregister);
 void pstore_get_records(int quiet)
 {
 	struct pstore_info *psi = psinfo;
-	char			*buf = NULL;
-	ssize_t			size;
-	u64			id;
-	int			count;
-	enum pstore_type_id	type;
-	struct timespec		time;
+	struct pstore_record	record = { .psi = psi, };
 	int			failed = 0, rc;
-	bool			compressed;
-	int			unzipped_len = -1;
-	ssize_t			ecc_notice_size = 0;
 
 	if (!psi)
 		return;
@@ -775,39 +818,21 @@ void pstore_get_records(int quiet)
 	if (psi->open && psi->open(psi))
 		goto out;
 
-	while ((size = psi->read(&id, &type, &count, &time, &buf, &compressed,
-				 &ecc_notice_size, psi)) > 0) {
-		if (compressed && (type == PSTORE_TYPE_DMESG)) {
-			if (big_oops_buf)
-				unzipped_len = pstore_decompress(buf,
-							big_oops_buf, size,
-							big_oops_buf_sz);
+	while ((record.size = psi->read(&record.id, &record.type,
+				 &record.count, &record.time,
+				 &record.buf, &record.compressed,
+				 &record.ecc_notice_size,
+				 record.psi)) > 0) {
 
-			if (unzipped_len > 0) {
-				if (ecc_notice_size)
-					memcpy(big_oops_buf + unzipped_len,
-					       buf + size, ecc_notice_size);
-				kfree(buf);
-				buf = big_oops_buf;
-				size = unzipped_len;
-				compressed = false;
-			} else {
-				pr_err("decompression failed;returned %d\n",
-				       unzipped_len);
-				compressed = true;
-			}
-		}
-		rc = pstore_mkfile(type, psi->name, id, count, buf,
-				   compressed, size + ecc_notice_size,
-				   time, psi);
-		if (unzipped_len < 0) {
-			/* Free buffer other than big oops */
-			kfree(buf);
-			buf = NULL;
-		} else
-			unzipped_len = -1;
+		decompress_record(&record);
+		rc = pstore_mkfile(&record);
+
 		if (rc && (rc != -EEXIST || !quiet))
 			failed++;
+
+		kfree(record.buf);
+		memset(&record, 0, sizeof(record));
+		record.psi = psi;
 	}
 	if (psi->close)
 		psi->close(psi);

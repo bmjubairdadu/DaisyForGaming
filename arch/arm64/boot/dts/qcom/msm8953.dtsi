@@ -165,7 +165,7 @@
 		dump_mem: mem_dump_region {
 			compatible = "shared-dma-pool";
 			reusable;
-			size = <0x400000>;
+			size = <0 0x400000>;
 		};
 
 		/* global autoconfigured region for contiguous allocations */
@@ -235,6 +235,7 @@
 	compatible = "simple-bus";
 
 	dcc: dcc@b3000 {
+		status = "disabled";
 		compatible = "qcom,dcc";
 		reg = <0xb3000 0x1000>,
 		      <0xb4000 0x800>;

@@ -30,7 +30,6 @@
 
 #include <linux/module.h>
 #include <linux/devfreq.h>
-#include <linux/jiffies.h>
 #include <linux/state_notifier.h>
 #include <linux/msm_adreno_devfreq.h>
 
@@ -57,8 +56,8 @@ module_param_named(adreno_idler_idlewait, idlewait, uint, 0664);
 static unsigned int downdifferential = 20;
 module_param_named(adreno_idler_downdifferential, downdifferential, uint, 0664);
 
-/* Master switch to activate the whole routine (default OFF for smooth 60fps/2K/4K video) */
-static bool adreno_idler_active = false;
+/* Master switch to activate the whole routine */
+static bool adreno_idler_active = true;
 module_param_named(adreno_idler_active, adreno_idler_active, bool, 0664);
 
 static unsigned int idlecount = 0;
@@ -66,7 +65,6 @@ static unsigned int idlecount = 0;
 int adreno_idler(struct devfreq_dev_status stats, struct devfreq *devfreq,
 		 unsigned long *freq)
 {
-
 	if (!adreno_idler_active)
 		return 0;
 

@@ -124,19 +124,10 @@ struct tlv_type_hdr {
 	__u8   data[0];
 } __packed;
 
-enum qca_btsoc_type {
-	QCA_INVALID = -1,
-	QCA_AR3002,
-	QCA_ROME,
-	QCA_WCN3990
-};
-
 #if IS_ENABLED(CONFIG_BT_QCA)
 
 int qca_set_bdaddr_rome(struct hci_dev *hdev, const bdaddr_t *bdaddr);
-int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
-		   enum qca_btsoc_type soc_type, u32 soc_ver);
-int qca_read_soc_version(struct hci_dev *hdev, u32 *soc_version);
+int qca_uart_setup_rome(struct hci_dev *hdev, uint8_t baudrate);
 
 #else
 
@@ -145,13 +136,7 @@ static inline int qca_set_bdaddr_rome(struct hci_dev *hdev, const bdaddr_t *bdad
 	return -EOPNOTSUPP;
 }
 
-static inline int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
-				 enum qca_btsoc_type soc_type, u32 soc_ver)
-{
-	return -EOPNOTSUPP;
-}
-
-static inline int qca_read_soc_version(struct hci_dev *hdev, u32 *soc_version)
+static inline int qca_uart_setup_rome(struct hci_dev *hdev, int speed)
 {
 	return -EOPNOTSUPP;
 }

@@ -608,7 +608,7 @@ static int syslog_action_restricted(int type)
 	       type != SYSLOG_ACTION_SIZE_BUFFER;
 }
 
-int check_syslog_permissions(int type, int source)
+static int check_syslog_permissions(int type, int source)
 {
 	/*
 	 * If this is from /proc/kmsg and we've already opened it, then we've
@@ -636,7 +636,6 @@ int check_syslog_permissions(int type, int source)
 ok:
 	return security_syslog(type);
 }
-EXPORT_SYMBOL_GPL(check_syslog_permissions);
 
 static void append_char(char **pp, char *e, char c)
 {
@@ -776,7 +775,8 @@ static ssize_t devkmsg_write(struct kiocb *iocb, struct iov_iter *from)
 	}
 
 	if (strncmp("healthd", line, 7) == 0 ||
-		strncmp("init: DM_DEV_STATUS failed", line, 26) == 0) {
+    	strncmp(line, "LibBpfLoader", sizeof("LibBpfLoader")) == 0 ||
+    	strncmp("init: DM_DEV_STATUS failed", line, 26) == 0) {
 		kfree(buf);
 		return len;
 	}

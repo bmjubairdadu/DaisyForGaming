@@ -17,7 +17,7 @@
 | Device | Xiaomi Mi A2 Lite (`daisy` / `daisy_sprout`) |
 | SoC | Snapdragon 625 (MSM8953, 8× Cortex-A53) |
 | GPU | Adreno 506 (650 MHz) |
-| Base tree | TogoFire r54 (Linux 4.9.337) |
+| Base tree | Linux 4.9.337 (DaisyForGaming) |
 | ROM | Android 11 (tested on Lineage-based ROM) |
 
 ## ⬇️ Downloads (v1.1)
@@ -151,7 +151,7 @@ byte-identical (handy for kpatch testing).
 
 ## 🙏 Credits
 
-- **TogoFire** r54 — base kernel tree
+- **JUBAIR HOSEN** — developer & maintainer
 - **AnyKernel3** (osm0sis) — flashable packaging
 - **FolkPatch** (LyraVoid) / **KernelPatch** (bmax121) — boot-patch root
 - Everyone in the daisy community

@@ -767,6 +767,10 @@ static ssize_t store_##file_name					\
 	int ret, temp;							\
 	struct cpufreq_policy new_policy;				\
 									\
+	if ((&policy->object == &policy->min) &&			\
+	    (kp_active_mode() != 1))					\
+		return count;						\
+									\
 	memcpy(&new_policy, policy, sizeof(*policy));			\
 	new_policy.min = policy->user_policy.min;			\
 	new_policy.max = policy->user_policy.max;			\
@@ -2303,7 +2307,9 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
 				struct cpufreq_policy *new_policy)
 {
 	struct cpufreq_governor *old_gov;
+	struct task_struct *p;
 	int ret;
+	bool available = false;
 
 	pr_debug("setting new policy for CPU %u: %u - %u kHz\n",
 		 new_policy->cpu, new_policy->min, new_policy->max);
@@ -2314,8 +2320,20 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
 	* This check works well when we store new min/max freq attributes,
 	* because new_policy is a copy of policy with one field updated.
 	*/
-	if (new_policy->min > new_policy->max)
-		return -EINVAL;
+	if (new_policy->min > new_policy->max) {
+		read_lock(&tasklist_lock);
+		for_each_process(p) {
+			/* Check if libperfmgr exists */
+			if (strstr(p->comm, "libperfmgr")) {
+				available = true;
+				new_policy->min = new_policy->max;
+			}
+		}
+		read_unlock(&tasklist_lock);
+
+		if (!available)
+			return -EINVAL;
+	}
 
 	/* verify the cpu speed can be set within this limit */
 	ret = cpufreq_driver->verify(new_policy);

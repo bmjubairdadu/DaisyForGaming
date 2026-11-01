@@ -2,7 +2,6 @@
  * Persistent Storage - ramfs parts.
  *
  * Copyright (C) 2010 Intel Corporation <tony.luck@intel.com>
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2 as
@@ -37,8 +36,6 @@
 #include <linux/slab.h>
 #include <linux/spinlock.h>
 #include <linux/uaccess.h>
-#include <linux/syslog.h>
-
 #ifdef CONFIG_PSTORE_LAST_KMSG
 #include <linux/proc_fs.h>
 #endif
@@ -112,9 +109,11 @@ static int pstore_ftrace_seq_show(struct seq_file *s, void *v)
 	struct pstore_ftrace_seq_data *data = v;
 	struct pstore_ftrace_record *rec = (void *)(ps->data + data->off);
 
-	seq_printf(s, "%d %08lx  %08lx  %pf <- %pF\n",
-		pstore_ftrace_decode_cpu(rec), rec->ip, rec->parent_ip,
-		(void *)rec->ip, (void *)rec->parent_ip);
+	seq_printf(s, "CPU:%d ts:%llu %08lx  %08lx  %pf <- %pF\n",
+		   pstore_ftrace_decode_cpu(rec),
+		   pstore_ftrace_read_timestamp(rec),
+		   rec->ip, rec->parent_ip, (void *)rec->ip,
+		   (void *)rec->parent_ip);
 
 	return 0;
 }
@@ -125,18 +124,6 @@ static const struct seq_operations pstore_ftrace_seq_ops = {
 	.stop	= pstore_ftrace_seq_stop,
 	.show	= pstore_ftrace_seq_show,
 };
-
-static int pstore_check_syslog_permissions(struct pstore_private *ps)
-{
-	switch (ps->type) {
-	case PSTORE_TYPE_DMESG:
-	case PSTORE_TYPE_CONSOLE:
-		return check_syslog_permissions(SYSLOG_ACTION_READ_ALL,
-			SYSLOG_FROM_READER);
-	default:
-		return 0;
-	}
-}
 
 static ssize_t pstore_file_read(struct file *file, char __user *userbuf,
 						size_t count, loff_t *ppos)
@@ -156,11 +143,8 @@ static int pstore_file_open(struct inode *inode, struct file *file)
 	int err;
 	const struct seq_operations *sops = NULL;
 
-	err = pstore_check_syslog_permissions(ps);
-	if (err)
-		return err;
-
 	if (ps->type == PSTORE_TYPE_FTRACE)
+
 		sops = &pstore_ftrace_seq_ops;
 
 	err = seq_open(file, sops);
@@ -196,17 +180,15 @@ static const struct file_operations pstore_file_operations = {
 static int pstore_unlink(struct inode *dir, struct dentry *dentry)
 {
 	struct pstore_private *p = d_inode(dentry)->i_private;
-	int err;
 
-	err = pstore_check_syslog_permissions(p);
-	if (err)
-		return err;
-
-	if (p->psi->erase)
+	if (p->psi->erase) {
+		mutex_lock(&p->psi->read_mutex);
 		p->psi->erase(p->type, p->id, p->count,
 			      d_inode(dentry)->i_ctime, p->psi);
-	else
+		mutex_unlock(&p->psi->read_mutex);
+	} else {
 		return -EPERM;
+	}
 
 	return simple_unlink(dir, dentry);
 }
@@ -298,15 +280,14 @@ bool pstore_is_mounted(void)
 }
 
 #ifdef CONFIG_PSTORE_LAST_KMSG
-
 static char *console_buffer;
 static ssize_t console_bufsize;
 
 static ssize_t last_kmsg_read(struct file *file, char __user *buf,
-		size_t len, loff_t *offset)
+			      size_t len, loff_t *offset)
 {
 	return simple_read_from_buffer(buf, len, offset,
-			console_buffer, console_bufsize);
+				       console_buffer, console_bufsize);
 }
 
 static const struct file_operations last_kmsg_fops = {
@@ -321,9 +302,7 @@ static const struct file_operations last_kmsg_fops = {
  * Load it up with "size" bytes of data from "buf".
  * Set the mtime & ctime to the date that this record was originally stored.
  */
-int pstore_mkfile(enum pstore_type_id type, char *psname, u64 id, int count,
-		  char *data, bool compressed, size_t size,
-		  struct timespec time, struct pstore_info *psi)
+int pstore_mkfile(struct pstore_record *record)
 {
 	struct dentry		*root = pstore_sb->s_root;
 	struct dentry		*dentry;
@@ -332,12 +311,13 @@ int pstore_mkfile(enum pstore_type_id type, char *psname, u64 id, int count,
 	char			name[PSTORE_NAMELEN];
 	struct pstore_private	*private, *pos;
 	unsigned long		flags;
+	size_t			size = record->size + record->ecc_notice_size;
 
 	spin_lock_irqsave(&allpstore_lock, flags);
 	list_for_each_entry(pos, &allpstore, list) {
-		if (pos->type == type &&
-		    pos->id == id &&
-		    pos->psi == psi) {
+		if (pos->type == record->type &&
+		    pos->id == record->id &&
+		    pos->psi == record->psi) {
 			rc = -EEXIST;
 			break;
 		}
@@ -355,48 +335,56 @@ int pstore_mkfile(enum pstore_type_id type, char *psname, u64 id, int count,
 	private = kmalloc(sizeof *private + size, GFP_KERNEL);
 	if (!private)
 		goto fail_alloc;
-	private->type = type;
-	private->id = id;
-	private->count = count;
-	private->psi = psi;
+	private->type = record->type;
+	private->id = record->id;
+	private->count = record->count;
+	private->psi = record->psi;
 
-	switch (type) {
+	switch (record->type) {
 	case PSTORE_TYPE_DMESG:
-		scnprintf(name, sizeof(name), "dmesg-%s-%lld%s",
-			  psname, id, compressed ? ".enc.z" : "");
+		scnprintf(name, sizeof(name), "dmesg-%s-%llu%s",
+			  record->psi->name, record->id,
+			  record->compressed ? ".enc.z" : "");
 		break;
 	case PSTORE_TYPE_CONSOLE:
-		scnprintf(name, sizeof(name), "console-%s-%lld", psname, id);
+		scnprintf(name, sizeof(name), "console-%s-%llu",
+			  record->psi->name, record->id);
 		break;
 	case PSTORE_TYPE_FTRACE:
-		scnprintf(name, sizeof(name), "ftrace-%s-%lld", psname, id);
+		scnprintf(name, sizeof(name), "ftrace-%s-%llu",
+			  record->psi->name, record->id);
 		break;
 	case PSTORE_TYPE_MCE:
-		scnprintf(name, sizeof(name), "mce-%s-%lld", psname, id);
+		scnprintf(name, sizeof(name), "mce-%s-%llu",
+			  record->psi->name, record->id);
 		break;
 	case PSTORE_TYPE_PPC_RTAS:
-		scnprintf(name, sizeof(name), "rtas-%s-%lld", psname, id);
+		scnprintf(name, sizeof(name), "rtas-%s-%llu",
+			  record->psi->name, record->id);
 		break;
 	case PSTORE_TYPE_PPC_OF:
-		scnprintf(name, sizeof(name), "powerpc-ofw-%s-%lld",
-			  psname, id);
+		scnprintf(name, sizeof(name), "powerpc-ofw-%s-%llu",
+			  record->psi->name, record->id);
 		break;
 	case PSTORE_TYPE_PPC_COMMON:
-		scnprintf(name, sizeof(name), "powerpc-common-%s-%lld",
-			  psname, id);
+		scnprintf(name, sizeof(name), "powerpc-common-%s-%llu",
+			  record->psi->name, record->id);
 		break;
 	case PSTORE_TYPE_PMSG:
-		scnprintf(name, sizeof(name), "pmsg-%s-%lld", psname, id);
+		scnprintf(name, sizeof(name), "pmsg-%s-%llu",
+			  record->psi->name, record->id);
 		break;
 	case PSTORE_TYPE_PPC_OPAL:
-		sprintf(name, "powerpc-opal-%s-%lld", psname, id);
+		scnprintf(name, sizeof(name), "powerpc-opal-%s-%llu",
+			  record->psi->name, record->id);
 		break;
 	case PSTORE_TYPE_UNKNOWN:
-		scnprintf(name, sizeof(name), "unknown-%s-%lld", psname, id);
+		scnprintf(name, sizeof(name), "unknown-%s-%llu",
+			  record->psi->name, record->id);
 		break;
 	default:
-		scnprintf(name, sizeof(name), "type%d-%s-%lld",
-			  type, psname, id);
+		scnprintf(name, sizeof(name), "type%d-%s-%llu",
+			  record->type, record->psi->name, record->id);
 		break;
 	}
 
@@ -406,13 +394,13 @@ int pstore_mkfile(enum pstore_type_id type, char *psname, u64 id, int count,
 	if (!dentry)
 		goto fail_lockedalloc;
 
-	memcpy(private->data, data, size);
+	memcpy(private->data, record->buf, size);
 	inode->i_size = private->size = size;
 
 	inode->i_private = private;
 
-	if (time.tv_sec)
-		inode->i_mtime = inode->i_ctime = time;
+	if (record->time.tv_sec)
+		inode->i_mtime = inode->i_ctime = record->time;
 
 	d_add(dentry, inode);
 
@@ -424,11 +412,10 @@ int pstore_mkfile(enum pstore_type_id type, char *psname, u64 id, int count,
 
 #ifdef CONFIG_PSTORE_LAST_KMSG
 	if (record->type == PSTORE_TYPE_CONSOLE) {
-		console_buffer = private->record->buf;
+		console_buffer = record->buf;
 		console_bufsize = size;
 	}
 #endif
-
 
 	return 0;
 
@@ -507,17 +494,20 @@ static int __init init_pstore_fs(void)
 		goto out;
 
 	err = register_filesystem(&pstore_fs_type);
-	if (err < 0)
+	if (err < 0) {
 		sysfs_remove_mount_point(fs_kobj, "pstore");
+		goto out;
+	}
 
 #ifdef CONFIG_PSTORE_LAST_KMSG
 	last_kmsg_entry = proc_create_data("last_kmsg", S_IFREG | S_IRUGO,
-			NULL, &last_kmsg_fops, NULL);
+					   NULL, &last_kmsg_fops, NULL);
 	if (!last_kmsg_entry) {
 		pr_err("Failed to create last_kmsg\n");
 		goto out;
 	}
 #endif
+
 out:
 	return err;
 }

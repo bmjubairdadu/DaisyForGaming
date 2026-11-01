@@ -119,7 +119,7 @@ extern bool msm_vidc_syscache_disable;
 
 #define MSM_VIDC_ERROR(value)					\
 	do {							\
-		WARN_ONCE(value, "msm_vidc: error condition\n"); \
+		BUG_ON(value);					\
 	} while (0)
 
 

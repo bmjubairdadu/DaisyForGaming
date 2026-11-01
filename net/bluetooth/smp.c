@@ -975,8 +975,7 @@ static u8 smp_random(struct smp_chan *smp)
 		return SMP_UNSPECIFIED;
 
 	if (crypto_memneq(smp->pcnf, confirm, sizeof(smp->pcnf))) {
-		bt_dev_err(hcon->hdev, "pairing failed "
-			   "(confirmation values mismatch)");
+		BT_ERR("Pairing failed (confirmation values mismatch)");
 		return SMP_CONFIRM_FAILED;
 	}
 
@@ -1182,7 +1181,7 @@ static void sc_generate_ltk(struct smp_chan *smp)
 
 	key = hci_find_link_key(hdev, &hcon->dst);
 	if (!key) {
-		bt_dev_err(hdev, "no Link Key found to generate LTK");
+		BT_ERR("%s No Link Key found to generate LTK", hdev->name);
 		return;
 	}
 
@@ -2006,11 +2005,11 @@ static int fixup_sc_false_positive(struct smp_chan *smp)
 		return SMP_UNSPECIFIED;
 
 	if (hci_dev_test_flag(hdev, HCI_SC_ONLY)) {
-		bt_dev_err(hdev, "refusing legacy fallback in SC-only mode");
+		BT_ERR("Refusing SMP SC -> legacy fallback in SC-only mode");
 		return SMP_UNSPECIFIED;
 	}
 
-	bt_dev_err(hdev, "trying to fall back to legacy SMP");
+	BT_ERR("Trying to fall back to legacy SMP");
 
 	req = (void *) &smp->preq[1];
 	rsp = (void *) &smp->prsp[1];
@@ -2021,7 +2020,7 @@ static int fixup_sc_false_positive(struct smp_chan *smp)
 	auth = req->auth_req & AUTH_REQ_MASK(hdev);
 
 	if (tk_request(conn, 0, auth, rsp->io_capability, req->io_capability)) {
-		bt_dev_err(hdev, "failed to fall back to legacy SMP");
+		BT_ERR("Failed to fall back to legacy SMP");
 		return SMP_UNSPECIFIED;
 	}
 
@@ -2300,7 +2299,7 @@ int smp_conn_security(struct hci_conn *hcon, __u8 sec_level)
 
 	chan = conn->smp;
 	if (!chan) {
-		bt_dev_err(hcon->hdev, "security requested but not available");
+		BT_ERR("SMP security requested but not available");
 		return 1;
 	}
 
@@ -2511,7 +2510,7 @@ static int smp_cmd_ident_addr_info(struct l2cap_conn *conn,
 	 */
 	if (!bacmp(&info->bdaddr, BDADDR_ANY) ||
 	    !hci_is_identity_address(&info->bdaddr, info->addr_type)) {
-		bt_dev_err(hcon->hdev, "ignoring IRK with no identity address");
+		BT_ERR("Ignoring IRK with no identity address");
 		goto distribute;
 	}
 
@@ -2926,8 +2925,8 @@ done:
 	return err;
 
 drop:
-	bt_dev_err(hcon->hdev, "unexpected SMP command 0x%02x from %pMR",
-		   code, &hcon->dst);
+	BT_ERR("%s unexpected SMP command 0x%02x from %pMR", hcon->hdev->name,
+	       code, &hcon->dst);
 	kfree_skb(skb);
 	return 0;
 }
@@ -2994,7 +2993,8 @@ static void bredr_pairing(struct l2cap_chan *chan)
 
 	smp = smp_chan_create(conn);
 	if (!smp) {
-		bt_dev_err(hdev, "unable to create SMP context for BR/EDR");
+		BT_ERR("%s unable to create SMP context for BR/EDR",
+		       hdev->name);
 		return;
 	}
 

@@ -19,6 +19,7 @@
 #include <linux/seq_file.h>
 #include <linux/cryptouser.h>
 #include <net/netlink.h>
+#include <linux/compiler.h>
 
 #include "internal.h"
 
@@ -448,7 +449,7 @@ static int crypto_shash_report(struct sk_buff *skb, struct crypto_alg *alg)
 #endif
 
 static void crypto_shash_show(struct seq_file *m, struct crypto_alg *alg)
-	__attribute__ ((unused));
+	__maybe_unused;
 static void crypto_shash_show(struct seq_file *m, struct crypto_alg *alg)
 {
 	struct shash_alg *salg = __crypto_shash_alg(alg);
@@ -482,9 +483,9 @@ static int shash_prepare_alg(struct shash_alg *alg)
 {
 	struct crypto_alg *base = &alg->base;
 
-	if (alg->digestsize > PAGE_SIZE / 8 ||
-	    alg->descsize > PAGE_SIZE / 8 ||
-	    alg->statesize > PAGE_SIZE / 8)
+	if (alg->digestsize > HASH_MAX_DIGESTSIZE ||
+	    alg->descsize > HASH_MAX_DESCSIZE ||
+	    alg->statesize > HASH_MAX_STATESIZE)
 		return -EINVAL;
 
 	base->cra_type = &crypto_shash_type;

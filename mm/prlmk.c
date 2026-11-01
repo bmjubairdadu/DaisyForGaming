@@ -100,24 +100,6 @@ static short min_adj = 300;
 module_param_named(min_adj, min_adj, short, 0644);
 
 /*
- * DFG Controller compat: "Aggressive LMK" toggle.
- * When set, background tasks (adj < min_adj) are also eligible for
- * killing under LOWMEM_NORMAL pressure instead of only CRITICAL,
- * and the protected adj_ignore list is honoured less strictly
- * (services may be reclaimed before the foreground app).
- *
- * MODULE_PARAM_PREFIX below rewrites all of these to
- * /sys/module/lowmemorykiller/parameters/... so the DFG Controller's
- * node paths keep working unchanged.
- */
-#undef MODULE_PARAM_PREFIX
-#define MODULE_PARAM_PREFIX "lowmemorykiller."
-static bool lmk_aggressive;
-module_param_named(lmk_aggressive, lmk_aggressive, bool, 0644);
-MODULE_PARM_DESC(lmk_aggressive,
-	"Kill background tasks earlier under memory pressure (0 = default, 1 = aggressive)");
-
-/*
  * Number of ACTIVE FILE backed pages in MiB below which
  * tasks with adjs lesser than min_adj will
  * be killed in addition to killing the other tasks.
@@ -126,7 +108,7 @@ MODULE_PARM_DESC(lmk_aggressive,
  * too low, and task killing can be more aggressive when too
  * high.
  */
-static int free_file_limit = 4096;
+static int free_file_limit = 20000;
 module_param_named(free_file_limit, free_file_limit, int, 0644);
 
 /*
@@ -410,29 +392,19 @@ static void sort_and_kill_tasks(void)
 		if (select.ignore)
 			continue;
 
-		if (select.adj < min_adj && !lm_crit && !lmk_aggressive)
+		if (select.adj < min_adj && !lm_crit)
 			continue;
 
 		/*
 		 * Protect the tasks whose adjs are in adj_ignore
 		 * from being killed under high memory pressure.
-		 * In aggressive mode services (adj > 0) lose this
-		 * protection early; the foreground app (adj == 0)
-		 * is always spared unless memory goes CRITICAL.
 		 */
 		if (in_adj_ignore(select.adj)) {
-			if (!select.adj) {
-				if (!lm_crit)
-					fg[fgcnt++] = tcnt;
-				continue;
-			}
-			if (!lmk_aggressive || lm_crit) {
+			if (!select.adj)
+				fg[fgcnt++] = tcnt;
+			else
 				sv[svcnt++] = tcnt;
-				continue;
-			}
-			/* aggressive + NORMAL pressure: service is killable */
-			kill_task(select);
-			killcnt++;
+
 			continue;
 		}
 
@@ -443,12 +415,20 @@ static void sort_and_kill_tasks(void)
 
 	/*
 	 * If no tasks were killed under high memory pressure,
-	 * kill background services if needed. Never kill foreground apps.
+	 * kill the protected tasks as well.
+	 *
+	 * Kill the services first, and then the foreground tasks.
 	 */
 	if (!killcnt && is_low_mem() == LOWMEM_CRITICAL) {
-		while (svcnt) {
+		while (svcnt || fgcnt) {
 			if (is_low_mem() < LOWMEM_CRITICAL)
 				return;
+
+			if (!svcnt) {
+				select = selected[fg[--fgcnt]];
+				kill_task(select);
+				continue;
+			}
 
 			select = selected[sv[--svcnt]];
 			kill_task(select);
@@ -482,7 +462,7 @@ static void proc_tasks(struct work_struct *work)
 			continue;
 
 		adj = p->signal->oom_score_adj;
-		if (adj <= 0) {
+		if (adj < 0) {
 			task_unlock(p);
 			continue;
 		}
@@ -564,10 +544,5 @@ static const struct kernel_param_ops prlmk_ops = {
 };
 
 #undef MODULE_PARAM_PREFIX
-#undef MODULE_PARAM_PREFIX
 #define MODULE_PARAM_PREFIX "lowmemorykiller."
 module_param_cb(minfree, &prlmk_ops, NULL, 0200);
-
-/* Restore the default prefix for anything declared after this point. */
-#undef MODULE_PARAM_PREFIX
-#define MODULE_PARAM_PREFIX "prlmk."

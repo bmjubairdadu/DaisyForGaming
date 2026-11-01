@@ -2,7 +2,7 @@
 
 All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (`daisy`) are documented here.
 
-## v1.1 (2026-10-31) — Recovery Decrypt Fix, Thermal Optimization, Sound Boost & 60FPS Anti-Lag
+## v1.1 (2026-11-01) — Recovery Decrypt Fix, Thermal Optimization, Sound Boost & 60FPS Anti-Lag
 
 ### 🔓 Recovery Decryption & Critical Power-Off Fix
 - **Fixed Recovery Auto-Shutdown on Decryption:** In `msm8953-thermal.dtsi`, trip point `modem_trip2` on sensor `pm8953_vadc 0x13` (`case_therm`) was incorrectly marked as `type = "critical"` at 75°C (75000 m°C). During storage decryption in recovery (TWRP/OrangeFox), CPU crypto bursts across all 8 cores spiked the case thermistor to 75°C, causing Linux `thermal_core.c` to trigger `orderly_poweroff(true)` and immediately shut down the phone.

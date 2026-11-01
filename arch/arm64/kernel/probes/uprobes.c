@@ -9,7 +9,6 @@
 #include <linux/ptrace.h>
 #include <linux/uprobes.h>
 #include <asm/cacheflush.h>
-#include <asm/compat.h>
 
 #include "decode-insn.h"
 
@@ -41,7 +40,7 @@ int arch_uprobe_analyze_insn(struct arch_uprobe *auprobe, struct mm_struct *mm,
 	probe_opcode_t insn;
 
 	/* TODO: Currently we do not support AARCH32 instruction probing */
-	if (is_compat_task())
+	if (test_bit(TIF_32BIT, &mm->context.flags))
 		return -ENOTSUPP;
 	else if (!IS_ALIGNED(addr, AARCH64_INSN_SIZE))
 		return -EINVAL;
