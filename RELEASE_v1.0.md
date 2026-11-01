@@ -64,3 +64,4 @@ The official release of the **DaisyForGaming** custom kernel for the **Xiaomi Mi
 3. Flash `DaisyForGaming-v1.0-Gaming-11-01-2026.zip`.
 4. (Optional) If rooted with Magisk, flash Magisk zip or patch boot via FolkPatch / KernelPatch.
 5. Reboot to System and enjoy butter smooth 60fps gaming and crystal-clear audio!
+
