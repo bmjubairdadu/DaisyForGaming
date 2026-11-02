@@ -25,16 +25,33 @@ done
 say "DaisyForGaming autonomous tuning start"
 
 if [ -e /sys/module/cpu_boost/parameters/boost_mode ]; then
-  w /sys/module/cpu_boost/parameters/boost_mode 1 && say "boost_mode = 1"
+  w /sys/module/cpu_boost/parameters/boost_mode 2 && say "boost_mode = 2 (gaming/responsive)"
   w /sys/module/cpu_boost/parameters/boost_on_charging 1 && say "boost_on_charging = 1"
 fi
 
 if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
-  echo "0:1401600 1:1401600 2:1401600 3:1401600 4:1401600 5:1401600 6:1401600 7:1401600" \
-    > /sys/module/cpu_boost/parameters/input_boost_freq 2>/dev/null && say "input_boost_freq = 1401 MHz"
-  w /sys/module/cpu_boost/parameters/input_boost_ms 60 && say "input_boost_ms = 60"
+  echo "0:1401600 1:1401600 2:1401600 3:1401600 4:1689600 5:1689600 6:1689600 7:1689600" \
+    > /sys/module/cpu_boost/parameters/input_boost_freq 2>/dev/null && say "input_boost_freq = 1401/1689 MHz"
+  w /sys/module/cpu_boost/parameters/input_boost_ms 250 && say "input_boost_ms = 250"
   w /sys/module/cpu_boost/parameters/sched_boost_on_input 1 && say "sched_boost_on_input = 1"
 fi
+
+for c in 0 1 2 3 4 5 6 7; do
+  w "/sys/devices/system/cpu/cpu$c/online" 1
+done
+for ctl in /sys/devices/system/cpu/cpu*/core_ctl; do
+  if [ -d "$ctl" ]; then
+    w "$ctl/min_cpus" 4
+    w "$ctl/max_cpus" 4
+  fi
+done
+say "All 8 cores locked online (core_ctl min_cpus=4)"
+
+for min_f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq \
+             /sys/devices/system/cpu/cpufreq/policy*/scaling_min_freq; do
+  w "$min_f" 1036800
+done
+say "CPU scaling_min_freq floor = 1036 MHz"
 
 for cpu_sched in /sys/devices/system/cpu/cpu*/cpufreq/schedutil \
                  /sys/devices/system/cpu/cpufreq/policy*/schedutil \
@@ -47,11 +64,11 @@ done
 say "schedutil rate limits configured"
 
 if [ -e /dev/stune/top-app/schedtune.boost ]; then
-  w /dev/stune/top-app/schedtune.boost 10 && say "top-app schedtune.boost = 10"
+  w /dev/stune/top-app/schedtune.boost 25 && say "top-app schedtune.boost = 25"
   w /dev/stune/top-app/schedtune.prefer_idle 1 && say "top-app schedtune.prefer_idle = 1"
 fi
 if [ -e /dev/stune/foreground/schedtune.boost ]; then
-  w /dev/stune/foreground/schedtune.boost 1 && say "foreground schedtune.boost = 1"
+  w /dev/stune/foreground/schedtune.boost 5 && say "foreground schedtune.boost = 5"
   w /dev/stune/foreground/schedtune.prefer_idle 1 && say "foreground schedtune.prefer_idle = 1"
 fi
 
@@ -59,10 +76,10 @@ for cg in /dev/cpuset; do
   [ -d "$cg/top-app" ] && w "$cg/top-app/cpus" 0-7
   [ -d "$cg/foreground" ] && w "$cg/foreground/cpus" 0-7
   [ -d "$cg/background" ] && w "$cg/background/cpus" 0-3
-  [ -d "$cg/system-background" ] && w "$cg/system-background/cpus" 0-3
+  [ -d "$cg/system-background" ] && w "$cg/system-background/cpus" 0-7
   [ -d "$cg/restricted" ] && w "$cg/restricted/cpus" 0-3
 done
-say "CPUSets optimized"
+say "CPUSets optimized (system-background = 0-7)"
 
 w /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
 w /sys/module/adreno_idler/parameters/adreno_idler_active 0
@@ -70,16 +87,18 @@ w /sys/class/kgsl/kgsl-3d0/devfreq/adreno_idler_active 0
 w /sys/class/kgsl/kgsl-3d0/min_clock_mhz 216
 w /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 216000000
 w /sys/class/kgsl/kgsl-3d0/idle_timer 80
-say "GPU governor = msm-adreno-tz"
+w /sys/class/kgsl/kgsl-3d0/force_bus_on 1
+say "GPU governor = msm-adreno-tz (min 216MHz, idler disabled, force_bus_on=1)"
 
 for q in /sys/block/mmcblk*/queue /sys/block/dm-*/queue; do
   if [ -d "$q" ]; then
-    w "$q/read_ahead_kb" 512
+    w "$q/read_ahead_kb" 1024
+    w "$q/nr_requests" 128
     w "$q/iostats" 0
     [ -f "$q/scheduler" ] && w "$q/scheduler" deadline
   fi
 done
-say "Storage read_ahead_kb = 512 & deadline scheduler applied"
+say "Storage read_ahead_kb = 1024, nr_requests = 128 & deadline scheduler applied"
 
 w /sys/kernel/mm/uksm/run 0
 w /sys/kernel/mm/ksm/run 0
@@ -112,7 +131,7 @@ if [ -b /dev/block/zram0 ]; then
   done
 fi
 
-w /proc/sys/vm/vfs_cache_pressure 100 && say "vfs_cache_pressure = 100"
+w /proc/sys/vm/vfs_cache_pressure 60 && say "vfs_cache_pressure = 60"
 w /proc/sys/vm/swappiness 60 && say "swappiness = 60"
 w /proc/sys/vm/dirty_ratio 20 && say "dirty_ratio = 20"
 w /proc/sys/vm/dirty_background_ratio 10 && say "dirty_background_ratio = 10"

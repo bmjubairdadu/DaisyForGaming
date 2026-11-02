@@ -25,7 +25,13 @@
 #include <linux/slab.h>
 #include <linux/input.h>
 #include <linux/time.h>
+#include <linux/fb.h>
+#include <linux/jiffies.h>
+#include <linux/workqueue.h>
 #include <linux/sched/rt.h>
+#include <linux/power_supply.h>
+
+#include <linux/sched.h>
 
 struct cpu_sync {
 	int cpu;
@@ -37,13 +43,173 @@ static DEFINE_PER_CPU(struct cpu_sync, sync_info);
 
 static struct kthread_work input_boost_work;
 
-static bool input_boost_enabled;
+#ifdef CONFIG_INPUT_BOOST_FREQ
+#define IB_FREQ_LITTLE_DEFAULT CONFIG_INPUT_BOOST_FREQ
+#else
+#define IB_FREQ_LITTLE_DEFAULT 1401600
+#endif
 
+#ifdef CONFIG_INPUT_BOOST_FREQ_BIG
+#define IB_FREQ_BIG_DEFAULT CONFIG_INPUT_BOOST_FREQ_BIG
+#else
+#define IB_FREQ_BIG_DEFAULT 1689600
+#endif
+
+#ifdef CONFIG_INPUT_BOOST_DURATION_MS
+#define IB_MS_DEFAULT CONFIG_INPUT_BOOST_DURATION_MS
+#else
+#define IB_MS_DEFAULT 40
+#endif
+
+#ifdef CONFIG_INPUT_BOOST_SCHED
+#define IB_SCHED_DEFAULT CONFIG_INPUT_BOOST_SCHED
+#else
+#define IB_SCHED_DEFAULT 1
+#endif
+
+
+static bool input_boost_enabled = true;
+static bool input_boost_user_off;
+
+static int input_boost_enabled_set(const char *val,
+		const struct kernel_param *kp)
+{
+	bool v;
+	int rc = param_set_bool(val, kp);
+
+	if (rc)
+		return rc;
+	v = input_boost_enabled;
+	input_boost_user_off = !v;
+	pr_info("cpu_boost: input_boost_enabled=%d (user off=%d)\n", v,
+			input_boost_user_off);
+	return 0;
+}
+
+static struct kernel_param_ops input_boost_enabled_ops = {
+	.set = input_boost_enabled_set,
+	.get = param_get_bool,
+};
+module_param_cb(input_boost_enabled, &input_boost_enabled_ops, &input_boost_enabled, 0644);
+MODULE_PARM_DESC(input_boost_enabled,
+	"Master input boost switch (DFG Controller: Gaming > Input Boost toggle)");
+
+static bool boost_on_charging;
+module_param(boost_on_charging, bool, 0644);
+MODULE_PARM_DESC(boost_on_charging,
+	"Apply CPU input boost while USB/AC is connected (0 = off, 1 = on)");
+
+static bool usb_charger_online(void)
+{
+	struct power_supply *usb;
+	union power_supply_propval val = { 0, };
+	bool online = false;
+
+	usb = power_supply_get_by_name("usb");
+	if (!usb)
+		return false;
+
+	if (!power_supply_get_property(usb, POWER_SUPPLY_PROP_PRESENT, &val))
+		online = !!val.intval;
+	else if (!power_supply_get_property(usb, POWER_SUPPLY_PROP_ONLINE, &val))
+		online = !!val.intval;
+	power_supply_put(usb);
+
+	return online;
+}
+
+
+#ifdef CONFIG_INPUT_BOOST_DURATION_MS
+static unsigned int input_boost_ms = CONFIG_INPUT_BOOST_DURATION_MS;
+#else
 static unsigned int input_boost_ms = 40;
+#endif
 module_param(input_boost_ms, uint, 0644);
 
-static unsigned int sched_boost_on_input;
+#ifdef CONFIG_INPUT_BOOST_SCHED
+static unsigned int sched_boost_on_input = CONFIG_INPUT_BOOST_SCHED;
+#else
+static unsigned int sched_boost_on_input = 1;
+#endif
 module_param(sched_boost_on_input, uint, 0644);
+
+static unsigned int boost_mode = 1;
+
+static unsigned int boost_mode_effective = 1;
+module_param(boost_mode_effective, uint, 0444);
+
+static void apply_boost_mode(void)
+{
+	unsigned int little = IB_FREQ_LITTLE_DEFAULT;
+	unsigned int big = IB_FREQ_BIG_DEFAULT;
+	int cpu;
+
+	if (input_boost_user_off) {
+		input_boost_enabled = false;
+	} else {
+		input_boost_enabled = true;
+		if (boost_mode == 0)
+			input_boost_user_off = true;
+	}
+
+	switch (boost_mode) {
+	case 0:
+		input_boost_enabled = false;
+		little = 0;
+		big = 0;
+		break;
+	case 2:
+		little = 1401600;
+		big = 1689600;
+		input_boost_ms = 250;
+		sched_boost_on_input = 1;
+		break;
+	case 1:
+	default:
+		boost_mode = 1;
+		little = IB_FREQ_LITTLE_DEFAULT;
+		big = IB_FREQ_BIG_DEFAULT;
+		input_boost_ms = IB_MS_DEFAULT;
+		sched_boost_on_input = IB_SCHED_DEFAULT;
+		break;
+	}
+
+	for_each_possible_cpu(cpu) {
+		struct cpu_sync *s = &per_cpu(sync_info, cpu);
+		s->input_boost_freq = (cpu < 4) ? little : big;
+	}
+	boost_mode_effective = boost_mode;
+
+	pr_info("boost_mode=%u: little=%ukHz big=%ukHz ms=%u sched_boost=%u\n",
+		boost_mode,
+		per_cpu(sync_info, 0).input_boost_freq,
+		per_cpu(sync_info, 4).input_boost_freq,
+		input_boost_ms, sched_boost_on_input);
+}
+
+static int set_boost_mode(const char *buf, const struct kernel_param *kp)
+{
+	unsigned int val;
+
+	if (kstrtouint(buf, 0, &val) || val > 2)
+		return -EINVAL;
+	boost_mode = val;
+	apply_boost_mode();
+	return 0;
+}
+
+static int get_boost_mode(char *buf, const struct kernel_param *kp)
+{
+	return scnprintf(buf, PAGE_SIZE, "%u\n", boost_mode);
+}
+
+static const struct kernel_param_ops param_ops_boost_mode = {
+	.set = set_boost_mode,
+	.get = get_boost_mode,
+};
+module_param_cb(boost_mode, &param_ops_boost_mode, NULL, 0644);
+MODULE_PARM_DESC(boost_mode,
+	"Input boost profile: 0=battery (off), 1=balanced (default), 2=gaming");
 
 static bool sched_boost_active;
 
@@ -65,7 +231,7 @@ static int set_input_boost_freq(const char *buf, const struct kernel_param *kp)
 	while ((cp = strpbrk(cp + 1, " :")))
 		ntokens++;
 
-	/* single number: apply to all CPUs */
+	
 	if (!ntokens) {
 		if (sscanf(buf, "%u\n", &val) != 1)
 			return -EINVAL;
@@ -74,7 +240,7 @@ static int set_input_boost_freq(const char *buf, const struct kernel_param *kp)
 		goto check_enable;
 	}
 
-	/* CPU:value pair */
+	
 	if (!(ntokens % 2))
 		return -EINVAL;
 
@@ -97,7 +263,13 @@ check_enable:
 			break;
 		}
 	}
+	/*
+	 * Setting the freq table to all zeroes is the legacy way to
+	 * disable boost (DFG Controller writes 0:0 1:0 ... for "off").
+	 * Track that as a user-off so profile refreshes keep it off.
+	 */
 	input_boost_enabled = enabled;
+	input_boost_user_off = !enabled;
 
 	return 0;
 }
@@ -122,11 +294,6 @@ static const struct kernel_param_ops param_ops_input_boost_freq = {
 };
 module_param_cb(input_boost_freq, &param_ops_input_boost_freq, NULL, 0644);
 
-/*
- * The CPUFREQ_ADJUST notifier is used to override the current policy min to
- * make sure policy min >= boost_min. The cpufreq framework then does the job
- * of enforcing the new policy.
- */
 static int boost_adjust_notify(struct notifier_block *nb, unsigned long val,
 				void *data)
 {
@@ -162,7 +329,7 @@ static void update_policy_online(void)
 {
 	unsigned int i;
 
-	/* Re-evaluate policy to trigger adjust notifier for online CPUs */
+	
 	get_online_cpus();
 	for_each_online_cpu(i) {
 		pr_debug("Updating policy for CPU%d\n", i);
@@ -176,14 +343,14 @@ static void do_input_boost_rem(struct work_struct *work)
 	unsigned int i, ret;
 	struct cpu_sync *i_sync_info;
 
-	/* Reset the input_boost_min for all CPUs in the system */
+	
 	pr_debug("Resetting input boost min for all CPUs\n");
 	for_each_possible_cpu(i) {
 		i_sync_info = &per_cpu(sync_info, i);
 		i_sync_info->input_boost_min = 0;
 	}
 
-	/* Update policies for all online CPUs */
+	
 	update_policy_online();
 
 	if (sched_boost_active) {
@@ -199,23 +366,27 @@ static void do_input_boost(struct kthread_work *work)
 	unsigned int i, ret;
 	struct cpu_sync *i_sync_info;
 
+	
+	if (!boost_on_charging && usb_charger_online())
+		return;
+
 	cancel_delayed_work_sync(&input_boost_rem);
 	if (sched_boost_active) {
 		sched_set_boost(0);
 		sched_boost_active = false;
 	}
 
-	/* Set the input_boost_min for all CPUs in the system */
+	
 	pr_debug("Setting input boost min for all CPUs\n");
 	for_each_possible_cpu(i) {
 		i_sync_info = &per_cpu(sync_info, i);
 		i_sync_info->input_boost_min = i_sync_info->input_boost_freq;
 	}
 
-	/* Update policies for all online CPUs */
+	
 	update_policy_online();
 
-	/* Enable scheduler boost to migrate tasks to big cluster */
+	
 	if (sched_boost_on_input > 0) {
 		ret = sched_set_boost(sched_boost_on_input);
 		if (ret)
@@ -284,7 +455,7 @@ static void cpuboost_input_disconnect(struct input_handle *handle)
 }
 
 static const struct input_device_id cpuboost_ids[] = {
-	/* multi-touch touchscreen */
+	
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
 			INPUT_DEVICE_ID_MATCH_ABSBIT,
@@ -293,7 +464,7 @@ static const struct input_device_id cpuboost_ids[] = {
 			BIT_MASK(ABS_MT_POSITION_X) |
 			BIT_MASK(ABS_MT_POSITION_Y) },
 	},
-	/* touchpad */
+	
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_KEYBIT |
 			INPUT_DEVICE_ID_MATCH_ABSBIT,
@@ -301,7 +472,7 @@ static const struct input_device_id cpuboost_ids[] = {
 		.absbit = { [BIT_WORD(ABS_X)] =
 			BIT_MASK(ABS_X) | BIT_MASK(ABS_Y) },
 	},
-	/* Keypad */
+	
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_EVBIT,
 		.evbit = { BIT_MASK(EV_KEY) },
@@ -336,7 +507,15 @@ static int cpu_boost_init(void)
 	for_each_possible_cpu(cpu) {
 		s = &per_cpu(sync_info, cpu);
 		s->cpu = cpu;
+		s->input_boost_freq = (cpu < 4) ? IB_FREQ_LITTLE_DEFAULT
+						: IB_FREQ_BIG_DEFAULT;
 	}
+	pr_info("input boost on by default: little=%ukHz big=%ukHz ms=%u sched_boost=%u\n",
+		IB_FREQ_LITTLE_DEFAULT, IB_FREQ_BIG_DEFAULT, input_boost_ms,
+		sched_boost_on_input);
+	boost_mode = 1;
+	boost_mode_effective = 1;
+	apply_boost_mode();
 	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
 
 	ret = input_register_handler(&cpuboost_input_handler);
