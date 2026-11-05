@@ -8,8 +8,8 @@ export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
 export PATH=$PATH:/usr/lib/ccache
 export LLVM=1 LLVM_IAS=1
 export KBUILD_BUILD_USER=JUBAIR_HOSEN KBUILD_BUILD_HOST=DaisyForGaming
-export KBUILD_BUILD_VERSION=12
-export KBUILD_BUILD_TIMESTAMP="Wed Oct 14 21:17:31 +06 2026"
+export KBUILD_BUILD_VERSION=14
+export KBUILD_BUILD_TIMESTAMP="Thu Nov 5 19:30:00 +06 2026"
 
 LOG=$SRC/.dfg_build.log
 : > "$LOG"
@@ -31,6 +31,14 @@ grep -q '^CONFIG_KPROBES=y' arch/arm64/configs/daisy_defconfig \
   && echo KPROBES_OK || { echo "FATAL: KPROBES off"; exit 1; }
 grep -q '^CONFIG_MODVERSIONS=y' arch/arm64/configs/daisy_defconfig \
   && echo MODVERSIONS_OK || { echo "FATAL: MODVERSIONS off (VINTF)"; exit 1; }
+grep -q '^CONFIG_MAX_BOOST_FREQ=2016000' arch/arm64/configs/daisy_defconfig \
+  && echo BOOST_CAP_OK || { echo "FATAL: MAX_BOOST_FREQ is not 2016000"; exit 1; }
+if grep -A8 'qcom,cpufreq-table' arch/arm64/boot/dts/qcom/msm8953.dtsi \
+    | grep -qE '2(150400|208000)'; then
+  echo "FATAL: overclocked CPU OPP still in cpufreq-table"; exit 1
+fi
+grep -q 'int vm_swappiness = 100;' mm/vmscan.c \
+  && echo SWAPPINESS_OK || { echo "FATAL: swappiness is not 100"; exit 1; }
 echo DEFCONFIG_OK
 
 make O=out ARCH=arm64 daisy_defconfig

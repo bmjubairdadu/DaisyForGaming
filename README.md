@@ -4,7 +4,7 @@
 [![Device](https://img.shields.io/badge/Device-Xiaomi%20Mi%20A2%20Lite%20(daisy)-0078d4.svg?style=flat-square)](https://github.com/bmjubairdadu/DaisyForGaming)
 [![Platform](https://img.shields.io/badge/Platform-Qualcomm%20Snapdragon%20625-e65100.svg?style=flat-square)](https://github.com/bmjubairdadu/DaisyForGaming)
 [![Compiler](https://img.shields.io/badge/Compiler-Clang%2014.0%20%2B%20LLD-5c2d91.svg?style=flat-square)](https://github.com/bmjubairdadu/DaisyForGaming)
-[![Release](https://img.shields.io/badge/Version-v1.0%20Official-008000.svg?style=flat-square)](https://github.com/bmjubairdadu/DaisyForGaming/releases)
+[![Release](https://img.shields.io/badge/Version-v1.2%20Stable-008000.svg?style=flat-square)](https://github.com/bmjubairdadu/DaisyForGaming/releases)
 [![Developer](https://img.shields.io/badge/Developer-JUBAIR%20HOSEN-1f2328.svg?style=flat-square)](https://github.com/bmjubairdadu)
 [![License](https://img.shields.io/badge/License-GPL%202.0-d32f2f.svg?style=flat-square)](COPYING)
 
@@ -60,22 +60,30 @@
 * **Zero Anti-Cheat Detection:** Game security systems (Free Fire, Mobile Legends, PUBG Mobile) inspect kernel integrity without detecting unauthorized symbols or modifications.
 * **Root Flexibility:** Compatible with standard Magisk or post-flash boot patching via FolkPatch / KernelPatch.
 
+### 6. Thermal, Memory and SystemUI Stability (v1.2)
+* **Stock CPU Ceiling:** The 2.150 GHz and 2.208 GHz operating points were removed from the cpufreq table and scheduler energy costs; the phone runs at the stock 2.016 GHz maximum, which removes the main heat source seen under gaming and video load.
+* **Zram-Aware Swapping:** `vm_swappiness` is raised from 10 to 100 so anonymous pages go to zram instead of file cache, eliminating the major-fault stalls behind app and SystemUI ANRs on a 2.8 GB device.
+* **No Reclaim Boost Trap:** The CPU max-boost kick was removed from the direct-reclaim retry path, so memory pressure no longer pins the CPU at the top OPP for hundreds of milliseconds per second.
+* **SystemUI Restart Fix:** Charging sounds are disabled at boot, preventing the GSI `BatteryService$PlayChargedSound` crash that killed `system_server` and restarted zygote.
+* **Boot Tuning That Actually Runs:** The installer relabels the boot service to `system_file`, so `magiskd` can execute it; the service caps CPU at 2.016 GHz and disables charging boost and GPU bus forcing.
+* **Root Survives the Flash:** The kernel keeps the boot initramfs even when the bootloader passes `skip_initramfs`, so Magisk's `magiskinit` runs and `magiskd` starts; v1.2 no longer boots without `su`.
+
 ---
 
 ## Release Verification
 
 | Package | Size | SHA256 Checksum |
 |:---|:---|:---|
-| **`DaisyForGaming-v1.1-Gaming-11-02-2026.zip`** | 17.3 MB (17,343,511 bytes) | `5598efb2d7cbc25a76df371d462e02fb4d26529d797c6220215e3a3f47f2f1dc` |
+| **`DaisyForGaming-v1.2-Gaming-11-05-2026.zip`** | 16.5 MiB (17,343,635 bytes) | `7d7b3b0e369cdc50bbb82f2c5877c190b056b1b8316168018a9163848d2b1459` |
 
-Release assets can be downloaded directly from the [GitHub Releases](https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/v1.1) section.
+Release assets can be downloaded directly from the [GitHub Releases](https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/v1.2) section.
 
 ---
 
 ## Installation
 
 ### Custom Recovery (TWRP / OrangeFox)
-1. Download **`DaisyForGaming-v1.1-Gaming-11-02-2026.zip`** to internal storage or an SD card.
+1. Download **`DaisyForGaming-v1.2-Gaming-11-05-2026.zip`** to internal storage or an SD card.
 2. Reboot into recovery mode.
 3. Recommended: Create a backup of your active `boot` partition.
 4. Navigate to **Install**, select the zip archive, and confirm flash.

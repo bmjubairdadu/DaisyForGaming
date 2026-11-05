@@ -2,6 +2,38 @@
 
 All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (`daisy`) are documented here.
 
+## v1.2 (2026-11-05) — Thermal, Memory and SystemUI Stability
+
+### CPU and thermal
+- **Removed the 2.150 GHz and 2.208 GHz CPU operating points** from `qcom,cpufreq-table` and from the scheduler energy-cost tables. The Snapdragon 625 is a 2.016 GHz part; live `time_in_state` showed ~14% residency at 2.208 GHz, which was the main source of unnecessary heat. The clock driver tables are left intact, but cpufreq can no longer select the overclocked rates.
+- **Capped max boost at 2.016 GHz** (`CONFIG_MAX_BOOST_FREQ`) so app-launch and input boosts cannot jump past the stock ceiling.
+- **Removed the CPU max-boost kick from the direct-reclaim retry path** in `mm/page_alloc.c`. Under memory pressure that path runs repeatedly and was pinning the CPU at the highest OPP for hundreds of milliseconds per second. The memory-bus boost is kept.
+- **Boot tuning no longer forces a 1.036 GHz minimum frequency.** The floor is back to 652 MHz, the ceiling is 2.016 GHz, and the governor is `schedutil`.
+- **`boost_on_charging` is disabled** so input boosts do not stack on top of charging heat.
+- **GPU bus forcing is disabled** (`force_bus_on = 0`); the GPU still uses `msm-adreno-tz` with the stock 216 MHz floor and 80 ms idle timer.
+
+### Memory pressure
+- **`vm_swappiness` changed from 10 to 100.** With 2 GB of zram and only 2.8 GB of RAM, swappiness 10 kept anonymous pages resident and evicted file cache instead, producing the major-fault stalls visible in the SystemUI and app ANRs. Swapping anon pages into zram keeps app code and dex resident.
+- `page-cluster` stays at 0 (Android's zram setting) and `vfs_cache_pressure` at the kernel default of 100.
+
+### SystemUI and system_server restarts
+- **Charging sounds are disabled at boot.** The GSI's `BatteryService$PlayChargedSound` builds a `Ringtone` from a missing URI and throws `IllegalStateException` in `MediaPlayer._setDataSource`, killing `system_server` and restarting zygote. This is the crash that took SystemUI and every running app down with it.
+- **Fixed the boot tune service not executing.** `/data/adb/service.d/99-dfg-tune.sh` inherited the `adb_data_file` SELinux label, which `magiskd` cannot `execve`. The installer now applies `u:object_r:system_file:s0` after copying the script; the service runs and logs to `/data/local/tmp/dfg_tune.log`.
+
+### Root preservation
+- **The kernel no longer honors `skip_initramfs`.** This device keeps Magisk's `magiskinit` in the boot ramdisk; honoring the parameter made the kernel discard the ramdisk, so `magiskd` never started and `su` disappeared after flashing v1.2. The parameter is still parsed, but the initramfs is kept, and `magiskinit` reads the flag itself to chain-load the system init. Root now survives the flash.
+
+### Included from v1.1
+- Adreno 5xx preemption, ringbuffer and IOMMU backports; `adreno_get_ucode_version`; WALT and schedutil fixes; jump-label and binder restorations. The previous test kernel on the device predated these fixes, so v1.2 is the first build that actually carries them.
+
+### Known issue
+- The `media.swcodec` SIGABRT (`__cfi_check_fail` inside `libcodec2_soft_hevcdec.so`) is a userspace GSI bug in the software HEVC decoder. It is not caused by the kernel and is not fixed by this release.
+
+### Release build
+- Kernel `4.9.337-DaisyForGaming #14` (Thu Nov 5 19:30:00 +06 2026), `Image.gz-dtb` 14,805,005 bytes.
+- `DaisyForGaming-v1.2-Gaming-11-05-2026.zip`, 17,343,635 bytes, SHA256 `7d7b3b0e369cdc50bbb82f2c5877c190b056b1b8316168018a9163848d2b1459`.
+- Flashed to `boot_a` and verified on the live device: `su` works, `magiskd` runs, `swappiness=100`, max CPU 2,016,000 kHz, boot tune log complete.
+
 ## v1.0 (2026-11-01) — Initial Official Gaming Release
 
 ### Recovery Decryption & Critical Power-Off Fix

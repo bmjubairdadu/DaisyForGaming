@@ -3798,8 +3798,12 @@ retry:
 	if (order > PAGE_ALLOC_COSTLY_ORDER && !(gfp_mask & __GFP_REPEAT))
 		goto nopage;
 
-	/* Boost when memory is low so allocation latency doesn't get too bad */
-	cpu_input_boost_kick_max(100);
+	/*
+	 * Boost the memory bus when memory is low so reclaim traffic does not
+	 * stall.  Do not kick the CPU to max boost here: this path is taken on
+	 * every direct-reclaim retry and would otherwise pin the CPU at the
+	 * highest OPP for hundreds of milliseconds per second under pressure.
+	 */
 	devfreq_boost_kick_max(DEVFREQ_MSM_CPUBW, 100);
 
 	if (should_reclaim_retry(gfp_mask, order, ac, alloc_flags,

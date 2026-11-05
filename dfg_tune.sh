@@ -1,4 +1,10 @@
 #!/system/bin/sh
+# DaisyForGaming v1.2 boot tuning
+#
+# The kernel already ships safe defaults for the important knobs (CPU cap,
+# swappiness, boost limits), so this script only refines what userspace owns.
+# It must stay conservative: a phone that overheats or kills apps is worse
+# than one that scores a few points lower in a benchmark.
 
 LOG=/data/local/tmp/dfg_tune.log
 say() { echo "$(date '+%H:%M:%S') $*" >> "$LOG"; }
@@ -22,74 +28,62 @@ while [ $i -lt 120 ]; do
   i=$((i+1)); sleep 1
 done
 
-say "DaisyForGaming autonomous tuning start"
+# Give the ROM performance HAL and the companion app time to finish their
+# own boot-time writes, then apply the final values.
+sleep 20
+say "DaisyForGaming v1.2 tuning start"
 
-if [ -e /sys/module/cpu_boost/parameters/boost_mode ]; then
-  w /sys/module/cpu_boost/parameters/boost_mode 2 && say "boost_mode = 2 (gaming/responsive)"
-  w /sys/module/cpu_boost/parameters/boost_on_charging 1 && say "boost_on_charging = 1"
-fi
-
-if [ -e /sys/module/cpu_boost/parameters/input_boost_freq ]; then
-  echo "0:1401600 1:1401600 2:1401600 3:1401600 4:1689600 5:1689600 6:1689600 7:1689600" \
-    > /sys/module/cpu_boost/parameters/input_boost_freq 2>/dev/null && say "input_boost_freq = 1401/1689 MHz"
-  w /sys/module/cpu_boost/parameters/input_boost_ms 250 && say "input_boost_ms = 250"
-  w /sys/module/cpu_boost/parameters/sched_boost_on_input 1 && say "sched_boost_on_input = 1"
-fi
-
+# ---------------------------------------------------------------------------
+# CPU: stock 2.016 GHz ceiling, no forced minimum, schedutil in charge.
+# ---------------------------------------------------------------------------
 for c in 0 1 2 3 4 5 6 7; do
   w "/sys/devices/system/cpu/cpu$c/online" 1
 done
-for ctl in /sys/devices/system/cpu/cpu*/core_ctl; do
-  if [ -d "$ctl" ]; then
-    w "$ctl/min_cpus" 4
-    w "$ctl/max_cpus" 4
-  fi
-done
-say "All 8 cores locked online (core_ctl min_cpus=4)"
 
-for min_f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq \
-             /sys/devices/system/cpu/cpufreq/policy*/scaling_min_freq; do
-  w "$min_f" 1036800
+for f in /sys/devices/system/cpu/cpufreq/policy*/scaling_max_freq \
+         /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq; do
+  w "$f" 2016000
 done
-say "CPU scaling_min_freq floor = 1036 MHz"
-
-for cpu_sched in /sys/devices/system/cpu/cpu*/cpufreq/schedutil \
-                 /sys/devices/system/cpu/cpufreq/policy*/schedutil \
-                 /sys/devices/system/cpu/cpufreq/schedutil; do
-  if [ -d "$cpu_sched" ]; then
-    w "$cpu_sched/up_rate_limit_us" 500
-    w "$cpu_sched/down_rate_limit_us" 20000
-  fi
+for f in /sys/devices/system/cpu/cpufreq/policy*/scaling_min_freq \
+         /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq; do
+  w "$f" 652800
 done
-say "schedutil rate limits configured"
+for g in /sys/devices/system/cpu/cpufreq/policy*/scaling_governor \
+         /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+  w "$g" schedutil
+done
+say "CPU capped at 2016 MHz, floor 652 MHz, schedutil"
 
-if [ -e /dev/stune/top-app/schedtune.boost ]; then
-  w /dev/stune/top-app/schedtune.boost 25 && say "top-app schedtune.boost = 25"
-  w /dev/stune/top-app/schedtune.prefer_idle 1 && say "top-app schedtune.prefer_idle = 1"
-fi
-if [ -e /dev/stune/foreground/schedtune.boost ]; then
-  w /dev/stune/foreground/schedtune.boost 5 && say "foreground schedtune.boost = 5"
-  w /dev/stune/foreground/schedtune.prefer_idle 1 && say "foreground schedtune.prefer_idle = 1"
+# cpu_input_boost is the only boost driver that can reach the top OPP.
+# Keep touch response but do not park the CPU at max.
+if [ -d /sys/module/cpu_input_boost/parameters ]; then
+  w /sys/module/cpu_input_boost/parameters/input_boost_freq 1401600
+  w /sys/module/cpu_input_boost/parameters/input_boost_duration 150
+  w /sys/module/cpu_input_boost/parameters/wake_boost_duration 300
+  w /sys/module/cpu_input_boost/parameters/max_boost_freq 2016000
+  say "cpu_input_boost: 1401 MHz / 150 ms, max 2016 MHz"
 fi
 
-for cg in /dev/cpuset; do
-  [ -d "$cg/top-app" ] && w "$cg/top-app/cpus" 0-7
-  [ -d "$cg/foreground" ] && w "$cg/foreground/cpus" 0-7
-  [ -d "$cg/background" ] && w "$cg/background/cpus" 0-3
-  [ -d "$cg/system-background" ] && w "$cg/system-background/cpus" 0-7
-  [ -d "$cg/restricted" ] && w "$cg/restricted/cpus" 0-3
-done
-say "CPUSets optimized (system-background = 0-7)"
+# The companion app's gaming profile is allowed to raise the input boost
+# frequencies, but boosting while charging is a heat trap.
+if [ -e /sys/module/cpu_boost/parameters/boost_on_charging ]; then
+  w /sys/module/cpu_boost/parameters/boost_on_charging 0
+  say "cpu_boost: boost_on_charging = 0"
+fi
 
+# ---------------------------------------------------------------------------
+# GPU: stock governor and minimum, bus gating enabled again.
+# ---------------------------------------------------------------------------
 w /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
-w /sys/module/adreno_idler/parameters/adreno_idler_active 0
-w /sys/class/kgsl/kgsl-3d0/devfreq/adreno_idler_active 0
 w /sys/class/kgsl/kgsl-3d0/min_clock_mhz 216
 w /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 216000000
 w /sys/class/kgsl/kgsl-3d0/idle_timer 80
-w /sys/class/kgsl/kgsl-3d0/force_bus_on 1
-say "GPU governor = msm-adreno-tz (min 216MHz, idler disabled, force_bus_on=1)"
+w /sys/class/kgsl/kgsl-3d0/force_bus_on 0
+say "GPU: msm-adreno-tz, 216 MHz floor, force_bus_on = 0"
 
+# ---------------------------------------------------------------------------
+# Storage
+# ---------------------------------------------------------------------------
 for q in /sys/block/mmcblk*/queue /sys/block/dm-*/queue; do
   if [ -d "$q" ]; then
     w "$q/read_ahead_kb" 1024
@@ -98,18 +92,11 @@ for q in /sys/block/mmcblk*/queue /sys/block/dm-*/queue; do
     [ -f "$q/scheduler" ] && w "$q/scheduler" deadline
   fi
 done
-say "Storage read_ahead_kb = 1024, nr_requests = 128 & deadline scheduler applied"
+say "storage: read_ahead 1024 KB, nr_requests 128, deadline"
 
-w /sys/kernel/mm/uksm/run 0
-w /sys/kernel/mm/ksm/run 0
-say "uksm/ksm = 0"
-
-if [ -e /sys/kernel/fast_charge/force_fast_charge ]; then
-  w /sys/kernel/fast_charge/force_fast_charge 1
-  w /sys/kernel/fast_charge/fast_charge_current 1500
-  say "force_fast_charge = 1 (1500mA)"
-fi
-
+# ---------------------------------------------------------------------------
+# zram: keep lz4 and make sure the swap device is up.
+# ---------------------------------------------------------------------------
 if [ -b /dev/block/zram0 ]; then
   ALG=$(cat /sys/block/zram0/comp_algorithm 2>/dev/null | tr '\n' ' ')
   case "$ALG" in
@@ -131,30 +118,49 @@ if [ -b /dev/block/zram0 ]; then
   done
 fi
 
-w /proc/sys/vm/vfs_cache_pressure 60 && say "vfs_cache_pressure = 60"
-w /proc/sys/vm/swappiness 60 && say "swappiness = 60"
-w /proc/sys/vm/dirty_ratio 20 && say "dirty_ratio = 20"
-w /proc/sys/vm/dirty_background_ratio 10 && say "dirty_background_ratio = 10"
+# ---------------------------------------------------------------------------
+# VM: use zram for anonymous pages and keep file cache resident.
+# ---------------------------------------------------------------------------
+# These procfs files are init-owned under SELinux on Android 11, so the
+# writes below can be denied even for root.  The v1.2 kernel already ships
+# swappiness=100 and page-cluster=0 as compiled defaults; log what is
+# actually in effect instead of assuming the write worked.
+w /proc/sys/vm/swappiness 100
+w /proc/sys/vm/vfs_cache_pressure 100
+w /proc/sys/vm/dirty_ratio 20
+w /proc/sys/vm/dirty_background_ratio 10
 w /proc/sys/vm/dirty_expire_centisecs 200
 w /proc/sys/vm/dirty_writeback_centisecs 500
-w /proc/sys/vm/min_free_kbytes 16384 && say "min_free_kbytes = 16384"
-w /proc/sys/vm/extra_free_kbytes 16384 && say "extra_free_kbytes = 16384"
-w /proc/sys/vm/watermark_scale_factor 150 && say "watermark_scale_factor = 150"
-w /proc/sys/vm/page-cluster 0 && say "page-cluster = 0"
+w /proc/sys/vm/page-cluster 0
+say "VM: swappiness=$(cat /proc/sys/vm/swappiness 2>/dev/null) vfs_cache_pressure=$(cat /proc/sys/vm/vfs_cache_pressure 2>/dev/null) page-cluster=$(cat /proc/sys/vm/page-cluster 2>/dev/null)"
 
+# ---------------------------------------------------------------------------
+# Network
+# ---------------------------------------------------------------------------
 w /proc/sys/net/core/default_qdisc fq 2>/dev/null
 w /proc/sys/net/ipv4/tcp_congestion_control bbr 2>/dev/null || \
 w /proc/sys/net/ipv4/tcp_congestion_control westwood 2>/dev/null || \
 w /proc/sys/net/ipv4/tcp_congestion_control cubic 2>/dev/null
 say "TCP congestion control configured"
 
+# ---------------------------------------------------------------------------
+# Sound.  The GSI ships a charging-sound URI that makes system_server throw
+# an IllegalStateException on some charge events; disabling the sound is the
+# only userspace-side fix and it stops the SystemUI restart loop.
+# ---------------------------------------------------------------------------
+settings put global charging_sounds_enabled 0 2>/dev/null
+settings put secure charging_sounds_enabled 0 2>/dev/null
+settings put global wireless_charging_sounds_enabled 0 2>/dev/null
+say "charging sounds disabled"
+
 if [ -d /sys/kernel/sound_control ]; then
   w /sys/kernel/sound_control/headphone_gain "4 4"
   w /sys/kernel/sound_control/speaker_gain 4
   w /sys/kernel/sound_control/mic_gain 2
   w /sys/kernel/sound_control/earpiece_gain 3
-  say "sound_control boost applied: HP +4dB, SPK +4dB, MIC +2dB, EAR +3dB"
+  say "sound_control boost applied"
 fi
 
 say "gov: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null)"
-say "DaisyForGaming boot tuning completed successfully"
+say "min: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 2>/dev/null) max: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2>/dev/null)"
+say "DaisyForGaming v1.2 boot tuning completed"

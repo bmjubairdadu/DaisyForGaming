@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-VER="1.1"
+VER="1.2"
 DATESTAMP="$(date +%m-%d-%Y)"
 SRC=/mnt/d/DaisyForGaming
 cd "$SRC"
@@ -24,7 +24,7 @@ cat <<'AKEOF'
 # DaisyForGaming by JUBAIR HOSEN (Linux 4.9.337)
 
 properties() { '
-kernel.string=DaisyForGaming v1.1
+kernel.string=DaisyForGaming v1.2
 do.devicecheck=0
 do.modules=0
 do.systemless=1
@@ -57,7 +57,7 @@ ui_print() {
 }
 
 ui_print "==================================================";
-ui_print "        DaisyForGaming Kernel v1.1 (Gaming)       ";
+ui_print "        DaisyForGaming Kernel v1.2 (Stable)       ";
 ui_print "           Xiaomi Mi A2 Lite (daisy)              ";
 ui_print "              Developer: JUBAIR HOSEN             ";
 ui_print "==================================================";
@@ -87,21 +87,21 @@ if grep -q " /data " /proc/mounts 2>/dev/null; then
 fi;
 
 if [ "$data_was_mounted" = "1" ] || mount /data 2>/dev/null; then
-  if [ -d /data/adb/service.d ]; then
-    if [ -f "$AKHOME/dfg_tune.sh" ]; then
-      cp -f "$AKHOME/dfg_tune.sh" /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
-      chmod 755 /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
-      rm -f /data/adb/service.d/90-kloder.sh 2>/dev/null;
-      ui_print "- Staging gaming performance & sound tune - ok";
-    fi;
-  else
-    ui_print "- Staging gaming performance & sound tune - ok";
+  mkdir -p /data/adb/service.d 2>/dev/null;
+  if [ -f "$AKHOME/dfg_tune.sh" ]; then
+    cp -f "$AKHOME/dfg_tune.sh" /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
+    chmod 755 /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
+    # /data/adb is labeled adb_data_file on this device; magiskd cannot
+    # execve scripts with that label.  Magisk's own files use system_file.
+    chcon u:object_r:system_file:s0 /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
+    rm -f /data/adb/service.d/90-kloder.sh 2>/dev/null;
+    ui_print "- Staging boot tune service - ok";
   fi;
   if [ "$data_was_mounted" = "0" ]; then
     umount /data 2>/dev/null || true;
   fi;
 else
-  ui_print "- Staging gaming performance & sound tune - ok";
+  ui_print "- Staging boot tune service - skipped (data not mounted)";
 fi;
 
 ui_print " ";
@@ -112,11 +112,11 @@ echo "[zip] anykernel.sh: $(wc -l < anykernel.sh) lines"
 
 cp "$SRC/dfg_tune.sh" dfg_tune.sh
 chmod 755 dfg_tune.sh
-grep -q 'DaisyForGaming autonomous tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"; exit 1; }
+grep -q 'DaisyForGaming v1.2 tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"; exit 1; }
 
 cat > banner <<'BAN'
 ==================================================
-        DaisyForGaming Kernel v1.1 (Gaming)
+        DaisyForGaming Kernel v1.2 (Stable)
            Xiaomi Mi A2 Lite (daisy)
               Developer: JUBAIR HOSEN
 ==================================================
@@ -137,6 +137,6 @@ echo "[zip] SusFS strings: $(grep -ic susfs raw.txt)  (expect 0)"
 echo "[zip] input boost:   $(grep -c 'input boost on by default' raw.txt)  (expect >=1)"
 echo "[zip] boost_mode:    $(grep -c 'boost_mode' raw.txt)  (expect >=1)"
 echo "[zip] kernel.string: $(grep kernel.string anykernel.sh)"
-echo "[zip] tune script:   $(grep -c 'DaisyForGaming autonomous tuning start' dfg_tune.sh) (expect 1)"
+echo "[zip] tune script:   $(grep -c 'DaisyForGaming v1.2 tuning start' dfg_tune.sh) (expect 1)"
 rm -f raw.txt
 echo "ZIP_DONE"

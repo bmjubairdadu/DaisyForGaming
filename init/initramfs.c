@@ -611,9 +611,14 @@ static int __initdata do_skip_initramfs;
 
 static int __init skip_initramfs_param(char *str)
 {
-	if (*str)
-		return 0;
-	do_skip_initramfs = 1;
+	/*
+	 * Daisy keeps Magisk in the boot ramdisk.  Honoring this parameter
+	 * makes the kernel discard the ramdisk, so magiskinit never runs and
+	 * the device boots without root.  Keep the initramfs; magiskinit
+	 * reads the flag itself and chain-loads the system init on a normal
+	 * boot.
+	 */
+	(void)str;
 	return 1;
 }
 __setup("skip_initramfs", skip_initramfs_param);
