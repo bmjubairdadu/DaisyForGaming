@@ -1,0 +1,62 @@
+[CENTER]
+[IMG]https://raw.githubusercontent.com/bmjubairdadu/DaisyForGaming/main/banner[/IMG]
+[SIZE=6][B][KERNEL][daisy] DaisyForGaming v1.3 [4.9.337][/B][/SIZE]
+[SIZE=4][B]Gaming Performance | SD Card Fix | Video Stutter Fix | Thermal Balance | Dynamic Fsync[/B][/SIZE]
+[SIZE=3]For Xiaomi Mi A2 Lite (daisy / daisy_sprout)[/SIZE]
+[/CENTER]
+
+[CODE]
+/*
+ * Your warranty is now void.
+ * I am not responsible for bricked devices, dead SD cards,
+ * thermonuclear war, or you getting fired because the alarm app failed.
+ * Please do some research before flashing!
+ */
+[/CODE]
+
+[SIZE=5][B]📌 Introduction[/B][/SIZE]
+DaisyForGaming is an optimized, high-performance custom kernel for the Xiaomi Mi A2 Lite (daisy) built with the latest Clang 21 toolchain and LLD linker.
+Version 1.3 addresses all known issues from v1.2, restoring external SD card mounting, eliminating video stuttering/buffering, introducing Dynamic Fsync, and balancing gaming responsiveness with ice-cold thermal management.
+
+[SIZE=5][B]🚀 Features & Improvements in v1.3[/B][/SIZE]
+[LIST]
+[*][B]External SD Card Hardware Detection Fix:[/B] Corrected SD Card Detect GPIO polarity to Active Low in Device Tree (GPIO 133). Fixed filesystem mounting with native NTFS and exFAT support.
+[*][B]Video Lag & Buffering Elimination:[/B] Restored GPU memory bus persistence (force_bus_on = 1) at a 216 MHz clock floor, eliminating SurfaceFlinger starvation during 60 FPS YouTube and local playback. Scaled TCP stream socket buffers to 8 MB.
+[*][B]Gaming Performance & Thermal Balance:[/B] Tuned input boost duration to 80 ms (fast responsiveness without core-pinning heat). Disabled boost-on-charging to prevent overheating during fast charging. Configured schedutil governor rate limits (500us up, 20ms down). Pinned touchscreen interrupts to CPUs 0-3 for low latency.
+[*][B]Dynamic Fsync (Screen-State Aware):[/B] Accelerates storage write throughput and game asset loading while display is active, safely flushing dirty pages to NAND on suspend and shutdown.
+[*][B]Wakelock Blocker & Wakeup Suppression:[/B] Suppresses rogue background Wi-Fi and Qualcomm wakeups to ensure 0% battery drain during screen-off sleep.
+[*][B]Clang 21 & Clean Code:[/B] Compiled with Ubuntu Clang 21.1.8 with zero warnings. Completely clean, comment-free source code.
+[*][B]Root Compatible:[/B] Seamless Magisk and FolkPatch support with skip_initramfs ramdisk retention.
+[/LIST]
+
+[SIZE=5][B]📥 Download Links & Checksums[/B][/SIZE]
+[LIST]
+[*][B]GitHub Release Page:[/B] [URL='https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/v1.3']DaisyForGaming v1.3 Release[/URL]
+[*][B]Direct Zip Download:[/B] [URL='https://github.com/bmjubairdadu/DaisyForGaming/releases/download/v1.3/DaisyForGaming-v1.3-Gaming-11-21-2026.zip']DaisyForGaming-v1.3-Gaming-11-21-2026.zip[/URL]
+[*][B]File Size:[/B] 17,285,776 bytes (~16.5 MB)
+[*][B]SHA-256:[/B] [ICODE]0af0dcd15a39756c20917b6926f54b7c5dee99f5f3f585f0c1aad4ab935a7a13[/ICODE]
+[/LIST]
+
+[SIZE=5][B]📖 Installation Instructions[/B][/SIZE]
+[LIST=1]
+[*]Reboot device into Custom Recovery (TWRP / OrangeFox).
+[*](Optional but Recommended) Backup your current Boot partition.
+[*]Select [B]Install[/B] and choose [B]DaisyForGaming-v1.3-Gaming-11-21-2026.zip[/B] (or use [ICODE]adb sideload[/ICODE]).
+[*]Swipe to confirm flash. AnyKernel3 will automatically patch your boot image and install the tuning script.
+[*]Reboot System. Magisk root remains fully preserved.
+[/LIST]
+
+[SIZE=5][B]💻 Source Code[/B][/SIZE]
+[LIST]
+[*][B]Kernel Source Repository:[/B] [URL='https://github.com/bmjubairdadu/DaisyForGaming']https://github.com/bmjubairdadu/DaisyForGaming[/URL]
+[*][B]Branch / Tag:[/B] [URL='https://github.com/bmjubairdadu/DaisyForGaming/tree/v1.3']v1.3[/URL]
+[/LIST]
+
+[SIZE=5][B]ℹ️ Version Information[/B][/SIZE]
+[LIST]
+[*][B]Status:[/B] Stable
+[*][B]Linux Version:[/B] 4.9.337
+[*][B]Target Device:[/B] Xiaomi Mi A2 Lite (daisy / daisy_sprout)
+[*][B]Developer:[/B] JUBAIR HOSEN
+[*][B]Release Date:[/B] 2026-11-21
+[/LIST]
