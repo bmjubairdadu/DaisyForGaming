@@ -2,6 +2,29 @@
 
 All notable changes to the **DaisyForGaming** kernel for the Xiaomi Mi A2 Lite (`daisy`) are documented here.
 
+## v1.3 (2026-11-21) — Gaming Performance, SD Card, Video & Thermal Balance
+
+### External SD Card and Storage
+- **Fixed SD Card Detection GPIO Polarity:** Corrected Card Detect pin from Active High (`0x0`) to Active Low (`0x1`) in `sakura-qrd.dtsi` (`cd-gpios = <&tlmm 133 0x1>`).
+- **Filesystem Support:** Built-in `CONFIG_NTFS_FS=y` and `CONFIG_NTFS_RW=y` alongside `CONFIG_EXFAT_FS=y` in `daisy_defconfig`.
+- **Dynamic Fsync (User Option 1):** Enabled `/sys/kernel/dyn_fsync/Dyn_fsync_active = 1` for zero fsync write overhead during screen-on and automatic safe flushes on screen-off and reboot.
+
+### Video Playback and Networking
+- **Restored GPU Memory Bus Bandwidth:** Re-enabled `force_bus_on = 1` with 216 MHz minimum clock in `dfg_tune.sh` to prevent SurfaceFlinger memory starving and video frame drops.
+- **TCP Socket Stream Scaling:** Increased `rmem_max` and `wmem_max` to 8 MB, tuned `tcp_rmem` and `tcp_wmem` up to 8 MB, and enabled `tcp_low_latency = 1` and `tcp_fastopen = 3`.
+- **Cpusets Optimization:** Expanded `system-background` cpusets to `0-7` for software video decoder pipelines.
+
+### Gaming Performance, Thermals and Power
+- **Input Boost Shortened:** Reduced input boost duration from 250 ms to 80 ms (`CONFIG_INPUT_BOOST_DURATION_MS=80` and `input_boost_duration = 80`) to eliminate continuous thermal build-up.
+- **Charging Boost Disabled:** Maintained `boost_on_charging = 0` to prevent overheating during play on charger.
+- **Wakelock Blocker & Wakeup Suppression (User Option 4):** Suppressed unnecessary WiFi and modem wakeups (`wlan_pno`, `wlan_ipa`, `qcom_rx_wakelock`, `IPA_WS`, `wlan_wow_wl`, `wlan_extscan_wl`) via `/sys/class/wakeup/`.
+- **Touch IRQ Affinity:** Pinned touchscreen interrupts to CPUs 0-3 for instantaneous touch response.
+
+### Toolchain and Clean Code
+- **Zero Comments Standardization:** Removed redundant comment blocks across all edited kernel files.
+- **Clang 21 Support:** Added `-Wno-default-const-init-field-unsafe`, `-Wno-default-const-init-var-unsafe`, and `-Wno-deprecated-ofast` compiler flags.
+- **Version Bump:** Build version set to `#15` (DaisyForGaming v1.3).
+
 ## v1.2 (2026-11-05) — Thermal, Memory and SystemUI Stability
 
 ### CPU and thermal

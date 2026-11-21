@@ -8,8 +8,8 @@ export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
 export PATH=$PATH:/usr/lib/ccache
 export LLVM=1 LLVM_IAS=1
 export KBUILD_BUILD_USER=JUBAIR_HOSEN KBUILD_BUILD_HOST=DaisyForGaming
-export KBUILD_BUILD_VERSION=14
-export KBUILD_BUILD_TIMESTAMP="Thu Nov 5 19:30:00 +06 2026"
+export KBUILD_BUILD_VERSION=15
+export KBUILD_BUILD_TIMESTAMP="Sat Nov 21 17:30:00 +06 2026"
 
 LOG=$SRC/.dfg_build.log
 : > "$LOG"
@@ -33,6 +33,12 @@ grep -q '^CONFIG_MODVERSIONS=y' arch/arm64/configs/daisy_defconfig \
   && echo MODVERSIONS_OK || { echo "FATAL: MODVERSIONS off (VINTF)"; exit 1; }
 grep -q '^CONFIG_MAX_BOOST_FREQ=2016000' arch/arm64/configs/daisy_defconfig \
   && echo BOOST_CAP_OK || { echo "FATAL: MAX_BOOST_FREQ is not 2016000"; exit 1; }
+grep -q '^CONFIG_NTFS_FS=y' arch/arm64/configs/daisy_defconfig \
+  && echo NTFS_OK || { echo "FATAL: CONFIG_NTFS_FS not enabled"; exit 1; }
+grep -q '^CONFIG_WLAN_FEATURE_RX_WAKELOCK=y' arch/arm64/configs/daisy_defconfig \
+  && echo WLAN_WAKELOCK_OK || { echo "FATAL: CONFIG_WLAN_FEATURE_RX_WAKELOCK not enabled"; exit 1; }
+grep -q 'cd-gpios = <&tlmm 133 0x1>;' arch/arm64/boot/dts/qcom/sakura/sakura-qrd.dtsi \
+  && echo SDCARD_CD_POLARITY_OK || { echo "FATAL: SD Card CD GPIO polarity wrong"; exit 1; }
 if grep -A8 'qcom,cpufreq-table' arch/arm64/boot/dts/qcom/msm8953.dtsi \
     | grep -qE '2(150400|208000)'; then
   echo "FATAL: overclocked CPU OPP still in cpufreq-table"; exit 1
@@ -50,10 +56,11 @@ echo "KSU lines in config: $(grep -c '^CONFIG_KSU' out/.config)  (expect 0)"
 echo "SusFS lines in config: $(grep -c 'SUSFS' out/.config)  (expect 0)"
 grep -E '^CONFIG_KALLSYMS=|^CONFIG_KALLSYMS_ALL=|^CONFIG_KPROBES=|^CONFIG_MODVERSIONS=' out/.config
 grep -E '^CONFIG_CPU_BOOST=|^CONFIG_INPUT_BOOST_FREQ=|^CONFIG_INPUT_BOOST_FREQ_BIG=|^CONFIG_INPUT_BOOST_DURATION_MS=|^CONFIG_INPUT_BOOST_SCHED=|^CONFIG_ZRAM_DEFAULT_COMP_ALGORITHM=' out/.config
+grep -E '^CONFIG_NTFS_FS=|^CONFIG_EXFAT_FS=|^CONFIG_WLAN_FEATURE_RX_WAKELOCK=' out/.config
 
 echo "=== build (this takes a while) ==="
 rm -f out/arch/arm64/boot/Image* out/arch/arm64/boot/Image.gz-dtb
-make O=out ARCH=arm64 -j$(nproc) 2>&1 | tee "$LOG" | tail -25
+make O=out ARCH=arm64 -j8 2>&1 | tee "$LOG" | tail -25
 if [ ! -f out/arch/arm64/boot/Image.gz-dtb ]; then
   echo "FATAL: Image.gz-dtb build failed!"
   grep -E 'error:|Error [0-9]|fatal error:' "$LOG" | head -20

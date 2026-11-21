@@ -559,6 +559,11 @@ endif
 CLANG_FLAGS	+= -Werror=unknown-warning-option
 CLANG_FLAGS	+= $(call cc-option, -Wno-misleading-indentation)
 CLANG_FLAGS	+= $(call cc-option, -Wno-bool-operation)
+CLANG_FLAGS	+= $(call cc-option, -Wno-default-const-init-field-unsafe)
+CLANG_FLAGS	+= $(call cc-option, -Wno-default-const-init-var-unsafe)
+CLANG_FLAGS	+= $(call cc-option, -Wno-deprecated-ofast)
+CLANG_FLAGS	+= $(call cc-option, -Wno-enum-compare)
+CLANG_FLAGS	+= $(call cc-option, -Wno-enum-conversion)
 KBUILD_CFLAGS	+= $(CLANG_FLAGS)
 KBUILD_AFLAGS	+= $(CLANG_FLAGS)
 ifeq ($(ld-name),lld)

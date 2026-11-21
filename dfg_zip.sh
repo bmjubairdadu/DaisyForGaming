@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-VER="1.2"
+VER="1.3"
 DATESTAMP="$(date +%m-%d-%Y)"
 SRC=/mnt/d/DaisyForGaming
 cd "$SRC"
@@ -20,11 +20,8 @@ echo "[zip] image staged: $(stat -c %s Image.gz-dtb) bytes"
 
 {
 cat <<'AKEOF'
-# AnyKernel3 Ramdisk Mod Script
-# DaisyForGaming by JUBAIR HOSEN (Linux 4.9.337)
-
 properties() { '
-kernel.string=DaisyForGaming v1.2
+kernel.string=DaisyForGaming v1.3
 do.devicecheck=0
 do.modules=0
 do.systemless=1
@@ -36,16 +33,13 @@ device.name3=sakura
 supported.versions=
 '; }
 
-# boot shell variables
 BLOCK=boot;
 IS_SLOT_DEVICE=auto;
 RAMDISK_COMPRESSION=auto;
 PATCH_VBMETA_FLAG=auto;
 
-# import functions/variables and setup patching
 . tools/ak3-core.sh;
 
-# Bulletproof ui_print supporting both recovery pipe and console output
 ui_print() {
   until [ ! "$1" ]; do
     if [ "$OUTFD" ] && [ -e "/proc/self/fd/$OUTFD" ]; then
@@ -57,30 +51,21 @@ ui_print() {
 }
 
 ui_print "==================================================";
-ui_print "        DaisyForGaming Kernel v1.2 (Stable)       ";
+ui_print "        DaisyForGaming Kernel v1.3 (Stable)       ";
 ui_print "           Xiaomi Mi A2 Lite (daisy)              ";
 ui_print "              Developer: JUBAIR HOSEN             ";
 ui_print "==================================================";
 ui_print " ";
 
-# Device check
 ui_print "- Checking device - ok";
-
-# Android version check
 ui_print "- Checking Android version - ok";
-
-# Boot slot check
 ui_print "- Checking boot slot - ok";
-
-# Unpack boot image and ramdisk
 ui_print "- Splitting boot image - ok";
 dump_boot;
 
-# Repack and flash kernel
 ui_print "- Flashing kernel - ok";
 write_boot;
 
-# Stage performance tuning service if /data is accessible
 data_was_mounted=0;
 if grep -q " /data " /proc/mounts 2>/dev/null; then
   data_was_mounted=1;
@@ -91,8 +76,6 @@ if [ "$data_was_mounted" = "1" ] || mount /data 2>/dev/null; then
   if [ -f "$AKHOME/dfg_tune.sh" ]; then
     cp -f "$AKHOME/dfg_tune.sh" /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
     chmod 755 /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
-    # /data/adb is labeled adb_data_file on this device; magiskd cannot
-    # execve scripts with that label.  Magisk's own files use system_file.
     chcon u:object_r:system_file:s0 /data/adb/service.d/99-dfg-tune.sh 2>/dev/null;
     rm -f /data/adb/service.d/90-kloder.sh 2>/dev/null;
     ui_print "- Staging boot tune service - ok";
@@ -112,31 +95,41 @@ echo "[zip] anykernel.sh: $(wc -l < anykernel.sh) lines"
 
 cp "$SRC/dfg_tune.sh" dfg_tune.sh
 chmod 755 dfg_tune.sh
-grep -q 'DaisyForGaming v1.2 tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"; exit 1; }
+grep -q 'DaisyForGaming v1.3 tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"; exit 1; }
 
 cat > banner <<'BAN'
 ==================================================
-        DaisyForGaming Kernel v1.2 (Stable)
+        DaisyForGaming Kernel v1.3 (Stable)
            Xiaomi Mi A2 Lite (daisy)
               Developer: JUBAIR HOSEN
 ==================================================
 BAN
 
-# Ensure strict UNIX LF line endings across all text files and scripts
 find . -type f \( -name "*.sh" -o -name "banner" -o -name "update-binary" -o -name "updater-script" \) -exec sed -i 's/\r$//' {} + 2>/dev/null || true
 chmod -R 755 tools META-INF anykernel.sh dfg_tune.sh
 
 rm -f "$OUT"
-zip -q -r -9 "$OUT" .
+python3 -c 'import os, sys, zipfile
+target = os.path.abspath(sys.argv[1])
+zf = zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED, compresslevel=9)
+for root, dirs, files in os.walk("."):
+    for f in files:
+        full = os.path.abspath(os.path.join(root, f))
+        if full == target:
+            continue
+        rel = os.path.relpath(full, ".")
+        zf.write(full, rel)
+zf.close()' "$OUT"
+
 echo "[zip]: $(stat -c %s "$OUT") bytes -> $ZIP"
 
-echo "[zip] files in zip: $(unzip -l "$OUT" | tail -1 | awk '{print $2}')"
+echo "[zip] files in zip: $(python3 -c 'import sys, zipfile; zf = zipfile.ZipFile(sys.argv[1], "r"); print(len(zf.namelist())); zf.testzip(); zf.close()' "$OUT")"
 gzip -dc Image.gz-dtb 2>/dev/null | strings > raw.txt
 echo "[zip] KSU strings:   $(grep -icE 'kernelsu|ksu_handle' raw.txt)  (expect 0)"
 echo "[zip] SusFS strings: $(grep -ic susfs raw.txt)  (expect 0)"
 echo "[zip] input boost:   $(grep -c 'input boost on by default' raw.txt)  (expect >=1)"
 echo "[zip] boost_mode:    $(grep -c 'boost_mode' raw.txt)  (expect >=1)"
 echo "[zip] kernel.string: $(grep kernel.string anykernel.sh)"
-echo "[zip] tune script:   $(grep -c 'DaisyForGaming v1.2 tuning start' dfg_tune.sh) (expect 1)"
+echo "[zip] tune script:   $(grep -c 'DaisyForGaming v1.3 tuning start' dfg_tune.sh) (expect 1)"
 rm -f raw.txt
 echo "ZIP_DONE"

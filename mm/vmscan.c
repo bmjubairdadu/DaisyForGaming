@@ -160,14 +160,6 @@ unsigned long sysctl_anon_min_kbytes __read_mostly = CONFIG_ANON_MIN_KBYTES;
 unsigned long sysctl_clean_low_kbytes __read_mostly = CONFIG_CLEAN_LOW_KBYTES;
 unsigned long sysctl_clean_min_kbytes __read_mostly = CONFIG_CLEAN_MIN_KBYTES;
 
-/*
- * From 0 .. 100.  Higher means more swappy.
- *
- * Android+zram wants anonymous pages in the compressed swap so that
- * file cache (app code and dex) stays resident; keeping this at the
- * kernel default of 10 evicted file pages instead and caused heavy
- * major-fault stalls on 2-3 GB devices.
- */
 int vm_swappiness = 100;
 /*
  * The total number of pages which are beyond the high watermark within all
