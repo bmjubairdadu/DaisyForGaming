@@ -1,0 +1,59 @@
+[CENTER]
+[SIZE=6][B][KERNEL][daisy] DaisyForGaming v1.4 [4.9.337][/B][/SIZE]
+[SIZE=4][B]Ultra-Smooth App Launch | Zero Idle Frequency Pinning | Ice-Cold Thermal Balance[/B][/SIZE]
+[SIZE=3]For Xiaomi Mi A2 Lite (daisy / daisy_sprout)[/SIZE]
+[/CENTER]
+
+[CODE]
+/*
+ * Your warranty is now void.
+ * I am not responsible for bricked devices, dead SD cards,
+ * thermonuclear war, or you getting fired because the alarm app failed.
+ * Please do some research before flashing!
+ */
+[/CODE]
+
+[SIZE=5][B]📌 Introduction[/B][/SIZE]
+DaisyForGaming v1.4 is a major performance and thermal optimization release for the Xiaomi Mi A2 Lite (daisy / daisy_sprout, MSM8953, Snapdragon 625).
+Built with the cutting-edge Clang 21 toolchain and LLD linker, v1.4 permanently resolves cold app-launch stutters, eliminates idle CPU frequency pinning, and brings device operating temperatures down to an ice-cold 30°C–33°C.
+
+[SIZE=5][B]🚀 What's New & Fixed in v1.4[/B][/SIZE]
+[LIST]
+[*][B]Cold App-Launch Instant Boost:[/B]
+Patched the Linux kernel fork subsystem (`kernel/fork.c`) so that whenever Android's Zygote process spawns a new app, both CPU frequencies (`cpu_input_boost_kick_max`) and DDR memory bus (`DEVFREQ_MSM_CPUBW`) are instantly boosted to maximum for 150 ms. Cold app startups (WhatsApp, Facebook, Chrome, YouTube) launch with zero delay and buttery-smooth animation.
+[*][B]Enhanced Zygote Detection (`fs/exec.c`):[/B]
+Hardened `task_is_zygote()` to evaluate process command names (`zygote`, `zygote64`, `main`) alongside pointer tracking, ensuring 100% of app launches receive priority boost.
+[*][B]Eliminated Idle CPU Frequency Pinning & Phone Heating:[/B]
+In previous builds, gaming profile boost combined with a 20 ms governor down-rate limit locked all 8 cores at 2.016 GHz continuously even while idling, causing high temperatures (38°C–45°C). In v1.4, input boost duration is optimized to 80 ms, permanent scheduler boost is disabled, and schedutil down-rate limit is reduced to 3 ms (`down_rate_limit_us = 3000`). All 8 cores now smoothly step down and rest at 652 MHz floor when idle.
+[*][B]Storage Queue Optimization (`read_ahead_kb = 256`):[/B]
+Reduced eMMC 5.1 queue read-ahead from 1024 KB to 256 KB. On eMMC storage, large 1024 KB read-ahead causes massive read amplification and queue congestion on random small APK/DEX/OAT library reads during app loading. 256 KB provides optimal read throughput and instant loading.
+[*][B]Virtual Memory & Cache Tuning (`vfs_cache_pressure = 60`):[/B]
+Lowered `vfs_cache_pressure` from 100 to 60 to prevent the kernel from discarding cached directory entries and inodes, accelerating file lookups during app execution. Swappiness tuned to 60 to prevent excessive zram thrashing.
+[*][B]All v1.3 Features Retained:[/B]
+Working External SD Card (Active Low CD GPIO 133, NTFS/exFAT), Dynamic Fsync, Wi-Fi Wakelock Blocker, GPU memory bus persistence, low-latency touchscreen IRQ affinity (CPUs 0-3), and Magisk/FolkPatch root compatibility.
+[/LIST]
+
+[SIZE=5][B]📥 Download Links & Checksums[/B][/SIZE]
+[LIST]
+[*][B]GitHub Release Page:[/B] [URL='https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/v1.4']DaisyForGaming v1.4 Release[/URL]
+[*][B]Direct Zip Download:[/B] [URL='https://github.com/bmjubairdadu/DaisyForGaming/releases/download/v1.4/DaisyForGaming-v1.4-Gaming-11-22-2026.zip']DaisyForGaming-v1.4-Gaming-11-22-2026.zip[/URL]
+[*][B]File Size:[/B] 17,283,612 bytes (~16.5 MB)
+[*][B]SHA-256:[/B] [ICODE]a1fbd246051f7f50821da474b17a6350af2f0e112cfdc4047fd0db28db682554[/ICODE]
+[/LIST]
+
+[SIZE=5][B]📖 Installation Instructions[/B][/SIZE]
+[LIST=1]
+[*]Reboot device into Custom Recovery (TWRP / OrangeFox).
+[*]Select [B]Install[/B] and flash [B]DaisyForGaming-v1.4-Gaming-11-22-2026.zip[/B] (or via [ICODE]adb sideload DaisyForGaming-v1.4-Gaming-11-22-2026.zip[/ICODE]).
+[*]Swipe to flash. AnyKernel3 will patch your boot partition and install boot tuning service.
+[*]Reboot to System. Magisk root is fully preserved.
+[/LIST]
+
+[SIZE=5][B]💻 Source Code & Details[/B][/SIZE]
+[LIST]
+[*][B]Kernel Source:[/B] [URL='https://github.com/bmjubairdadu/DaisyForGaming']GitHub - bmjubairdadu/DaisyForGaming[/URL]
+[*][B]Branch:[/B] [ICODE]main[/ICODE]
+[*][B]Compiler:[/B] Ubuntu Clang 21.1.8 + LLD Linker
+[*][B]Linux Version:[/B] 4.9.337-DaisyForGaming #16 SMP PREEMPT
+[*][B]Author / Developer:[/B] JUBAIR HOSEN
+[/LIST]
