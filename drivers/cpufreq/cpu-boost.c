@@ -64,7 +64,7 @@ static struct kthread_work input_boost_work;
 #ifdef CONFIG_INPUT_BOOST_SCHED
 #define IB_SCHED_DEFAULT CONFIG_INPUT_BOOST_SCHED
 #else
-#define IB_SCHED_DEFAULT 1
+#define IB_SCHED_DEFAULT 0
 #endif
 
 
@@ -161,8 +161,8 @@ static void apply_boost_mode(void)
 	case 2:
 		little = 1401600;
 		big = 1689600;
-		input_boost_ms = 250;
-		sched_boost_on_input = 1;
+		input_boost_ms = 80;
+		sched_boost_on_input = 0;
 		break;
 	case 1:
 	default:
@@ -170,7 +170,7 @@ static void apply_boost_mode(void)
 		little = IB_FREQ_LITTLE_DEFAULT;
 		big = IB_FREQ_BIG_DEFAULT;
 		input_boost_ms = IB_MS_DEFAULT;
-		sched_boost_on_input = IB_SCHED_DEFAULT;
+		sched_boost_on_input = 0;
 		break;
 	}
 

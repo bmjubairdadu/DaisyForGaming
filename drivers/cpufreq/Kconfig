@@ -281,7 +281,7 @@ config INPUT_BOOST_FREQ_BIG
 config INPUT_BOOST_SCHED
 	int "WALT scheduler boost on input"
 	range 0 1
-	default "1"
+	default "0"
 	help
 	  When 1, every input event also raises a full-throttle WALT
 	  scheduler boost (sched_set_boost) for the input boost duration,

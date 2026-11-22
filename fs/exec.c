@@ -84,7 +84,12 @@ static struct task_struct *zygote64_task;
 
 bool task_is_zygote(struct task_struct *task)
 {
-	return task == zygote32_task || task == zygote64_task;
+	if (!task)
+		return false;
+
+	return task == zygote32_task || task == zygote64_task ||
+	       !strcmp(task->comm, "zygote") || !strcmp(task->comm, "zygote64") ||
+	       !strcmp(task->comm, "main");
 }
 
 void __register_binfmt(struct linux_binfmt * fmt, int insert)

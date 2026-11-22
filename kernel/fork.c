@@ -2100,12 +2100,13 @@ long _do_fork(unsigned long clone_flags,
 	long nr;
 	unsigned int period;
 
-	period = (kp_active_mode() == 2) ? 50 : (kp_active_mode() == 3) ? 100 : 30;
+	period = (kp_active_mode() == 2) ? 100 : (kp_active_mode() == 3) ? 200 : 150;
 
 #ifdef CONFIG_CPU_INPUT_BOOST
-	/* Boost CPU to the max when userspace launches an app */
-	if (task_is_zygote(current))
+	if (task_is_zygote(current)) {
+		cpu_input_boost_kick_max(period);
 		devfreq_boost_kick_max(DEVFREQ_MSM_CPUBW, period);
+	}
 #endif
 
 	/*
