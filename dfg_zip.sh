@@ -50,13 +50,6 @@ ui_print() {
   done;
 }
 
-ui_print "==================================================";
-ui_print "        DaisyForGaming Kernel v1.3 (Stable)       ";
-ui_print "           Xiaomi Mi A2 Lite (daisy)              ";
-ui_print "              Developer: JUBAIR HOSEN             ";
-ui_print "==================================================";
-ui_print " ";
-
 ui_print "- Checking device - ok";
 ui_print "- Checking Android version - ok";
 ui_print "- Checking boot slot - ok";

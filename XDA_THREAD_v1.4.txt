@@ -38,7 +38,7 @@ Working External SD Card (Active Low CD GPIO 133, NTFS/exFAT), Dynamic Fsync, Wi
 [*][B]GitHub Release Page:[/B] [URL='https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/v1.4']DaisyForGaming v1.4 Release[/URL]
 [*][B]Direct Zip Download:[/B] [URL='https://github.com/bmjubairdadu/DaisyForGaming/releases/download/v1.4/DaisyForGaming-v1.4-Gaming-11-22-2026.zip']DaisyForGaming-v1.4-Gaming-11-22-2026.zip[/URL]
 [*][B]File Size:[/B] 17,283,612 bytes (~16.5 MB)
-[*][B]SHA-256:[/B] [ICODE]a1fbd246051f7f50821da474b17a6350af2f0e112cfdc4047fd0db28db682554[/ICODE]
+[*][B]SHA-256:[/B] [ICODE]f077e3464e32d14c20ee1229dccbabfd77c0f89894db73e4c5abc9943a4d40e4[/ICODE]
 [/LIST]
 
 [SIZE=5][B]📖 Installation Instructions[/B][/SIZE]
