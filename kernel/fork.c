@@ -80,7 +80,7 @@
 #include <linux/kcov.h>
 #include <linux/cpufreq_times.h>
 #include <linux/binfmts.h>
-#include <linux/cpu_input_boost.h>
+#include <linux/cpu_boost.h>
 #include <linux/devfreq_boost.h>
 #include <../drivers/misc/kprofiles/kprofiles.h>
 
@@ -2102,12 +2102,14 @@ long _do_fork(unsigned long clone_flags,
 
 	period = (kp_active_mode() == 2) ? 100 : (kp_active_mode() == 3) ? 200 : 150;
 
-#ifdef CONFIG_CPU_INPUT_BOOST
 	if (task_is_zygote(current)) {
-		cpu_input_boost_kick_max(period);
-		devfreq_boost_kick_max(DEVFREQ_MSM_CPUBW, period);
-	}
+#ifdef CONFIG_CPU_BOOST
+		cpu_boost_kick_max(period);
 #endif
+#ifdef CONFIG_DEVFREQ_BOOST
+		devfreq_boost_kick_max(DEVFREQ_MSM_CPUBW, period);
+#endif
+	}
 
 	/*
 	 * Determine whether and which event to report to ptracer.  When

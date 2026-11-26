@@ -1,0 +1,57 @@
+[CENTER]
+[SIZE=6][B][KERNEL][daisy] DaisyForGaming v1.5 [4.9.337][/B][/SIZE]
+[SIZE=4][B]Video Buffer Fix | External SD Card Hardware Detection | PM8953 Thermal Zone | Data Integrity Fsync[/B][/SIZE]
+[SIZE=3]For Xiaomi Mi A2 Lite (daisy / daisy_sprout)[/SIZE]
+[/CENTER]
+
+[CODE]
+/*
+ * Your warranty is now void.
+ * I am not responsible for bricked devices, dead SD cards,
+ * thermonuclear war, or you getting fired because the alarm app failed.
+ * Please do some research before flashing!
+ */
+[/CODE]
+
+[SIZE=5][B]📌 Introduction[/B][/SIZE]
+DaisyForGaming v1.5 is a major stability, hardware compatibility, and streaming media release for the Xiaomi Mi A2 Lite (daisy / daisy_sprout, MSM8953, Snapdragon 625).
+v1.5 resolves video playback buffer stalls across Facebook and other media platforms, restores external MicroSD card hardware detection, activates the PM8953 PMIC thermal zone driver, and guarantees full storage data integrity.
+
+[SIZE=5][B]🚀 What's New & Fixed in v1.5[/B][/SIZE]
+[LIST]
+[*][B]Video Playback & Media Streaming Buffer Fix:[/B]
+Tuned TCP socket buffer limits (`rmem_max` and `wmem_max` to 6 MB, `tcp_rmem` to 6 MB, `tcp_wmem` to 4 MB) with BBR congestion control and `fq` packet pacing. Disabled `tcp_slow_start_after_idle` (`= 0`) and enabled `tcp_mtu_probing` (`= 1`), eliminating buffer stalls and lag during video playback across Facebook, YouTube, TikTok, and browsers.
+[*][B]External SD Card Hardware Detection:[/B]
+Corrected SD Card Detect GPIO polarity in `msm8953-qrd-sku3-daisy.dts` and `sakura-qrd.dtsi` (`cd-gpios = <&tlmm 133 0x0>`) with DDR50 bus speed mode. MicroSD cards now mount cleanly on system boot and in recovery without delay.
+[*][B]PM8953 PMIC Thermal Zone Driver (`pm8953_tz`):[/B]
+Activated the PM8953 thermal zone in device tree, providing accurate hardware thermal readings on `thermal_zone2`.
+[*][B]Data Integrity & Vanilla Fsync Restored:[/B]
+Disabled unsafe `CONFIG_DYNAMIC_FSYNC` and restored vanilla Linux kernel `fsync()` / `fdatasync()` system call semantics. Zero risk of zero-byte file corruption during sudden restarts or power loss.
+[*][B]Retained All v1.4 Performance Enhancements:[/B]
+Cold app-launch instant Zygote boost (150 ms CPU + DDR bus boost), smooth 80 ms input boost, 652 MHz idle frequency floor, eMMC 256 KB read-ahead, zero comments, zero warnings, and Magisk root preservation.
+[/LIST]
+
+[SIZE=5][B]📥 Download Links & Checksums[/B][/SIZE]
+[LIST]
+[*][B]GitHub Release Page:[/B] [URL='https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/v1.5']DaisyForGaming v1.5 Release[/URL]
+[*][B]Direct Zip Download:[/B] [URL='https://github.com/bmjubairdadu/DaisyForGaming/releases/download/v1.5/DaisyForGaming-v1.5-Gaming-11-26-2026.zip']DaisyForGaming-v1.5-Gaming-11-26-2026.zip[/URL]
+[*][B]File Size:[/B] 17,286,715 bytes (~16.5 MB)
+[*][B]SHA-256:[/B] [ICODE]28d5b8b318effda182d9926c514f78a98686a9da60eb1c497fd07e9540ae3a27[/ICODE]
+[/LIST]
+
+[SIZE=5][B]📖 Installation Instructions[/B][/SIZE]
+[LIST=1]
+[*]Reboot device into Custom Recovery (OrangeFox / TWRP).
+[*]Select [B]Install[/B] and flash [B]DaisyForGaming-v1.5-Gaming-11-26-2026.zip[/B] (or via [ICODE]adb sideload DaisyForGaming-v1.5-Gaming-11-26-2026.zip[/ICODE]).
+[*]AnyKernel3 will automatically detect boot slot, patch the kernel, and preserve Magisk root.
+[*]Reboot to System.
+[/LIST]
+
+[SIZE=5][B]💻 Source Code & Details[/B][/SIZE]
+[LIST]
+[*][B]Kernel Source:[/B] [URL='https://github.com/bmjubairdadu/DaisyForGaming']GitHub - bmjubairdadu/DaisyForGaming[/URL]
+[*][B]Branch:[/B] [ICODE]main[/ICODE]
+[*][B]Compiler:[/B] Ubuntu Clang 18.1.3 + LLD Linker
+[*][B]Linux Version:[/B] 4.9.337-DaisyForGaming #18 SMP PREEMPT
+[*][B]Author / Developer:[/B] JUBAIR HOSEN
+[/LIST]

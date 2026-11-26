@@ -2028,7 +2028,7 @@ static VOS_STATUS csrNeighborRoamHandleEmptyScanResult(tpAniSirGlobal pMac)
         {
             smsLog(pMac, LOGW,
                    FL("Couldn't re-register csrNeighborRoamNeighborLookupDOWNCallback"
-                      " with TL: Status = %d"), status);
+                      " with TL: Status = %d"), vosStatus);
         }
         if (pNeighborRoamInfo->isPeriodicScanEnabled)
         {

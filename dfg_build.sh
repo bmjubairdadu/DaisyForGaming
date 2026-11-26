@@ -8,8 +8,8 @@ export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
 export PATH=$PATH:/usr/lib/ccache
 export LLVM=1 LLVM_IAS=1
 export KBUILD_BUILD_USER=JUBAIR_HOSEN KBUILD_BUILD_HOST=DaisyForGaming
-export KBUILD_BUILD_VERSION=16
-export KBUILD_BUILD_TIMESTAMP="Sun Nov 22 13:00:00 +06 2026"
+export KBUILD_BUILD_VERSION=18
+export KBUILD_BUILD_TIMESTAMP="Thu Nov 26 10:05:00 +06 2026"
 
 LOG=$SRC/.dfg_build.log
 : > "$LOG"
@@ -37,8 +37,16 @@ grep -q '^CONFIG_NTFS_FS=y' arch/arm64/configs/daisy_defconfig \
   && echo NTFS_OK || { echo "FATAL: CONFIG_NTFS_FS not enabled"; exit 1; }
 grep -q '^CONFIG_WLAN_FEATURE_RX_WAKELOCK=y' arch/arm64/configs/daisy_defconfig \
   && echo WLAN_WAKELOCK_OK || { echo "FATAL: CONFIG_WLAN_FEATURE_RX_WAKELOCK not enabled"; exit 1; }
-grep -q 'cd-gpios = <&tlmm 133 0x1>;' arch/arm64/boot/dts/qcom/sakura/sakura-qrd.dtsi \
+grep -q 'cd-gpios = <&tlmm 133 0x0>;' arch/arm64/boot/dts/qcom/sakura/sakura-qrd.dtsi \
   && echo SDCARD_CD_POLARITY_OK || { echo "FATAL: SD Card CD GPIO polarity wrong"; exit 1; }
+grep -q 'down_rate_limit_us = 20000;' kernel/sched/cpufreq_schedutil.c \
+  && echo SCHEDUTIL_RATE_OK || { echo "FATAL: schedutil down_rate_limit_us wrong"; exit 1; }
+if grep -q '^CONFIG_CPU_INPUT_BOOST=y' arch/arm64/configs/daisy_defconfig; then
+  echo "FATAL: conflicting CONFIG_CPU_INPUT_BOOST enabled"; exit 1
+fi
+if grep -q '^CONFIG_DYNAMIC_FSYNC=y' arch/arm64/configs/daisy_defconfig; then
+  echo "FATAL: unsafe CONFIG_DYNAMIC_FSYNC enabled"; exit 1
+fi
 if grep -A8 'qcom,cpufreq-table' arch/arm64/boot/dts/qcom/msm8953.dtsi \
     | grep -qE '2(150400|208000)'; then
   echo "FATAL: overclocked CPU OPP still in cpufreq-table"; exit 1

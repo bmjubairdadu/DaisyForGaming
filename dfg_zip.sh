@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-VER="1.4"
+VER="1.5"
 DATESTAMP="$(date +%m-%d-%Y)"
 SRC=/mnt/d/DaisyForGaming
 cd "$SRC"
@@ -14,14 +14,14 @@ WORK="$SRC/_zipwork/final"
 BASE="$SRC/_ak3base"
 rm -rf "$WORK"; mkdir -p "$WORK"; cd "$WORK"
 cp -r "$BASE"/. .
-rm -rf .git .github Image.gz-dtb anykernel.sh README.md banner
+rm -rf .git .github Image.gz-dtb anykernel.sh README.md banne
 cp "$SRC/$IMAGE" Image.gz-dtb
 echo "[zip] image staged: $(stat -c %s Image.gz-dtb) bytes"
 
 {
 cat <<'AKEOF'
 properties() { '
-kernel.string=DaisyForGaming v1.4
+kernel.string=DaisyForGaming v1.5
 do.devicecheck=0
 do.modules=0
 do.systemless=1
@@ -88,11 +88,11 @@ echo "[zip] anykernel.sh: $(wc -l < anykernel.sh) lines"
 
 cp "$SRC/dfg_tune.sh" dfg_tune.sh
 chmod 755 dfg_tune.sh
-grep -q 'DaisyForGaming v1.4 tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"; exit 1; }
+grep -q 'DaisyForGaming v1.5 tuning start' dfg_tune.sh || { echo "FATAL: bad dfg_tune.sh"; exit 1; }
 
 cat > banner <<'BAN'
 ==================================================
-        DaisyForGaming Kernel v1.4 (Ultra-Smooth)
+        DaisyForGaming Kernel v1.5 (Stable)
            Xiaomi Mi A2 Lite (daisy)
               Developer: JUBAIR HOSEN
 ==================================================
@@ -123,6 +123,6 @@ echo "[zip] SusFS strings: $(grep -ic susfs raw.txt)  (expect 0)"
 echo "[zip] input boost:   $(grep -c 'input boost on by default' raw.txt)  (expect >=1)"
 echo "[zip] boost_mode:    $(grep -c 'boost_mode' raw.txt)  (expect >=1)"
 echo "[zip] kernel.string: $(grep kernel.string anykernel.sh)"
-echo "[zip] tune script:   $(grep -c 'DaisyForGaming v1.4 tuning start' dfg_tune.sh) (expect 1)"
+echo "[zip] tune script:   $(grep -c 'DaisyForGaming v1.5 tuning start' dfg_tune.sh) (expect 1)"
 rm -f raw.txt
 echo "ZIP_DONE"

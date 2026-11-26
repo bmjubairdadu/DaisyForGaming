@@ -30,6 +30,7 @@
 #include <linux/workqueue.h>
 #include <linux/sched/rt.h>
 #include <linux/power_supply.h>
+#include <linux/cpu_boost.h>
 
 #include <linux/sched.h>
 
@@ -42,6 +43,14 @@ struct cpu_sync {
 static DEFINE_PER_CPU(struct cpu_sync, sync_info);
 
 static struct kthread_work input_boost_work;
+static struct kthread_work max_boost_work;
+static atomic_t max_boost_dur = ATOMIC_INIT(0);
+
+#ifdef CONFIG_MAX_BOOST_FREQ
+#define IB_FREQ_MAX_DEFAULT CONFIG_MAX_BOOST_FREQ
+#else
+#define IB_FREQ_MAX_DEFAULT 2016000
+#endif
 
 #ifdef CONFIG_INPUT_BOOST_FREQ
 #define IB_FREQ_LITTLE_DEFAULT CONFIG_INPUT_BOOST_FREQ
@@ -307,6 +316,9 @@ static int boost_adjust_notify(struct notifier_block *nb, unsigned long val,
 		if (!ib_min)
 			break;
 
+		if (ib_min > policy->max)
+			ib_min = policy->max;
+
 		pr_debug("CPU%u policy min before boost: %u kHz\n",
 			 cpu, policy->min);
 		pr_debug("CPU%u boost min: %u kHz\n", cpu, ib_min);
@@ -380,7 +392,8 @@ static void do_input_boost(struct kthread_work *work)
 	pr_debug("Setting input boost min for all CPUs\n");
 	for_each_possible_cpu(i) {
 		i_sync_info = &per_cpu(sync_info, i);
-		i_sync_info->input_boost_min = i_sync_info->input_boost_freq;
+		if (i_sync_info->input_boost_freq > i_sync_info->input_boost_min)
+			i_sync_info->input_boost_min = i_sync_info->input_boost_freq;
 	}
 
 	
@@ -397,6 +410,42 @@ static void do_input_boost(struct kthread_work *work)
 
 	schedule_delayed_work(&input_boost_rem, msecs_to_jiffies(input_boost_ms));
 }
+
+static void do_max_boost(struct kthread_work *work)
+{
+	unsigned int i, ms = atomic_xchg(&max_boost_dur, 0);
+	struct cpu_sync *i_sync_info;
+
+	if (!ms || !input_boost_enabled || (!boost_on_charging && usb_charger_online()))
+		return;
+
+	cancel_delayed_work_sync(&input_boost_rem);
+	if (sched_boost_active) {
+		sched_set_boost(0);
+		sched_boost_active = false;
+	}
+
+	for_each_possible_cpu(i) {
+		i_sync_info = &per_cpu(sync_info, i);
+		i_sync_info->input_boost_min = IB_FREQ_MAX_DEFAULT;
+	}
+
+	update_policy_online();
+	schedule_delayed_work(&input_boost_rem, msecs_to_jiffies(ms));
+}
+
+void cpu_boost_kick_max(unsigned int duration_ms)
+{
+	if (!duration_ms || !input_boost_enabled || !cpu_boost_worker_thread)
+		return;
+
+	if (duration_ms > (unsigned int)atomic_read(&max_boost_dur))
+		atomic_set(&max_boost_dur, duration_ms);
+
+	if (!queuing_blocked(&cpu_boost_worker, &max_boost_work))
+		kthread_queue_work(&cpu_boost_worker, &max_boost_work);
+}
+EXPORT_SYMBOL_GPL(cpu_boost_kick_max);
 
 static void cpuboost_input_event(struct input_handle *handle,
 		unsigned int type, unsigned int code, int value)
@@ -502,6 +551,7 @@ static int cpu_boost_init(void)
 
 	sched_setscheduler(cpu_boost_worker_thread, SCHED_FIFO, &param);
 	kthread_init_work(&input_boost_work, do_input_boost);
+	kthread_init_work(&max_boost_work, do_max_boost);
 	INIT_DELAYED_WORK(&input_boost_rem, do_input_boost_rem);
 
 	for_each_possible_cpu(cpu) {

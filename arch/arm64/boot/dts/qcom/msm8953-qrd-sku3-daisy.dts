@@ -82,3 +82,9 @@
 #include "sakura/sakura-qrd.dtsi"
 #include "sakura/sakura-camera.dtsi"
 #include "sakura/general-clk.dtsi"
+
+&thermal_zones {
+	pm8953_tz {
+		status = "okay";
+	};
+};

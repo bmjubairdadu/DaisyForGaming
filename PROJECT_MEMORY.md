@@ -51,3 +51,29 @@
 - **Compiler:** Clang 21.1.8 + LLD Linker
 - **Banner:** `Linux version 4.9.337-DaisyForGaming (JUBAIR_HOSEN@DaisyForGaming) #16 SMP PREEMPT Sun Nov 22 13:00:00 +06 2026`
 - **Verification:** 0 warnings, 0 errors, 0 KSU strings, 0 SusFS strings, single banner in AnyKernel3, zygote app-launch boost active, zero comments throughout codebase.
+
+---
+
+## Identified Issues & Solutions for v1.5 (Video Buffer, SD Card, Thermal & Fsync Release)
+1. **Video Playback & Social App Buffer Lag**:
+   - Cause: Default TCP buffer scaling, aggressive low latency and fastopen options causing packet drops and re-buffering on Facebook/YouTube.
+   - Fix: Scaled TCP buffers (rmem 6MB, wmem 4MB), configured BBR congestion control with fq pacing, set `tcp_slow_start_after_idle = 0` and enabled `tcp_mtu_probing = 1`.
+2. **External SD Card Hardware Detection**:
+   - Cause: `sakura-qrd.dtsi` inverted Card Detect to Active High.
+   - Fix: Corrected to Active Low (`cd-gpios = <&tlmm 133 0x0>`), DDR50 bus speed mode. MicroSD mounts cleanly in OS and recovery as `/sdcard1`.
+3. **PM8953 Thermal Zone Driver**:
+   - Cause: Missing thermal zone in DTS for PM8953.
+   - Fix: Enabled `pm8953_tz` in `msm8953-qrd.dtsi`, active on `thermal_zone2`.
+4. **Data Integrity & Fsync Stability**:
+   - Cause: `CONFIG_DYNAMIC_FSYNC` skipped flushes while screen-on, risking 0-byte file truncation on sudden restart.
+   - Fix: Completely disabled `CONFIG_DYNAMIC_FSYNC`, restored vanilla Linux kernel `fsync()`/`fdatasync()` behavior.
+
+## Build #18 Metrics & Verification (v1.5)
+- **Status:** Completed Successfully & Verified Booting on Device
+- **Kernel Image:** `out/arch/arm64/boot/Image.gz-dtb` (14,741,078 bytes)
+- **Recovery Zip:** `DaisyForGaming-v1.5-Gaming-11-26-2026.zip` (17,286,715 bytes)
+- **SHA256:** `28d5b8b318effda182d9926c514f78a98686a9da60eb1c497fd07e9540ae3a27`
+- **Compiler:** Ubuntu Clang 18.1.3 + LLD Linker
+- **Banner:** `Linux version 4.9.337-DaisyForGaming (JUBAIR_HOSEN@DaisyForGaming) #18 SMP PREEMPT Thu Nov 26 10:05:00 +06 2026`
+- **Verification:** 0 warnings, 0 errors, 0 KSU strings, 0 SusFS strings, boots cleanly to sys.boot_completed=1, zero comments throughout codebase.
+

@@ -168,7 +168,6 @@ static bool test_task_tflag(struct task_struct *p, int flag)
 		task_lock(t);
 		if (test_tsk_thread_flag(t, flag)) {
 			task_unlock(t);
-			rcu_read_unlock();
 			return true;
 		}
 		task_unlock(t);
@@ -181,33 +180,36 @@ static int asz_cmp(const void *a, const void *b)
 {
 	struct selected_task *x = ((struct selected_task *)a);
 	struct selected_task *y = ((struct selected_task *)b);
-	int ret;
 
-	ret = x->anonsize < y->anonsize ? 1 : -1;
-
-	return ret;
+	if (x->anonsize < y->anonsize)
+		return 1;
+	if (x->anonsize > y->anonsize)
+		return -1;
+	return 0;
 }
 
 static int txd_cmp(const void *a, const void *b)
 {
 	struct selected_task *x = ((struct selected_task *)a);
 	struct selected_task *y = ((struct selected_task *)b);
-	int ret;
 
-	ret = x->p->acct_timexpd < y->p->acct_timexpd ? 1 : -1;
-
-	return ret;
+	if (x->p->acct_timexpd < y->p->acct_timexpd)
+		return 1;
+	if (x->p->acct_timexpd > y->p->acct_timexpd)
+		return -1;
+	return 0;
 }
 
 static int gid_cmp(const void *a, const void *b)
 {
 	struct selected_task *x = ((struct selected_task *)a);
 	struct selected_task *y = ((struct selected_task *)b);
-	int ret;
 
-	ret = gid_lt(x->gid, y->gid) ? 1 : -1;
-
-	return ret;
+	if (gid_lt(x->gid, y->gid))
+		return 1;
+	if (gid_gt(x->gid, y->gid))
+		return -1;
+	return 0;
 }
 
 static void cmp_swap(void *a, void *b, int size)
@@ -250,55 +252,24 @@ static inline int is_low_mem(void)
 
 static void filter_tasks_by_gid(void)
 {
-	int i, j, lpos, fpos = -1;
+	int i, j, fpos = 0;
 
-	if (!kill_heaviest_gid || is_low_mem() == LOWMEM_CRITICAL)
+	if (tcnt < 2 || !kill_heaviest_gid || is_low_mem() == LOWMEM_CRITICAL)
 		return;
 
-	/* Group tasks based on their GIDs, the order doesn't matter */
 	sort(selected, tcnt, sizeof(*selected), gid_cmp, cmp_swap);
 
-	/* Split the tasks with the same GIDs into separate sets */
-	for (i = 0; i < (tcnt - 1); i++) {
-		kgid_t curr_gid = selected[i].gid;
-		kgid_t next_gid = selected[i + 1].gid;
-		kgid_t fpos_gid;
-
-		if (!gid_eq(curr_gid, next_gid)) {
-			if (fpos >= 0 && i != fpos) {
-				fpos_gid = selected[fpos].gid;
-
-				if (gid_eq(curr_gid, fpos_gid))
-					goto get_heaviest;
-			}
-
+	for (i = 1; i <= tcnt; i++) {
+		if (i < tcnt && gid_eq(selected[fpos].gid, selected[i].gid))
 			continue;
+
+		if (i - fpos > 1) {
+			sort(&selected[fpos], i - fpos,
+					sizeof(*selected), txd_cmp, cmp_swap);
+			for (j = fpos + 1; j < i; j++)
+				selected[j].ignore = true;
 		}
-
-		if (fpos < 0)
-			fpos = i;
-
-		continue;
-
-get_heaviest:
-		lpos = i;
-
-		/*
-		 * Find the heaviest task within the given
-		 * set of tasks.
-		 */
-		sort(&selected[fpos], lpos - (fpos - 1),
-				sizeof(*selected), txd_cmp, cmp_swap);
-
-		/*
-		 * Mark the rest of the tasks in the set as ignored,
-		 * so that they won't be considered when tasks are
-		 * getting killed.
-		 */
-		for (j = (fpos + 1); j <= lpos; j++)
-			selected[j].ignore = true;
-
-		fpos = -1;
+		fpos = i;
 	}
 }
 
@@ -308,13 +279,9 @@ static void reclaim_tasks(void)
 	int alimit = atask_limit();
 	int i, eff, nr_to_reclaim, reclaimed = 0, scanned = 0;
 
-	/*
-	 * Sort tasks according to their anonsize (number of MM_ANON pages),
-	 * in descending order.
-	 */
-	sort(selected, (alimit - 1), sizeof(*selected), asz_cmp, cmp_swap);
+	if (alimit > 1)
+		sort(selected, alimit, sizeof(*selected), asz_cmp, cmp_swap);
 
-	/* Reclaim tasks with the highest anonsize first */
 	for (i = 0; i < alimit; i++) {
 		struct task_struct *t = selected[i].p;
 		int adj = selected[i].adj;
@@ -363,23 +330,13 @@ static void sort_and_kill_tasks(void)
 {
 	struct selected_task select;
 	int sv[MAX_KTASK], fg[MAX_KTASK];
+	int i, nr_selected = tcnt;
 	int killcnt = 0, svcnt = 0, fgcnt = 0;
 
-	/*
-	 * Find the heaviest task within a given set of
-	 * GIDs and ignore the rest of the tasks within
-	 * that set, so that only the heaviest task is
-	 * considered when killing tasks.
-	 */
 	filter_tasks_by_gid();
 
-	/*
-	 * Sort tasks based on their accumulated rss usage,
-	 * in descending order.
-	 */
 	sort(selected, tcnt, sizeof(*selected), txd_cmp, cmp_swap);
 
-	/* Kill tasks with the lowest accumulated rss usage first */
 	while (tcnt--) {
 		int lm_status = is_low_mem();
 		bool lm_crit = lm_status == LOWMEM_CRITICAL;
@@ -387,7 +344,7 @@ static void sort_and_kill_tasks(void)
 		select = selected[tcnt];
 
 		if (lm_status == LOWMEM_NONE)
-			return;
+			goto out;
 
 		if (select.ignore)
 			continue;
@@ -395,10 +352,6 @@ static void sort_and_kill_tasks(void)
 		if (select.adj < min_adj && !lm_crit)
 			continue;
 
-		/*
-		 * Protect the tasks whose adjs are in adj_ignore
-		 * from being killed under high memory pressure.
-		 */
 		if (in_adj_ignore(select.adj)) {
 			if (!select.adj)
 				fg[fgcnt++] = tcnt;
@@ -408,21 +361,14 @@ static void sort_and_kill_tasks(void)
 			continue;
 		}
 
-		/* Kill the selected task */
 		kill_task(select);
 		killcnt++;
 	}
 
-	/*
-	 * If no tasks were killed under high memory pressure,
-	 * kill the protected tasks as well.
-	 *
-	 * Kill the services first, and then the foreground tasks.
-	 */
 	if (!killcnt && is_low_mem() == LOWMEM_CRITICAL) {
 		while (svcnt || fgcnt) {
 			if (is_low_mem() < LOWMEM_CRITICAL)
-				return;
+				goto out;
 
 			if (!svcnt) {
 				select = selected[fg[--fgcnt]];
@@ -434,6 +380,11 @@ static void sort_and_kill_tasks(void)
 			kill_task(select);
 		}
 	}
+
+out:
+	for (i = 0; i < nr_selected; i++)
+		put_task_struct(selected[i].p);
+	tcnt = 0;
 }
 
 static void proc_tasks(struct work_struct *work)
@@ -472,7 +423,9 @@ static void proc_tasks(struct work_struct *work)
 
 		if (kill_heaviest_gid) {
 			group = __task_cred(p)->group_info;
-			gid = group->gid[(group->ngroups - 1)];
+			if (!group || !group->ngroups)
+				continue;
+			gid = group->gid[group->ngroups - 1];
 
 			if (!__kgid_val(gid))
 				continue;
@@ -496,7 +449,9 @@ static void proc_tasks(struct work_struct *work)
 
 	if (is_low_mem() == LOWMEM_NONE) {
 		if (!should_skip_reclaim()) {
-			for (i = 0; i < atask_limit(); i++)
+			int lim = atask_limit();
+
+			for (i = 0; i < lim; i++)
 				get_task_struct(selected[i].p);
 			rcu_read_unlock();
 			reclaim_tasks();
@@ -505,6 +460,8 @@ static void proc_tasks(struct work_struct *work)
 		rcu_read_unlock();
 		return;
 	}
+	for (i = 0; i < tcnt; i++)
+		get_task_struct(selected[i].p);
 	rcu_read_unlock();
 
 	sort_and_kill_tasks();

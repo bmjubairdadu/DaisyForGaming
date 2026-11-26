@@ -12,6 +12,9 @@
 #include <linux/export.h>
 #include <linux/module.h>
 #include <linux/state_notifier.h>
+#ifdef CONFIG_FB
+#include <linux/fb.h>
+#endif
 
 #define DEFAULT_SUSPEND_DEFER_TIME 	1
 #define STATE_NOTIFIER			"state_notifier"
@@ -91,7 +94,7 @@ static void _resume_work(struct work_struct *work)
 void state_suspend(void)
 {
 	dprintk("%s: suspend called.\n", STATE_NOTIFIER);
-	if (state_suspended || suspend_in_progress || !enabled)
+	if (!susp_wq || state_suspended || suspend_in_progress || !enabled)
 		return;
 
 	suspend_in_progress = true;
@@ -103,6 +106,8 @@ void state_suspend(void)
 void state_resume(void)
 {
 	dprintk("%s: resume called.\n", STATE_NOTIFIER);
+	if (!susp_wq)
+		return;
 	if (delayed_work_pending(&suspend_work))
 		cancel_delayed_work_sync(&suspend_work);
 	suspend_in_progress = false;
@@ -111,17 +116,53 @@ void state_resume(void)
 		queue_work(susp_wq, &resume_work);
 }
 
+#ifdef CONFIG_FB
+static int fb_notifier_callback(struct notifier_block *self,
+				unsigned long event, void *data)
+{
+	struct fb_event *evdata = data;
+	int *blank;
+
+	if (event != FB_EVENT_BLANK || !evdata || !evdata->data)
+		return NOTIFY_DONE;
+
+	blank = evdata->data;
+	switch (*blank) {
+	case FB_BLANK_UNBLANK:
+		state_resume();
+		break;
+	case FB_BLANK_POWERDOWN:
+		state_suspend();
+		break;
+	default:
+		break;
+	}
+
+	return NOTIFY_OK;
+}
+
+static struct notifier_block fb_notif = {
+	.notifier_call = fb_notifier_callback,
+};
+#endif
+
 static int __init state_notifier_init(void)
 {
 	susp_wq =
 	    alloc_workqueue("state_susp_wq",
 			    WQ_HIGHPRI | WQ_UNBOUND | WQ_MEM_RECLAIM, 0);
 
-	if (!susp_wq)
+	if (!susp_wq) {
 		pr_err("State Notifier failed to allocate suspend workqueue\n");
+		return -ENOMEM;
+	}
 
 	INIT_DELAYED_WORK(&suspend_work, _suspend_work);
 	INIT_WORK(&resume_work, _resume_work);
+#ifdef CONFIG_FB
+	if (fb_register_client(&fb_notif))
+		pr_err("State Notifier failed to register fb client\n");
+#endif
 
 	return 0;
 }
