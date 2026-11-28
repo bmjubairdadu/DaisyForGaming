@@ -3,8 +3,8 @@
 [![Linux](https://img.shields.io/badge/Kernel-Linux%204.9.337-24292e.svg?style=flat-square&logo=linux&logoColor=white)](https://github.com/bmjubairdadu/DaisyForGaming)
 [![Device](https://img.shields.io/badge/Device-Xiaomi%20Mi%20A2%20Lite%20(daisy)-0078d4.svg?style=flat-square)](https://github.com/bmjubairdadu/DaisyForGaming)
 [![Platform](https://img.shields.io/badge/Platform-Qualcomm%20Snapdragon%20625-e65100.svg?style=flat-square)](https://github.com/bmjubairdadu/DaisyForGaming)
-[![Compiler](https://img.shields.io/badge/Compiler-Clang%2014.0%20%2B%20LLD-5c2d91.svg?style=flat-square)](https://github.com/bmjubairdadu/DaisyForGaming)
-[![Release](https://img.shields.io/badge/Version-v1.2%20Stable-008000.svg?style=flat-square)](https://github.com/bmjubairdadu/DaisyForGaming/releases)
+[![Compiler](https://img.shields.io/badge/Compiler-Clang%2021.1.8%20%2B%20LLD-5c2d91.svg?style=flat-square)](https://github.com/bmjubairdadu/DaisyForGaming)
+[![Release](https://img.shields.io/badge/Version-v1.5%20Stable-008000.svg?style=flat-square)](https://github.com/bmjubairdadu/DaisyForGaming/releases)
 [![Developer](https://img.shields.io/badge/Developer-JUBAIR%20HOSEN-1f2328.svg?style=flat-square)](https://github.com/bmjubairdadu)
 [![License](https://img.shields.io/badge/License-GPL%202.0-d32f2f.svg?style=flat-square)](COPYING)
 
@@ -21,7 +21,7 @@
 | **CPU Architecture** | 8x ARM Cortex-A53 up to 2.0 GHz (64-bit ARMv8-A) |
 | **GPU Architecture** | Qualcomm Adreno 506 (650 MHz max) |
 | **Base Kernel** | Linux 4.9.337-DaisyForGaming |
-| **Toolchain** | Clang 14.0.0 (LLVM + LLD Linker) |
+| **Toolchain** | Clang 21.1.8 (LLVM + LLD Linker) |
 | **Target ABI** | ARM64 (`aarch64-linux-gnu`) |
 | **Lead Developer** | JUBAIR HOSEN |
 
@@ -60,13 +60,18 @@
 * **Zero Anti-Cheat Detection:** Game security systems (Free Fire, Mobile Legends, PUBG Mobile) inspect kernel integrity without detecting unauthorized symbols or modifications.
 * **Root Flexibility:** Compatible with standard Magisk or post-flash boot patching via FolkPatch / KernelPatch.
 
-### 6. Thermal, Memory and SystemUI Stability (v1.2)
-* **Stock CPU Ceiling:** The 2.150 GHz and 2.208 GHz operating points were removed from the cpufreq table and scheduler energy costs; the phone runs at the stock 2.016 GHz maximum, which removes the main heat source seen under gaming and video load.
-* **Zram-Aware Swapping:** `vm_swappiness` is raised from 10 to 100 so anonymous pages go to zram instead of file cache, eliminating the major-fault stalls behind app and SystemUI ANRs on a 2.8 GB device.
-* **No Reclaim Boost Trap:** The CPU max-boost kick was removed from the direct-reclaim retry path, so memory pressure no longer pins the CPU at the top OPP for hundreds of milliseconds per second.
-* **SystemUI Restart Fix:** Charging sounds are disabled at boot, preventing the GSI `BatteryService$PlayChargedSound` crash that killed `system_server` and restarted zygote.
-* **Boot Tuning That Actually Runs:** The installer relabels the boot service to `system_file`, so `magiskd` can execute it; the service caps CPU at 2.016 GHz and disables charging boost and GPU bus forcing.
-* **Root Survives the Flash:** The kernel keeps the boot initramfs even when the bootloader passes `skip_initramfs`, so Magisk's `magiskinit` runs and `magiskd` starts; v1.2 no longer boots without `su`.
+### 6. Video Streaming and Network Buffer Optimization (v1.5)
+* **Buffer Depletion Elimination:** TCP receive and transmit buffers scaled to 6 MB (`rmem_max`, `wmem_max`, `tcp_rmem` 6 MB, `tcp_wmem` 4 MB) with default Google BBR congestion control and Fair Queueing (`fq`) packet pacing.
+* **Continuous Streaming Stability:** Disabled `tcp_slow_start_after_idle` (`= 0`) and enabled `tcp_mtu_probing` (`= 1`) to eliminate sudden buffer stalls and frame freezing on Facebook, YouTube, TikTok, and live media streams.
+* **Safe Fsync & Data Integrity:** Completely removed unsafe `CONFIG_DYNAMIC_FSYNC` and restored vanilla Linux 4.9 `fsync()`, `fdatasync()`, and `sync_file_range()` syscalls to protect against 0-byte file corruption during unexpected power loss.
+
+### 7. External Storage and Hardware Detection (v1.5)
+* **MicroSD Card Detection Fix:** Corrected Card Detect (CD) GPIO polarity in `msm8953-qrd-sku3-daisy.dts` and `sakura-qrd.dtsi` (`cd-gpios = <&tlmm 133 0x0>`) with DDR50 bus speed mode, ensuring MicroSD cards mount cleanly on boot and custom recovery.
+* **PM8953 Thermal Zone Driver:** Enabled `pm8953_tz` in Device Tree, providing accurate battery and PMIC temperature reporting on `thermal_zone2`.
+
+### 8. Scheduler and Ultra-Smooth Launch Tuning (v1.4)
+* **Dynamic Fork Boost:** Connected zygote process spawning to CPU input boost (`cpu_input_boost_kick_max` 150 ms) in `_do_fork()`, eliminating stutter during cold application launch.
+* **Balanced Frequencies:** All 8 Cortex-A53 cores idle smoothly at 652 MHz floor and scale dynamically to 2.016 GHz ceiling with schedutil governor (500 us up-rate limit, 20 ms down-rate limit).
 
 ---
 
@@ -74,16 +79,16 @@
 
 | Package | Size | SHA256 Checksum |
 |:---|:---|:---|
-| **`DaisyForGaming-v1.2-Gaming-11-05-2026.zip`** | 16.5 MiB (17,343,635 bytes) | `7d7b3b0e369cdc50bbb82f2c5877c190b056b1b8316168018a9163848d2b1459` |
+| **`DaisyForGaming-v1.5-Gaming-11-26-2026.zip`** | 16.5 MiB (17,286,715 bytes) | `28d5b8b318effda182d9926c514f78a98686a9da60eb1c497fd07e9540ae3a27` |
 
-Release assets can be downloaded directly from the [GitHub Releases](https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/v1.2) section.
+Release assets can be downloaded directly from the [GitHub Releases](https://github.com/bmjubairdadu/DaisyForGaming/releases/tag/v1.5) section.
 
 ---
 
 ## Installation
 
 ### Custom Recovery (TWRP / OrangeFox)
-1. Download **`DaisyForGaming-v1.2-Gaming-11-05-2026.zip`** to internal storage or an SD card.
+1. Download **`DaisyForGaming-v1.5-Gaming-11-26-2026.zip`** to internal storage or an SD card.
 2. Reboot into recovery mode.
 3. Recommended: Create a backup of your active `boot` partition.
 4. Navigate to **Install**, select the zip archive, and confirm flash.
